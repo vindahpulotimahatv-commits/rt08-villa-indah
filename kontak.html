@@ -313,15 +313,15 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <section class="page-hero"><div class="container"><div class="breadcrumb">BERANDA / KONTAK</div><h1>Kontak & Nomor Penting</h1><p>Kontak pengurus, keamanan, dan layanan darurat ditempatkan terpisah agar mudah dicari saat dibutuhkan.</p></div></section>
 <section class="section"><div class="container">
 <div class="contact-grid">
-  <div class="contact-card"><div class="contact-icon">👨‍💼</div><div><strong>Ketua RT</strong><span>08xx xxxx xxxx</span></div></div>
-  <div class="contact-card"><div class="contact-icon">📝</div><div><strong>Sekretaris</strong><span>08xx xxxx xxxx</span></div></div>
-  <div class="contact-card"><div class="contact-icon">💰</div><div><strong>Bendahara</strong><span>08xx xxxx xxxx</span></div></div>
-  <div class="contact-card"><div class="contact-icon">🛡️</div><div><strong>Keamanan</strong><span>08xx xxxx xxxx</span></div></div>
-  <div class="contact-card"><div class="contact-icon">🚒</div><div><strong>Pemadam Kebakaran</strong><span>Isi nomor wilayah setempat</span></div></div>
-  <div class="contact-card"><div class="contact-icon">🚑</div><div><strong>Ambulans / Faskes</strong><span>Isi nomor wilayah setempat</span></div></div>
+  <div class="contact-card"><div class="contact-icon">👨‍💼</div><div><strong>Ketua RT</strong><span id="cKetua">08xx xxxx xxxx</span></div></div>
+  <div class="contact-card"><div class="contact-icon">📝</div><div><strong>Sekretaris</strong><span id="cSekretaris">08xx xxxx xxxx</span></div></div>
+  <div class="contact-card"><div class="contact-icon">💰</div><div><strong>Bendahara</strong><span id="cBendahara">08xx xxxx xxxx</span></div></div>
+  <div class="contact-card"><div class="contact-icon">🛡️</div><div><strong>Keamanan</strong><span id="cKeamanan">08xx xxxx xxxx</span></div></div>
+  <div class="contact-card"><div class="contact-icon">🚒</div><div><strong>Pemadam Kebakaran</strong><span id="cPemadam">113</span></div></div>
+  <div class="contact-card"><div class="contact-icon">🚑</div><div><strong>Ambulans / Faskes</strong><span id="cAmbulans">119</span></div></div>
 </div>
 <div style="height:20px"></div>
-<div class="callout"><div><h3>🚨 Kondisi darurat?</h3><p>Untuk keadaan yang mengancam keselamatan, hubungi layanan darurat resmi dan keamanan lingkungan.</p></div><a class="btn btn-gold" href="#" data-demo="Masukkan nomor keamanan resmi RT sebelum dipublikasikan.">Hubungi Keamanan</a></div>
+<div class="callout"><div><h3>🚨 Kondisi darurat?</h3><p>Untuk keadaan yang mengancam keselamatan, hubungi layanan darurat resmi dan keamanan lingkungan.</p></div><a class="btn btn-gold" href="#" id="btnHubKeamanan">Hubungi Keamanan</a></div>
 </div></section>
 </main>
 <footer class="footer">
@@ -334,23 +334,47 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
       <a href="informasi.html">Pengumuman</a><a href="agenda.html">Agenda</a>
       <a href="layanan.html">Layanan Warga</a><a href="transparansi.html">Kas RT</a>
       <a href="umkm.html">UMKM Warga</a><a href="galeri.html">Galeri</a>
-      <a href="kontak.html">Kontak Penting</a><a href="#" data-demo="Login warga bisa ditambahkan dengan Firebase Auth.">Login Warga</a>
+      <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a>
     </div>
   </div>
-</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="active" href="kontak.html"><b>☰</b>Menu</a></nav><script>
+</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="active" href="kontak.html"><b>☰</b>Menu</a></nav><script src="config.js"></script><script>
 document.addEventListener("DOMContentLoaded",()=>{
-  document.querySelectorAll("[data-demo]").forEach(el=>{
-    el.addEventListener("click",e=>{
+  const g=document.getElementById("navGrupWA");
+  if(g){
+    if(RT_CONFIG.linkGrupWA){ g.href=RT_CONFIG.linkGrupWA; g.target="_blank"; g.rel="noopener"; }
+    else { g.href="kontak.html"; g.removeAttribute("target"); }
+  }
+  function setContact(id, value){
+    const el=document.getElementById(id);
+    if(!el) return;
+    const digits = String(value||"").replace(/[^0-9+]/g,"");
+    if(digits && digits.replace(/\D/g,"").length>=6){
+      el.innerHTML = "";
+      const a=document.createElement("a");
+      a.href="tel:"+digits; a.textContent=value; a.style.color="inherit";
+      el.appendChild(a);
+    } else {
+      el.textContent = value || "-";
+    }
+  }
+  setContact("cKetua", RT_CONFIG.teleponKetua);
+  setContact("cSekretaris", RT_CONFIG.teleponSekretaris);
+  setContact("cBendahara", RT_CONFIG.teleponBendahara);
+  setContact("cKeamanan", RT_CONFIG.teleponKeamanan);
+  setContact("cPemadam", RT_CONFIG.teleponPemadam);
+  setContact("cAmbulans", RT_CONFIG.teleponAmbulans);
+
+  const btnH=document.getElementById("btnHubKeamanan");
+  if(btnH){
+    btnH.addEventListener("click", e=>{
       e.preventDefault();
-      showToast(el.dataset.demo || "Fitur siap dihubungkan.");
-    });
-  });
-  const form=document.getElementById("reportForm");
-  if(form){
-    form.addEventListener("submit",e=>{
-      e.preventDefault();
-      showToast("Laporan demo berhasil dikirim. Backend bisa ditambahkan nanti.");
-      form.reset();
+      if(RT_CONFIG.waKeamanan){
+        window.open(rtWaLink(RT_CONFIG.waKeamanan,"Halo Keamanan RT 08, saya membutuhkan bantuan."), "_blank", "noopener");
+      } else if(RT_CONFIG.teleponKeamanan){
+        window.location.href = "tel:"+RT_CONFIG.teleponKeamanan.replace(/[^0-9+]/g,"");
+      } else {
+        showToast("Nomor keamanan belum diatur admin di config.js.");
+      }
     });
   }
 });

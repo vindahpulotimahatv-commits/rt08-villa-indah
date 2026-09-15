@@ -336,7 +336,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <rect x="96" y="184" width="7" height="24" rx="3.5" fill="#6f765d"/><rect x="411" y="184" width="7" height="25" rx="3.5" fill="#6f765d"/>
 </svg></div>
       <div class="board-stats">
-        <div class="board-stat"><strong>—</strong><span>Jumlah KK</span></div>
+        <div class="board-stat"><strong id="statKK">—</strong><span>Jumlah KK</span></div>
         <div class="board-stat"><strong>3</strong><span>Agenda Aktif</span></div>
         <div class="board-stat"><strong>24/7</strong><span>Akses Portal</span></div>
       </div>
@@ -395,25 +395,18 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
       <a href="informasi.html">Pengumuman</a><a href="agenda.html">Agenda</a>
       <a href="layanan.html">Layanan Warga</a><a href="transparansi.html">Kas RT</a>
       <a href="umkm.html">UMKM Warga</a><a href="galeri.html">Galeri</a>
-      <a href="kontak.html">Kontak Penting</a><a href="#" data-demo="Login warga bisa ditambahkan dengan Firebase Auth.">Login Warga</a>
+      <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a>
     </div>
   </div>
-</footer><nav class="mobile-nav"><a class="active" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>☰</b>Menu</a></nav><script>
+</footer><nav class="mobile-nav"><a class="active" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>☰</b>Menu</a></nav><script src="config.js"></script><script>
 document.addEventListener("DOMContentLoaded",()=>{
-  document.querySelectorAll("[data-demo]").forEach(el=>{
-    el.addEventListener("click",e=>{
-      e.preventDefault();
-      showToast(el.dataset.demo || "Fitur siap dihubungkan.");
-    });
-  });
-  const form=document.getElementById("reportForm");
-  if(form){
-    form.addEventListener("submit",e=>{
-      e.preventDefault();
-      showToast("Laporan demo berhasil dikirim. Backend bisa ditambahkan nanti.");
-      form.reset();
-    });
+  const g=document.getElementById("navGrupWA");
+  if(g){
+    if(RT_CONFIG.linkGrupWA){ g.href=RT_CONFIG.linkGrupWA; g.target="_blank"; g.rel="noopener"; }
+    else { g.href="kontak.html"; g.removeAttribute("target"); }
   }
+  const kk=document.getElementById("statKK");
+  if(kk) kk.textContent = RT_CONFIG.jumlahKK || "—";
 });
 function showToast(msg){
   let t=document.querySelector(".toast");

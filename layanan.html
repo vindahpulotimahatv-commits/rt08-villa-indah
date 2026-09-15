@@ -312,21 +312,21 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <main>
 <section class="page-hero"><div class="container"><div class="breadcrumb">BERANDA / LAYANAN</div><h1>Layanan Warga</h1><p>Halaman layanan dibuat seperti menu aplikasi agar warga langsung tahu harus klik ke mana.</p></div></section>
 <section class="section"><div class="container"><div class="service-grid">
-  <div class="service-card"><div class="icon">📝</div><h3>Surat Pengantar</h3><p>Ajukan kebutuhan surat pengantar RT secara digital.</p><a class="btn btn-brand" href="#" data-demo="Form Surat Pengantar siap dihubungkan.">Ajukan</a></div>
-  <div class="service-card"><div class="icon">🏠</div><h3>Warga Baru</h3><p>Pelaporan warga baru atau perubahan domisili.</p><a class="btn btn-brand" href="#" data-demo="Form Warga Baru siap dihubungkan.">Isi Form</a></div>
-  <div class="service-card"><div class="icon">🚚</div><h3>Warga Pindah</h3><p>Pelaporan perpindahan domisili warga.</p><a class="btn btn-brand" href="#" data-demo="Form Warga Pindah siap dihubungkan.">Laporkan</a></div>
-  <div class="service-card"><div class="icon">🏟️</div><h3>Pinjam Fasilitas</h3><p>Ajukan penggunaan fasilitas lingkungan.</p><a class="btn btn-brand" href="#" data-demo="Form Peminjaman Fasilitas siap dihubungkan.">Ajukan</a></div>
-  <div class="service-card"><div class="icon">💡</div><h3>Aspirasi Warga</h3><p>Sampaikan ide dan saran untuk lingkungan.</p><a class="btn btn-brand" href="#" data-demo="Kotak Aspirasi siap dihubungkan.">Kirim</a></div>
-  <div class="service-card"><div class="icon">📄</div><h3>Dokumen RT</h3><p>Akses tata tertib, surat edaran, atau dokumen umum.</p><a class="btn btn-brand" href="#" data-demo="Folder dokumen dapat dihubungkan.">Buka</a></div>
+  <div class="service-card"><div class="icon">📝</div><h3>Surat Pengantar</h3><p>Ajukan kebutuhan surat pengantar RT secara digital.</p><a class="btn btn-brand" href="#" id="svcSurat">Ajukan</a></div>
+  <div class="service-card"><div class="icon">🏠</div><h3>Warga Baru</h3><p>Pelaporan warga baru atau perubahan domisili.</p><a class="btn btn-brand" href="#" id="svcWargaBaru">Isi Form</a></div>
+  <div class="service-card"><div class="icon">🚚</div><h3>Warga Pindah</h3><p>Pelaporan perpindahan domisili warga.</p><a class="btn btn-brand" href="#" id="svcWargaPindah">Laporkan</a></div>
+  <div class="service-card"><div class="icon">🏟️</div><h3>Pinjam Fasilitas</h3><p>Ajukan penggunaan fasilitas lingkungan.</p><a class="btn btn-brand" href="#" id="svcPinjamFasilitas">Ajukan</a></div>
+  <div class="service-card"><div class="icon">💡</div><h3>Aspirasi Warga</h3><p>Sampaikan ide dan saran untuk lingkungan.</p><a class="btn btn-brand" href="#" id="svcAspirasi">Kirim</a></div>
+  <div class="service-card"><div class="icon">📄</div><h3>Dokumen RT</h3><p>Akses tata tertib, surat edaran, atau dokumen umum.</p><a class="btn btn-brand" href="#" id="svcDokumen">Buka</a></div>
 </div></div></section>
-<section class="section-tight" id="lapor"><div class="container"><div class="section-heading"><div><h2>🚨 Lapor Lingkungan</h2><p>Form demo untuk laporan keamanan dan fasilitas.</p></div></div>
+<section class="section-tight" id="lapor"><div class="container"><div class="section-heading"><div><h2>🚨 Lapor Lingkungan</h2><p>Isi form berikut untuk melaporkan masalah keamanan atau fasilitas ke pengurus RT.</p></div></div>
 <form class="form-card" id="reportForm"><div class="form-grid">
-  <div class="field"><label>Nama</label><input required placeholder="Nama warga"></div>
-  <div class="field"><label>Blok / Nomor Rumah</label><input required placeholder="Contoh: E6 / 12"></div>
-  <div class="field"><label>Kategori</label><select><option>Keamanan</option><option>Lampu Jalan</option><option>Sampah</option><option>Drainase</option><option>Jalan</option><option>Fasilitas Umum</option><option>Lainnya</option></select></div>
-  <div class="field"><label>Nomor WhatsApp</label><input placeholder="08xxxxxxxxxx"></div>
-  <div class="field full"><label>Keterangan</label><textarea required placeholder="Jelaskan laporan secara singkat dan jelas..."></textarea></div>
-  <div class="field full"><button class="btn btn-gold" type="submit">Kirim Laporan Demo</button></div>
+  <div class="field"><label>Nama</label><input id="lpNama" required placeholder="Nama warga"></div>
+  <div class="field"><label>Blok / Nomor Rumah</label><input id="lpBlok" required placeholder="Contoh: E6 / 12"></div>
+  <div class="field"><label>Kategori</label><select id="lpKategori"><option>Keamanan</option><option>Lampu Jalan</option><option>Sampah</option><option>Drainase</option><option>Jalan</option><option>Fasilitas Umum</option><option>Lainnya</option></select></div>
+  <div class="field"><label>Nomor WhatsApp</label><input id="lpWA" placeholder="08xxxxxxxxxx"></div>
+  <div class="field full"><label>Keterangan</label><textarea id="lpKeterangan" required placeholder="Jelaskan laporan secara singkat dan jelas..."></textarea></div>
+  <div class="field full"><button class="btn btn-gold" type="submit">Kirim Laporan</button></div>
 </div></form></div></section>
 </main>
 <footer class="footer">
@@ -339,23 +339,63 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
       <a href="informasi.html">Pengumuman</a><a href="agenda.html">Agenda</a>
       <a href="layanan.html">Layanan Warga</a><a href="transparansi.html">Kas RT</a>
       <a href="umkm.html">UMKM Warga</a><a href="galeri.html">Galeri</a>
-      <a href="kontak.html">Kontak Penting</a><a href="#" data-demo="Login warga bisa ditambahkan dengan Firebase Auth.">Login Warga</a>
+      <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a>
     </div>
   </div>
-</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="active" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>☰</b>Menu</a></nav><script>
+</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="active" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>☰</b>Menu</a></nav><script src="config.js"></script><script>
 document.addEventListener("DOMContentLoaded",()=>{
-  document.querySelectorAll("[data-demo]").forEach(el=>{
-    el.addEventListener("click",e=>{
+  const g=document.getElementById("navGrupWA");
+  if(g){
+    if(RT_CONFIG.linkGrupWA){ g.href=RT_CONFIG.linkGrupWA; g.target="_blank"; g.rel="noopener"; }
+    else { g.href="kontak.html"; g.removeAttribute("target"); }
+  }
+  function wireService(id, nomorKey, pesanBuilder){
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.addEventListener("click", e=>{
       e.preventDefault();
-      showToast(el.dataset.demo || "Fitur siap dihubungkan.");
+      const nomor = RT_CONFIG[nomorKey] || RT_CONFIG.waKetua;
+      rtOpenWa(nomor, pesanBuilder(), "Nomor WhatsApp pengurus belum diatur admin di config.js. Silakan hubungi lewat halaman Kontak.");
     });
-  });
+  }
+  wireService("svcSurat","waSekretaris",()=> "Halo Admin RT 08, saya ingin mengajukan Surat Pengantar.\nNama:\nBlok/No Rumah:\nKeperluan surat:");
+  wireService("svcWargaBaru","waSekretaris",()=> "Halo Admin RT 08, saya warga baru dan ingin melapor.\nNama:\nBlok/No Rumah:\nAsal domisili sebelumnya:");
+  wireService("svcWargaPindah","waSekretaris",()=> "Halo Admin RT 08, saya ingin melaporkan perpindahan domisili.\nNama:\nBlok/No Rumah:\nTanggal pindah:");
+  wireService("svcPinjamFasilitas","waKetua",()=> "Halo Pengurus RT 08, saya ingin mengajukan peminjaman fasilitas lingkungan.\nNama:\nBlok/No Rumah:\nFasilitas yang dipinjam:\nTanggal & keperluan:");
+  wireService("svcAspirasi","waKetua",()=> "Halo Pengurus RT 08, saya ingin menyampaikan aspirasi/saran untuk lingkungan.\nNama:\nBlok/No Rumah:\nAspirasi/saran:");
+
+  const dokumenBtn=document.getElementById("svcDokumen");
+  if(dokumenBtn){
+    dokumenBtn.addEventListener("click", e=>{
+      e.preventDefault();
+      if(RT_CONFIG.linkDokumen){
+        window.open(RT_CONFIG.linkDokumen, "_blank", "noopener");
+      } else {
+        rtOpenWa(RT_CONFIG.waSekretaris || RT_CONFIG.waKetua, "Halo Admin RT 08, saya ingin meminta dokumen RT (tata tertib/surat edaran).", "Dokumen belum diunggah admin. Silakan hubungi pengurus lewat halaman Kontak.");
+      }
+    });
+  }
+
   const form=document.getElementById("reportForm");
   if(form){
-    form.addEventListener("submit",e=>{
+    form.addEventListener("submit", e=>{
       e.preventDefault();
-      showToast("Laporan demo berhasil dikirim. Backend bisa ditambahkan nanti.");
-      form.reset();
+      const nama=document.getElementById("lpNama").value.trim();
+      const blok=document.getElementById("lpBlok").value.trim();
+      const kategori=document.getElementById("lpKategori").value;
+      const wa=document.getElementById("lpWA").value.trim();
+      const ket=document.getElementById("lpKeterangan").value.trim();
+      if(!nama || !blok || !ket){ showToast("Mohon lengkapi Nama, Blok/No Rumah, dan Keterangan."); return; }
+      const pesan = "🚨 LAPORAN WARGA RT 08\nNama: "+nama+"\nBlok/No Rumah: "+blok+"\nKategori: "+kategori+"\nNomor WhatsApp pelapor: "+(wa||"-")+"\nKeterangan: "+ket;
+      const nomor = RT_CONFIG.waKeamanan || RT_CONFIG.waKetua;
+      const link = rtWaLink(nomor, pesan);
+      if(link){
+        window.open(link, "_blank", "noopener");
+        showToast("WhatsApp terbuka — silakan tekan kirim untuk melaporkan.");
+        form.reset();
+      } else {
+        showToast("Nomor WhatsApp keamanan belum diatur admin di config.js.");
+      }
     });
   }
 });

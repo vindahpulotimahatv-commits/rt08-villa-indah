@@ -310,14 +310,15 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
   </div>
 </header>
 <main>
-<section class="page-hero"><div class="container"><div class="breadcrumb">BERANDA / TRANSPARANSI</div><h1>Transparansi Kas RT</h1><p>Keuangan dibuat ringkas dengan kartu statistik dan tabel transaksi. Angka masih placeholder.</p></div></section>
+<section class="page-hero"><div class="container"><div class="breadcrumb">BERANDA / TRANSPARANSI</div><h1>Transparansi Kas RT</h1><p>Keuangan RT ditampilkan ringkas melalui kartu statistik dan tabel transaksi, diperbarui berkala oleh bendahara.</p></div></section>
 <section class="section"><div class="container">
 <div class="finance-grid">
-  <div class="finance-card"><span>Saldo Kas</span><strong>Rp —</strong></div>
-  <div class="finance-card"><span>Pemasukan Bulan Ini</span><strong>Rp —</strong></div>
-  <div class="finance-card"><span>Pengeluaran Bulan Ini</span><strong>Rp —</strong></div>
+  <div class="finance-card"><span>Saldo Kas</span><strong id="finSaldo">Rp —</strong></div>
+  <div class="finance-card"><span>Pemasukan Bulan Ini</span><strong id="finMasuk">Rp —</strong></div>
+  <div class="finance-card"><span>Pengeluaran Bulan Ini</span><strong id="finKeluar">Rp —</strong></div>
 </div>
 <div style="height:18px"></div>
+<!-- Admin: baris transaksi di bawah ini diedit langsung di HTML sesuai catatan kas bulanan -->
 <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th>Masuk</th><th>Keluar</th></tr></thead>
 <tbody>
 <tr><td>01/08/2026</td><td>Iuran warga</td><td>Iuran</td><td class="amount in">Rp —</td><td>-</td></tr>
@@ -326,7 +327,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <tr><td>17/08/2026</td><td>Kegiatan warga</td><td>Kegiatan</td><td class="amount in">Rp —</td><td class="amount out">Rp —</td></tr>
 </tbody></table></div>
 <div style="height:18px"></div>
-<div class="callout"><div><h3>Privasi warga tetap dijaga</h3><p>Daftar tunggakan individu tidak perlu tampil di halaman publik. Data pribadi sebaiknya hanya di area login.</p></div><a class="btn btn-brand" href="#" data-demo="Area login warga dapat dibuat di versi berikutnya.">Area Warga</a></div>
+<div class="callout"><div><h3>Privasi warga tetap dijaga</h3><p>Daftar tunggakan individu tidak perlu tampil di halaman publik. Data pribadi sebaiknya hanya di area login.</p></div><a class="btn btn-brand" href="#" id="btnTanyaBendahara">Tanya Bendahara</a></div>
 </div></section>
 </main>
 <footer class="footer">
@@ -339,23 +340,24 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
       <a href="informasi.html">Pengumuman</a><a href="agenda.html">Agenda</a>
       <a href="layanan.html">Layanan Warga</a><a href="transparansi.html">Kas RT</a>
       <a href="umkm.html">UMKM Warga</a><a href="galeri.html">Galeri</a>
-      <a href="kontak.html">Kontak Penting</a><a href="#" data-demo="Login warga bisa ditambahkan dengan Firebase Auth.">Login Warga</a>
+      <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a>
     </div>
   </div>
-</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>☰</b>Menu</a></nav><script>
+</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>☰</b>Menu</a></nav><script src="config.js"></script><script>
 document.addEventListener("DOMContentLoaded",()=>{
-  document.querySelectorAll("[data-demo]").forEach(el=>{
-    el.addEventListener("click",e=>{
+  const g=document.getElementById("navGrupWA");
+  if(g){
+    if(RT_CONFIG.linkGrupWA){ g.href=RT_CONFIG.linkGrupWA; g.target="_blank"; g.rel="noopener"; }
+    else { g.href="kontak.html"; g.removeAttribute("target"); }
+  }
+  const sSaldo=document.getElementById("finSaldo"); if(sSaldo) sSaldo.textContent = RT_CONFIG.saldoKas || "Rp —";
+  const sMasuk=document.getElementById("finMasuk"); if(sMasuk) sMasuk.textContent = RT_CONFIG.pemasukanBulanIni || "Rp —";
+  const sKeluar=document.getElementById("finKeluar"); if(sKeluar) sKeluar.textContent = RT_CONFIG.pengeluaranBulanIni || "Rp —";
+  const btnB=document.getElementById("btnTanyaBendahara");
+  if(btnB){
+    btnB.addEventListener("click", e=>{
       e.preventDefault();
-      showToast(el.dataset.demo || "Fitur siap dihubungkan.");
-    });
-  });
-  const form=document.getElementById("reportForm");
-  if(form){
-    form.addEventListener("submit",e=>{
-      e.preventDefault();
-      showToast("Laporan demo berhasil dikirim. Backend bisa ditambahkan nanti.");
-      form.reset();
+      rtOpenWa(RT_CONFIG.waBendahara || RT_CONFIG.waKetua, "Halo Bendahara RT 08, saya ingin bertanya seputar kas/iuran RT.", "Nomor WhatsApp bendahara belum diatur admin di config.js.");
     });
   }
 });
