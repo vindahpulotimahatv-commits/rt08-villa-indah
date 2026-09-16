@@ -35,13 +35,15 @@ button,input,textarea,select{font:inherit}
 img,svg{max-width:100%;display:block}
 .container{width:min(1180px,calc(100% - 34px));margin:auto}
 
+.header-banner{display:block;line-height:0;background:#081428}
+.header-banner img{width:100%;height:auto;max-height:260px;object-fit:cover;display:block}
 .site-header{
   position:sticky;top:0;z-index:100;
   background:linear-gradient(180deg,rgba(8,20,44,.94),rgba(10,26,58,.88));backdrop-filter:blur(18px);
   border-bottom:1px solid rgba(213,166,43,.28);
   box-shadow:0 12px 30px rgba(3,10,26,.35)
 }
-.nav{display:flex;align-items:center;justify-content:space-between;min-height:76px;gap:20px}
+.nav{display:flex;align-items:center;justify-content:center;min-height:60px;gap:20px}
 .brand{display:flex;align-items:center;gap:13px;font-weight:950;color:#fff}
 .brand-mark{
   width:50px;height:50px;border-radius:50%;object-fit:cover;display:block;
@@ -304,9 +306,9 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <span>🧹 Kerja Bakti • 30 Agustus 2026 • 07.00 WIB</span>
 <span>🎉 Malam Puncak • 19 September 2026 • Area E6 & E7</span>
 </div></div></div>
+<a class="header-banner" href="index.html"><img src="assets/header-banner.jpg" alt="RT 08 / RW 021 Villa Indah Pulo Timaha" loading="lazy"></a>
 <header class="site-header">
   <div class="container nav">
-    <a class="brand" href="index.html"><img class="brand-mark" src="assets/logo-badge.png" alt="Logo RT 08 / RW 021 Villa Indah Pulo Timaha"><div>RT 08 / RW 021<small>VILLA INDAH PULO TIMAHA</small></div></a>
     <nav class="desktop-nav"><a class="" href="index.html">Beranda</a><a class="" href="informasi.html">Informasi</a><a class="" href="agenda.html">Agenda</a><a class="" href="layanan.html">Layanan</a><a class="" href="transparansi.html">Transparansi</a><a class="" href="umkm.html">UMKM</a><a class="active" href="galeri.html">Galeri</a><a class="" href="kontak.html">Kontak</a><a class="nav-cta" href="layanan.html#lapor">🚨 Lapor</a></nav>
   </div>
 </header>
