@@ -197,7 +197,7 @@ function firebaseReady_(){
   return !!(cfg.apiKey && cfg.databaseURL && cfg.appId);
 }
 function normalizeRumah_(v){
-  return String(v || "").trim().toLowerCase().replace(/\s+/g, "");
+  return String(v || "").trim().toLowerCase().replace(/[.#$\[\]\/\s]/g, "");
 }
 
 document.addEventListener("DOMContentLoaded", function(){

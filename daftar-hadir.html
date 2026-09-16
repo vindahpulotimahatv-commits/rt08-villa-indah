@@ -259,7 +259,7 @@ function esc_(s){
 }
 // Dipakai sebagai key Realtime Database supaya 1 rumah = 1 entri (anti-duplikat).
 function normalizeRumah_(v){
-  return String(v || "").trim().toLowerCase().replace(/\s+/g, "");
+  return String(v || "").trim().toLowerCase().replace(/[.#$\[\]\/\s]/g, "");
 }
 // Cocokkan input warga dengan daftar rumah resmi (abaikan besar/kecil huruf & spasi).
 // Kalau daftarRumah belum diisi admin, kembalikan apa adanya (mode ketik bebas).
