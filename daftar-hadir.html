@@ -85,9 +85,17 @@ input:focus{border-color:#7d9fd6;box-shadow:0 0 0 4px rgba(18,58,107,.08)}
 .suggest-list{
   display:none;position:absolute;left:0;right:0;top:100%;margin-top:6px;z-index:60;
   background:#fff;border:1px solid var(--line);border-radius:14px;
-  box-shadow:0 16px 38px rgba(3,10,26,.2);max-height:230px;overflow-y:auto;padding:6px
+  box-shadow:0 16px 38px rgba(3,10,26,.2);max-height:320px;overflow-y:auto;padding:6px;
+  scrollbar-width:thin
 }
 .suggest-list.show{display:block}
+.suggest-count{
+  position:sticky;top:0;background:#fff;padding:8px 12px 9px;margin:-6px -6px 4px;
+  font-size:10.5px;font-weight:900;color:var(--muted);letter-spacing:.3px;
+  border-bottom:1px solid var(--line);text-transform:uppercase;
+  display:flex;align-items:center;justify-content:space-between
+}
+.suggest-count span.hint{color:#c49325;text-transform:none;font-weight:800}
 .suggest-item{padding:11px 12px;border-radius:10px;font-size:14px;font-weight:700;color:var(--ink);cursor:pointer}
 .suggest-item:hover,.suggest-item.active{background:var(--mint);color:var(--green)}
 .suggest-empty{padding:11px 12px;font-size:12.5px;color:var(--muted)}
@@ -270,10 +278,12 @@ function populateRumahOptions_(){
     var matches = q
       ? list.filter(function(r){ return r.toLowerCase().indexOf(q) !== -1; })
       : list.slice();
+    var countBar = '<div class="suggest-count"><span>' + matches.length + ' dari ' + list.length + ' rumah</span>' +
+      (matches.length > 6 ? '<span class="hint">↓ Scroll untuk lihat semua</span>' : '') + '</div>';
     if (matches.length === 0) {
-      box.innerHTML = '<div class="suggest-empty">Tidak ditemukan. Coba ketik blok atau nomor saja, misal "E2" atau "47".</div>';
+      box.innerHTML = countBar + '<div class="suggest-empty">Tidak ditemukan. Coba ketik blok atau nomor saja, misal "E2" atau "47".</div>';
     } else {
-      box.innerHTML = matches.map(function(r){
+      box.innerHTML = countBar + matches.map(function(r){
         return '<div class="suggest-item" data-val="' + esc_(r) + '">' + esc_(r) + '</div>';
       }).join("");
     }
