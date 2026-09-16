@@ -312,13 +312,21 @@ function drawWheel(rem){
     ctx.fill();
 
     if (showLabels) {
+      var nameSize = Math.max(10, Math.min(15, 200 / n));
+      var rumahSize = Math.max(9, nameSize - 2);
+      var nameTxt = String(rem[i].nama || "").trim();
+      var rumahTxt = "No. " + String(rem[i].rumah || "").trim();
+      var maxChars = Math.max(6, Math.round(240 / n));
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(start + seg / 2);
       ctx.textAlign = "right";
       ctx.fillStyle = "#fff";
-      ctx.font = "700 " + Math.max(11, Math.min(16, 220 / n)) + "px Inter, sans-serif";
-      ctx.fillText(String(rem[i].rumah).slice(0, 12), r - 16, 5);
+      ctx.font = "800 " + nameSize + "px Inter, sans-serif";
+      ctx.fillText(nameTxt.slice(0, maxChars), r - 16, -3);
+      ctx.fillStyle = "#f3cf6a";
+      ctx.font = "700 " + rumahSize + "px Inter, sans-serif";
+      ctx.fillText(rumahTxt.slice(0, maxChars), r - 16, rumahSize + 3);
       ctx.restore();
     }
   }
