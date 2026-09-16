@@ -18,7 +18,7 @@ Simpan `config.js`, lalu upload ulang bersama file HTML lainnya. Semua halaman o
 
 Dua halaman ini (`daftar-hadir.html` dan `doorprize.html`) butuh tempat
 penyimpanan data bersama supaya HP siapa pun bisa daftar dan panitia bisa
-mengundi dari data yang sama. Ini memakai **Firebase Firestore** (gratis).
+mengundi dari data yang sama. Ini memakai **Firebase Realtime Database** (gratis).
 Selama `firebaseConfig` di `config.js` masih kosong, kedua halaman ini akan
 menampilkan pesan "belum dikonfigurasi" — fitur lain di situs tetap normal.
 

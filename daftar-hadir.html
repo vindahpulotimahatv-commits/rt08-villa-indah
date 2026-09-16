@@ -156,7 +156,7 @@ input:focus{border-color:#8bb8a0;box-shadow:0 0 0 4px rgba(15,93,61,.08)}
 </div></section>
 </main>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
 <script src="config.js"></script>
 <script>
 var LS_KEY = "rt08_doorprize_daftar";
@@ -164,7 +164,7 @@ var db = null;
 
 function firebaseReady_(){
   var cfg = RT_CONFIG.firebaseConfig || {};
-  return !!(cfg.apiKey && cfg.projectId && cfg.appId);
+  return !!(cfg.apiKey && cfg.databaseURL && cfg.appId);
 }
 
 document.addEventListener("DOMContentLoaded", function(){
@@ -179,7 +179,7 @@ document.addEventListener("DOMContentLoaded", function(){
     return;
   }
   firebase.initializeApp(RT_CONFIG.firebaseConfig);
-  db = firebase.firestore();
+  db = firebase.database();
 
   populateRumahOptions_();
 
@@ -214,32 +214,32 @@ document.addEventListener("DOMContentLoaded", function(){
     btn.disabled = true; btn.textContent = "Mengirim...";
 
     var docId = normalizeRumah_(rumah);
-    var docRef = db.collection("daftarHadir").doc(docId);
+    var ref = db.ref("daftarHadir/" + docId);
+    var isDuplicate = false;
 
-    db.runTransaction(function(tx){
-      return tx.get(docRef).then(function(snap){
-        if (snap.exists) {
-          throw { rt08Reason: "duplicate" };
-        }
-        tx.set(docRef, {
-          nama: nama,
-          rumah: rumah,
-          waktu: firebase.firestore.FieldValue.serverTimestamp(),
-          status: "belum"
-        });
-      });
+    ref.transaction(function(current){
+      if (current !== null) {
+        isDuplicate = true;
+        return; // abort transaction, tidak menimpa data yang sudah ada
+      }
+      return {
+        nama: nama,
+        rumah: rumah,
+        waktu: firebase.database.ServerValue.TIMESTAMP,
+        status: "belum"
+      };
     })
-    .then(function(){
-      writeSaved_(nama, rumah);
-      showSuccess_(nama, rumah);
-    })
-    .catch(function(err){
-      if (err && err.rt08Reason === "duplicate") {
+    .then(function(result){
+      if (isDuplicate || !result.committed) {
         document.getElementById("dRumah").textContent = rumah;
         showState_("dupCard");
       } else {
-        showToast("Tidak bisa terhubung ke server. Periksa koneksi internet lalu coba lagi.");
+        writeSaved_(nama, rumah);
+        showSuccess_(nama, rumah);
       }
+    })
+    .catch(function(){
+      showToast("Tidak bisa terhubung ke server. Periksa koneksi internet lalu coba lagi.");
     })
     .finally(function(){
       btn.disabled = false; btn.textContent = "✅ Daftar & Ikut Undian";
@@ -257,7 +257,7 @@ function esc_(s){
     return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
   });
 }
-// Dipakai sebagai ID dokumen Firestore supaya 1 rumah = 1 dokumen (anti-duplikat).
+// Dipakai sebagai key Realtime Database supaya 1 rumah = 1 entri (anti-duplikat).
 function normalizeRumah_(v){
   return String(v || "").trim().toLowerCase().replace(/\s+/g, "");
 }

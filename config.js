@@ -48,16 +48,17 @@ const RT_CONFIG = {
   lokasiAcaraDoorprize: "Lapangan RT 08 / Area E6 & E7",
   // Konfigurasi Firebase (lihat PANDUAN-FIREBASE.md untuk cara membuatnya).
   // Selama objek ini kosong, form Daftar Hadir & Roda Doorprize akan menampilkan pesan "belum dikonfigurasi".
-  // Cara isi: buat project di https://console.firebase.google.com, aktifkan Firestore Database,
+  // Cara isi: buat project di https://console.firebase.google.com, aktifkan Realtime Database,
   // lalu buka Project settings > General > scroll ke "Your apps" > tambah app Web (</>) > salin
-  // objek firebaseConfig yang muncul ke sini apa adanya.
+  // objek firebaseConfig yang muncul ke sini apa adanya (termasuk databaseURL).
   firebaseConfig: {
-    apiKey: "",
-    authDomain: "",
-    projectId: "",
-    storageBucket: "",
-    messagingSenderId: "",
-    appId: ""
+    apiKey: "AIzaSyC-ZBaxoY8ojcpjcdSp8QDeY46oUgyUkvU",
+    authDomain: "rt08-villa-indah.firebaseapp.com",
+    databaseURL: "https://rt08-villa-indah-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "rt08-villa-indah",
+    storageBucket: "rt08-villa-indah.firebasestorage.app",
+    messagingSenderId: "586495278440",
+    appId: "1:586495278440:web:38ed8bdf63a68915d32add"
   },
 
   // Daftar nomor rumah resmi (diambil dari Data Induk RT), dipakai sebagai
