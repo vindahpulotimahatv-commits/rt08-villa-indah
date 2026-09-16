@@ -184,21 +184,33 @@ button{font:inherit}
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
 <script src="config.js"></script>
 <script>
 var COLORS = ["#0f5d3d","#d5a62b","#18704a","#f4e2ac","#0a3d2a","#e8c874"];
 var state = { peserta: [], rotation: 0, spinning: false, lastWinnerIdx: null };
+var db = null;
+
+function firebaseReady_(){
+  var cfg = RT_CONFIG.firebaseConfig || {};
+  return !!(cfg.apiKey && cfg.projectId && cfg.appId);
+}
+function normalizeRumah_(v){
+  return String(v || "").trim().toLowerCase().replace(/\s+/g, "");
+}
 
 document.addEventListener("DOMContentLoaded", function(){
   document.getElementById("eventName").textContent = "🎉 " + (RT_CONFIG.namaAcaraDoorprize || "Acara RT 08");
 
-  var api = (RT_CONFIG.apiDaftarHadir || "").trim();
-  if (!api) {
+  if (!firebaseReady_()) {
     document.getElementById("warnCard").style.display = "block";
     document.getElementById("btnSpin").disabled = true;
     document.getElementById("btnReload").disabled = true;
     return;
   }
+  firebase.initializeApp(RT_CONFIG.firebaseConfig);
+  db = firebase.firestore();
 
   document.getElementById("btnReload").addEventListener("click", loadData);
   document.getElementById("btnSpin").addEventListener("click", spin);
@@ -214,20 +226,18 @@ document.addEventListener("DOMContentLoaded", function(){
   loadData();
 });
 
-function api_(){ return (RT_CONFIG.apiDaftarHadir || "").trim(); }
-
 function loadData(){
   var btn = document.getElementById("btnReload");
   btn.disabled = true; btn.textContent = "Memuat...";
-  fetch(api_(), { method: "GET" })
-    .then(function(r){ return r.json(); })
-    .then(function(res){
-      if (res.ok) {
-        state.peserta = res.data || [];
-        render();
-      } else {
-        showToast("Gagal memuat data.");
-      }
+  db.collection("daftarHadir").orderBy("waktu", "asc").get()
+    .then(function(snap){
+      var rows = [];
+      snap.forEach(function(doc){
+        var d = doc.data();
+        rows.push({ nama: d.nama || "", rumah: d.rumah || "", status: d.status || "belum" });
+      });
+      state.peserta = rows;
+      render();
     })
     .catch(function(){ showToast("Tidak bisa terhubung ke server. Periksa koneksi internet."); })
     .finally(function(){ btn.disabled = false; btn.textContent = "🔄 Muat Ulang Data"; });
@@ -360,23 +370,14 @@ function confirmWin(){
   if (!p) { closeModal(); return; }
   var btn = document.getElementById("btnConfirmWin");
   btn.disabled = true; btn.textContent = "Menyimpan...";
-  fetch(api_(), {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action: "menang", rumah: p.rumah })
+  db.collection("daftarHadir").doc(normalizeRumah_(p.rumah)).update({ status: "menang" })
+  .then(function(){
+    var found = state.peserta.find(function(x){ return x.rumah === p.rumah; });
+    if (found) found.status = "menang";
+    render();
+    closeModal();
   })
-  .then(function(r){ return r.json(); })
-  .then(function(res){
-    if (res.ok) {
-      var found = state.peserta.find(function(x){ return x.rumah === p.rumah; });
-      if (found) found.status = "menang";
-      render();
-      closeModal();
-    } else {
-      showToast("Gagal menyimpan status menang, coba lagi.");
-    }
-  })
-  .catch(function(){ showToast("Tidak bisa terhubung ke server."); })
+  .catch(function(){ showToast("Gagal menyimpan status menang, coba lagi."); })
   .finally(function(){ btn.disabled = false; btn.textContent = "✅ Tandai Sudah Menang & Lanjut"; });
 }
 

@@ -155,9 +155,17 @@ input:focus{border-color:#8bb8a0;box-shadow:0 0 0 4px rgba(15,93,61,.08)}
 
 </div></section>
 </main>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
 <script src="config.js"></script>
 <script>
 var LS_KEY = "rt08_doorprize_daftar";
+var db = null;
+
+function firebaseReady_(){
+  var cfg = RT_CONFIG.firebaseConfig || {};
+  return !!(cfg.apiKey && cfg.projectId && cfg.appId);
+}
 
 document.addEventListener("DOMContentLoaded", function(){
   document.getElementById("hAcara").textContent = RT_CONFIG.namaAcaraDoorprize || "Acara RT 08";
@@ -165,12 +173,13 @@ document.addEventListener("DOMContentLoaded", function(){
   document.getElementById("hTanggal").textContent = RT_CONFIG.tanggalAcaraDoorprize || "-";
   document.getElementById("hLokasi").textContent = RT_CONFIG.lokasiAcaraDoorprize || "-";
 
-  var api = (RT_CONFIG.apiDaftarHadir || "").trim();
-  if (!api) {
+  if (!firebaseReady_()) {
     document.getElementById("warnCard").style.display = "block";
     document.getElementById("formCard").style.display = "none";
     return;
   }
+  firebase.initializeApp(RT_CONFIG.firebaseConfig);
+  db = firebase.firestore();
 
   populateRumahOptions_();
 
@@ -204,25 +213,33 @@ document.addEventListener("DOMContentLoaded", function(){
     var btn = document.getElementById("btnSubmit");
     btn.disabled = true; btn.textContent = "Mengirim...";
 
-    fetch(api, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "daftar", nama: nama, rumah: rumah })
+    var docId = normalizeRumah_(rumah);
+    var docRef = db.collection("daftarHadir").doc(docId);
+
+    db.runTransaction(function(tx){
+      return tx.get(docRef).then(function(snap){
+        if (snap.exists) {
+          throw { rt08Reason: "duplicate" };
+        }
+        tx.set(docRef, {
+          nama: nama,
+          rumah: rumah,
+          waktu: firebase.firestore.FieldValue.serverTimestamp(),
+          status: "belum"
+        });
+      });
     })
-    .then(function(r){ return r.json(); })
-    .then(function(res){
-      if (res.ok) {
-        writeSaved_(nama, rumah);
-        showSuccess_(nama, rumah);
-      } else if (res.reason === "duplicate") {
+    .then(function(){
+      writeSaved_(nama, rumah);
+      showSuccess_(nama, rumah);
+    })
+    .catch(function(err){
+      if (err && err.rt08Reason === "duplicate") {
         document.getElementById("dRumah").textContent = rumah;
         showState_("dupCard");
       } else {
-        showToast("Gagal mengirim, coba lagi ya. (" + (res.reason || "error") + ")");
+        showToast("Tidak bisa terhubung ke server. Periksa koneksi internet lalu coba lagi.");
       }
-    })
-    .catch(function(){
-      showToast("Tidak bisa terhubung ke server. Periksa koneksi internet lalu coba lagi.");
     })
     .finally(function(){
       btn.disabled = false; btn.textContent = "✅ Daftar & Ikut Undian";
@@ -239,6 +256,10 @@ function esc_(s){
   return String(s || "").replace(/[&<>"']/g, function(c){
     return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
   });
+}
+// Dipakai sebagai ID dokumen Firestore supaya 1 rumah = 1 dokumen (anti-duplikat).
+function normalizeRumah_(v){
+  return String(v || "").trim().toLowerCase().replace(/\s+/g, "");
 }
 // Cocokkan input warga dengan daftar rumah resmi (abaikan besar/kecil huruf & spasi).
 // Kalau daftarRumah belum diisi admin, kembalikan apa adanya (mode ketik bebas).

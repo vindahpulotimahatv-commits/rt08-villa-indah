@@ -14,6 +14,17 @@ Buka `config.js` dengan text editor apa pun (Notepad, TextEdit, atau langsung "E
 
 Simpan `config.js`, lalu upload ulang bersama file HTML lainnya. Semua halaman otomatis memakai data terbaru — tidak perlu edit satu-satu di tiap file HTML.
 
+## Fitur Daftar Hadir & Roda Doorprize (opsional, butuh Firebase)
+
+Dua halaman ini (`daftar-hadir.html` dan `doorprize.html`) butuh tempat
+penyimpanan data bersama supaya HP siapa pun bisa daftar dan panitia bisa
+mengundi dari data yang sama. Ini memakai **Firebase Firestore** (gratis).
+Selama `firebaseConfig` di `config.js` masih kosong, kedua halaman ini akan
+menampilkan pesan "belum dikonfigurasi" — fitur lain di situs tetap normal.
+
+Lihat **`PANDUAN-FIREBASE.md`** untuk langkah lengkap membuat project Firebase
+dan mengisi `firebaseConfig`.
+
 ## Cara kerja fitur (tanpa server/backend)
 
 Karena situs ini murni statis (cocok untuk GitHub Pages), semua form dan tombol aksi (Lapor Lingkungan, Ajukan Surat, Hubungi UMKM, dll) bekerja dengan cara membuka chat WhatsApp berisi pesan otomatis ke nomor pengurus terkait — bukan mengirim ke database. Ini yang membuat portal bisa langsung dipakai warga tanpa perlu membangun server sendiri.

@@ -46,9 +46,19 @@ const RT_CONFIG = {
   namaAcaraDoorprize: "Pentas Seni & Malam Apresiasi",
   tanggalAcaraDoorprize: "Sabtu, 19 September 2026 · 19.00 WIB",
   lokasiAcaraDoorprize: "Lapangan RT 08 / Area E6 & E7",
-  // URL Web App Google Apps Script (lihat PANDUAN-DOORPRIZE.md untuk cara membuatnya).
-  // Selama masih kosong, form Daftar Hadir & Roda Doorprize akan menampilkan pesan "belum dikonfigurasi".
-  apiDaftarHadir: "",
+  // Konfigurasi Firebase (lihat PANDUAN-FIREBASE.md untuk cara membuatnya).
+  // Selama objek ini kosong, form Daftar Hadir & Roda Doorprize akan menampilkan pesan "belum dikonfigurasi".
+  // Cara isi: buat project di https://console.firebase.google.com, aktifkan Firestore Database,
+  // lalu buka Project settings > General > scroll ke "Your apps" > tambah app Web (</>) > salin
+  // objek firebaseConfig yang muncul ke sini apa adanya.
+  firebaseConfig: {
+    apiKey: "",
+    authDomain: "",
+    projectId: "",
+    storageBucket: "",
+    messagingSenderId: "",
+    appId: ""
+  },
 
   // Daftar nomor rumah resmi (diambil dari Data Induk RT), dipakai sebagai
   // sumber pencarian di form Daftar Hadir supaya warga tinggal cari nomor
