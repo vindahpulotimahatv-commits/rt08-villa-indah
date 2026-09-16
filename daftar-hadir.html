@@ -37,19 +37,19 @@ img,svg{max-width:100%;display:block}
 
 .site-header{
   position:sticky;top:0;z-index:100;
-  background:rgba(255,255,255,.82);backdrop-filter:blur(18px);
-  border-bottom:1px solid rgba(219,226,240,.85)
+  background:linear-gradient(180deg,rgba(8,20,44,.94),rgba(10,26,58,.88));backdrop-filter:blur(18px);
+  border-bottom:1px solid rgba(213,166,43,.28);
+  box-shadow:0 12px 30px rgba(3,10,26,.35)
 }
 .nav{display:flex;align-items:center;justify-content:space-between;min-height:76px;gap:20px}
-.brand{display:flex;align-items:center;gap:12px;font-weight:950;color:var(--green)}
+.brand{display:flex;align-items:center;gap:13px;font-weight:950;color:#fff}
 .brand-mark{
-  width:48px;height:48px;border-radius:17px;display:grid;place-items:center;
-  background:linear-gradient(145deg,var(--green2),var(--green3));color:#fff;font-size:20px;
-  box-shadow:0 10px 24px rgba(18,58,107,.24);position:relative;overflow:hidden
+  width:50px;height:50px;border-radius:50%;object-fit:cover;display:block;
+  box-shadow:0 0 0 2px rgba(213,166,43,.6),0 10px 22px rgba(3,10,26,.55);
+  background:radial-gradient(circle,#123a6b,#081c38)
 }
-.brand-mark:after{content:"";position:absolute;inset:auto -8px -12px auto;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.12)}
-.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:.8px;font-weight:800;margin-top:3px}
-.back-link{font-size:12px;font-weight:900;color:var(--green);display:flex;align-items:center;gap:6px}
+.brand small{display:block;color:#d5a62b;font-size:10px;letter-spacing:1px;font-weight:800;margin-top:3px;text-transform:uppercase}
+.back-link{font-size:12px;font-weight:900;color:#f3cf6a;display:flex;align-items:center;gap:6px}
 
 .hero{
   position:relative;overflow:hidden;padding:52px 0 44px;color:#fff;text-align:center;
@@ -108,7 +108,7 @@ input:focus{border-color:#7d9fd6;box-shadow:0 0 0 4px rgba(18,58,107,.08)}
 </head><body>
 <header class="site-header">
   <div class="container nav">
-    <a class="brand" href="index.html"><div class="brand-mark">🏘️</div><div>RT 08 / RW 021<small>VILLA INDAH PULO TIMAHA</small></div></a>
+    <a class="brand" href="index.html"><img class="brand-mark" src="assets/logo-badge.png" alt="Logo RT 08 / RW 021 Villa Indah Pulo Timaha"><div>RT 08 / RW 021<small>VILLA INDAH PULO TIMAHA</small></div></a>
     <a class="back-link" href="index.html">← Beranda</a>
   </div>
 </header>
