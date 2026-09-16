@@ -268,8 +268,8 @@ function populateRumahOptions_(){
   function render(query){
     var q = String(query || "").trim().toLowerCase();
     var matches = q
-      ? list.filter(function(r){ return r.toLowerCase().indexOf(q) !== -1; }).slice(0, 8)
-      : list.slice(0, 8);
+      ? list.filter(function(r){ return r.toLowerCase().indexOf(q) !== -1; })
+      : list.slice();
     if (matches.length === 0) {
       box.innerHTML = '<div class="suggest-empty">Tidak ditemukan. Coba ketik blok atau nomor saja, misal "E2" atau "47".</div>';
     } else {
