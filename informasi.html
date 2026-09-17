@@ -302,6 +302,16 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 }
 .visual-board{position:relative}
 @media(max-width:640px){.quick-floating{right:3px;bottom:20px}}
+.info-slider{position:relative;height:300px;border-radius:16px;overflow:hidden;background:#eef2f9}
+.info-slider .is-slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1s ease}
+.info-slider .is-slide.active{opacity:1}
+.info-slider .is-cap{position:absolute;left:0;right:0;bottom:0;padding:16px;background:linear-gradient(to top,rgba(8,20,40,.82),rgba(8,20,40,0));color:#fff}
+.info-slider .is-cap h4{margin:0 0 3px;font-size:15px}
+.info-slider .is-cap p{margin:0;font-size:12px;opacity:.88;line-height:1.5}
+.info-slider .is-dots{position:absolute;top:12px;right:14px;display:flex;gap:6px;z-index:2}
+.info-slider .is-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.5);transition:background .3s}
+.info-slider .is-dot.active{background:#fff}
+@media(max-width:640px){.info-slider{height:230px}}
 </style>
 </head><body>
 <div class="ticker"><div class="container"><div class="ticker-track">
@@ -326,12 +336,8 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
     <div id="infoListPage"><div class="announcement"><p class="meta">Memuat informasi...</p></div></div>
   </div>
   <div class="card">
-    <h3>Alur Informasi</h3>
-    <div class="timeline">
-      <div class="timeline-item"><h4>Pengurus menambahkan info</h4><p>Pengumuman baru ditambahkan pengurus lewat halaman Admin.</p></div>
-      <div class="timeline-item"><h4>Warga membaca dari HP</h4><p>Informasi penting tampil dalam format kartu yang ringkas.</p></div>
-      <div class="timeline-item"><h4>Info lama tetap tersimpan</h4><p>Arsip pengumuman bisa dibuat berdasarkan tanggal dan kategori.</p></div>
-    </div>
+    <h3>Galeri Kegiatan</h3>
+    <div class="info-slider" id="infoSlider"><div class="meta" style="padding:14px">Memuat galeri...</div></div>
   </div>
 </div></section>
 </main>
@@ -380,6 +386,8 @@ document.addEventListener("DOMContentLoaded",()=>{
   var cfg = RT_CONFIG.firebaseConfig || {};
   if(!(cfg.apiKey && cfg.databaseURL && cfg.appId)){
     if(elPage) elPage.innerHTML='<div class="announcement"><p class="meta">Belum ada pengumuman.</p></div>';
+    var elSlider0 = document.getElementById("infoSlider");
+    if(elSlider0) elSlider0.innerHTML='<div class="meta" style="padding:14px">Galeri belum dikonfigurasi admin.</div>';
     return;
   }
   if(!firebase.apps.length) firebase.initializeApp(cfg);
@@ -390,7 +398,40 @@ document.addEventListener("DOMContentLoaded",()=>{
     items.sort(function(a,b){ return (b.tanggal||"").localeCompare(a.tanggal||"") || (b.createdAt||0)-(a.createdAt||0); });
     if(elPage) renderInfoList_(items, elPage);
   });
+  initInfoSlider_(db);
 });
+function initInfoSlider_(db){
+  var box = document.getElementById("infoSlider");
+  if(!box) return;
+  db.ref("galeri").on("value", function(snap){
+    var val = snap.val() || {};
+    var items = Object.keys(val).map(function(k){ return val[k]; });
+    items.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+    if(window.infoSliderTimer_) clearInterval(window.infoSliderTimer_);
+    if(items.length===0){
+      box.innerHTML='<div class="meta" style="padding:14px">Belum ada foto kegiatan yang diunggah.</div>';
+      return;
+    }
+    box.innerHTML = items.map(function(it,i){
+      return '<div class="is-slide'+(i===0?' active':'')+'" style="background-image:url(\''+it.foto+'\')">'
+        +'<div class="is-cap"><h4>'+escI_(it.judul||"")+'</h4>'
+        +(it.keterangan?'<p>'+escI_(it.keterangan)+'</p>':'')
+        +'</div></div>';
+    }).join("") + '<div class="is-dots">'+items.map(function(_,i){ return '<span class="is-dot'+(i===0?' active':'')+'"></span>'; }).join("")+'</div>';
+    if(items.length>1){
+      var idx=0;
+      window.infoSliderTimer_ = setInterval(function(){
+        var slides = box.querySelectorAll(".is-slide");
+        var dots = box.querySelectorAll(".is-dot");
+        slides[idx].classList.remove("active");
+        dots[idx].classList.remove("active");
+        idx = (idx+1) % slides.length;
+        slides[idx].classList.add("active");
+        dots[idx].classList.add("active");
+      }, 4000);
+    }
+  });
+}
 function showToast(msg){
   let t=document.querySelector(".toast");
   if(!t){t=document.createElement("div");t.className="toast";document.body.appendChild(t)}
