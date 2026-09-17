@@ -111,6 +111,26 @@ textarea{min-height:76px;resize:vertical}
 }
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .warn-card{background:#fff7e8;border:1px solid #ecd8a0;border-radius:18px;padding:16px;color:#5c4c1a;font-size:13px;margin-bottom:16px;line-height:1.6}
+.tabs-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tabs-scroll::-webkit-scrollbar{display:none}
+.tabs-scroll .tab-btn{flex:0 0 auto;white-space:nowrap}
+.preview-wrap{margin-bottom:14px}
+.preview-wrap img{max-width:150px;max-height:150px;border-radius:14px;display:block;object-fit:cover;border:1px solid var(--line)}
+.thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;padding:10px}
+.thumb-item{position:relative;border-radius:14px;overflow:hidden;aspect-ratio:1/1;background:var(--mint)}
+.thumb-item img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb-item .thumb-cap{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(0deg,rgba(0,0,0,.72),transparent);color:#fff;font-size:9px;font-weight:800;padding:10px 6px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thumb-item .thumb-del{position:absolute;top:5px;right:5px;width:24px;height:24px;border:none;border-radius:8px;background:rgba(199,68,68,.92);color:#fff;font-weight:900;cursor:pointer;font-size:12px;line-height:24px;padding:0}
+.finance-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px}
+.finance-summary .fs-item{background:#f8f9fc;border-radius:14px;padding:12px 8px;text-align:center}
+.finance-summary .fs-item span{display:block;font-size:9.5px;color:var(--muted);font-weight:800;margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
+.finance-summary .fs-item strong{display:block;font-size:15px;color:var(--green)}
+.finance-summary .fs-item.masuk strong{color:#1c8a4e}
+.finance-summary .fs-item.keluar strong{color:var(--red)}
+.entry-amount{font-weight:900}
+.entry-amount.masuk{color:#1c8a4e}
+.entry-amount.keluar{color:var(--red)}
+@media(max-width:480px){.finance-summary{grid-template-columns:1fr}}
 </style>
 </head><body>
 <header class="topbar"><div class="container topbar-inner">
@@ -132,9 +152,12 @@ textarea{min-height:76px;resize:vertical}
 <div id="dashboard"><div class="container">
   <div class="warn-card" id="warnCard" style="display:none">⚠️ Firebase belum dikonfigurasi di <code>config.js</code>. Data tidak bisa disimpan/ditampilkan sampai diatur admin teknis.</div>
 
-  <div class="tabs">
+  <div class="tabs tabs-scroll">
     <button class="tab-btn active" data-tab="agenda">📅 Agenda</button>
     <button class="tab-btn" data-tab="info">📢 Informasi</button>
+    <button class="tab-btn" data-tab="galeri">🖼️ Galeri</button>
+    <button class="tab-btn" data-tab="umkm">🛍️ UMKM</button>
+    <button class="tab-btn" data-tab="keuangan">💰 Keuangan</button>
   </div>
 
   <!-- ===== PANEL AGENDA ===== -->
@@ -187,6 +210,82 @@ textarea{min-height:76px;resize:vertical}
     </div>
   </div>
 
+  <!-- ===== PANEL GALERI ===== -->
+  <div class="panel" id="panel-galeri">
+    <div class="form-card">
+      <h3>Tambah Foto Galeri</h3>
+      <p class="sub">Upload foto kegiatan warga. Foto otomatis dikompres biar hemat kuota, lalu langsung tampil di halaman Galeri.</p>
+      <form id="formGaleri">
+        <div class="form-grid">
+          <div class="field full"><label>Judul Foto</label><input id="gJudul" required placeholder="Contoh: Kerja Bakti Agustus 2026"></div>
+          <div class="field full"><label>Keterangan (opsional)</label><input id="gKeterangan" placeholder="Contoh: Kebersamaan menjaga lingkungan"></div>
+          <div class="field full"><label>Pilih Foto</label><input type="file" id="gFoto" accept="image/*" required></div>
+        </div>
+        <div class="preview-wrap" id="gPreviewWrap" style="display:none"><img id="gPreview" alt="Pratinjau foto"></div>
+        <button class="btn btn-brand" type="submit" id="btnSimpanGaleri">➕ Simpan Foto</button>
+      </form>
+    </div>
+    <div class="list-card">
+      <div class="list-title">Foto Tersimpan</div>
+      <div id="listGaleri" class="thumb-grid"><div class="empty-note">Memuat data...</div></div>
+    </div>
+  </div>
+
+  <!-- ===== PANEL UMKM ===== -->
+  <div class="panel" id="panel-umkm">
+    <div class="form-card">
+      <h3>Tambah UMKM / Usaha Warga</h3>
+      <p class="sub">Upload foto/logo usaha. Otomatis tampil di halaman UMKM.</p>
+      <form id="formUmkm">
+        <div class="form-grid">
+          <div class="field"><label>Nama Usaha</label><input id="uNama" required placeholder="Contoh: Dapur Bu Rina"></div>
+          <div class="field"><label>Kategori</label>
+            <select id="uKategori">
+              <option>Kuliner</option><option>Jasa</option><option>Kue</option><option>Otomotif</option><option>Lainnya</option>
+            </select>
+          </div>
+          <div class="field full"><label>Deskripsi</label><input id="uDeskripsi" placeholder="Contoh: Catering & nasi box harian"></div>
+          <div class="field"><label>Nomor WhatsApp usaha</label><input id="uWa" placeholder="6281234567890"></div>
+          <div class="field full"><label>Foto Usaha (opsional)</label><input type="file" id="uFoto" accept="image/*"></div>
+        </div>
+        <div class="preview-wrap" id="uPreviewWrap" style="display:none"><img id="uPreview" alt="Pratinjau foto usaha"></div>
+        <button class="btn btn-brand" type="submit">➕ Simpan Usaha</button>
+      </form>
+    </div>
+    <div class="list-card">
+      <div class="list-title">UMKM Tersimpan</div>
+      <div id="listUmkm" class="thumb-grid"><div class="empty-note">Memuat data...</div></div>
+    </div>
+  </div>
+
+  <!-- ===== PANEL KEUANGAN ===== -->
+  <div class="panel" id="panel-keuangan">
+    <div class="form-card">
+      <h3>Catat Transaksi Kas</h3>
+      <p class="sub">Setiap transaksi otomatis dihitung ke Saldo Kas &amp; rekap bulanan di halaman Transparansi.</p>
+      <form id="formKeuangan">
+        <div class="form-grid">
+          <div class="field"><label>Tanggal</label><input type="date" id="kTanggal" required></div>
+          <div class="field"><label>Jenis</label>
+            <select id="kJenis"><option value="masuk">🟢 Pemasukan</option><option value="keluar">🔴 Pengeluaran</option></select>
+          </div>
+          <div class="field full"><label>Keterangan</label><input id="kKeterangan" required placeholder="Contoh: Iuran warga bulan Agustus"></div>
+          <div class="field"><label>Kategori (opsional)</label><input id="kKategori" placeholder="Contoh: Iuran, Operasional, Kegiatan"></div>
+          <div class="field"><label>Jumlah (Rp)</label><input type="number" id="kJumlah" required min="1" placeholder="500000"></div>
+        </div>
+        <button class="btn btn-brand" type="submit">➕ Simpan Transaksi</button>
+      </form>
+    </div>
+    <div class="list-card">
+      <div class="list-title">Ringkasan Kas</div>
+      <div class="finance-summary" id="financeSummary"></div>
+    </div>
+    <div class="list-card">
+      <div class="list-title">Riwayat Transaksi</div>
+      <div id="listKeuangan"><div class="empty-note">Memuat data...</div></div>
+    </div>
+  </div>
+
 </div></div>
 
 <div class="toast" id="toast"></div>
@@ -220,6 +319,32 @@ function fmtTanggal_(iso){
   var d = parseInt(parts[2], 10);
   var m = BULAN_ID[parseInt(parts[1], 10) - 1] || "-";
   return { d: (d<10?"0"+d:d), m: m };
+}
+function fmtRp_(n){
+  return "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+}
+// Resize + kompres foto di browser (canvas) sebelum disimpan sebagai base64 ke Realtime Database.
+// Menghindari kebutuhan Firebase Storage (yang berbayar) sekaligus menghemat kuota database gratis.
+function compressImage_(file, maxWidth, quality){
+  return new Promise(function(resolve, reject){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        var scale = Math.min(1, maxWidth / img.width);
+        var w = Math.round(img.width * scale);
+        var h = Math.round(img.height * scale);
+        var canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = function(){ reject(new Error("Gagal membaca gambar")); };
+      img.src = e.target.result;
+    };
+    reader.onerror = function(){ reject(new Error("Gagal membaca file")); };
+    reader.readAsDataURL(file);
+  });
 }
 
 /* ---------------- GATE ---------------- */
@@ -351,9 +476,147 @@ function initDashboard_(){
     }).join("");
   });
 
-  /* ---- DELETE (delegasi klik untuk kedua daftar) ---- */
+  /* ---- GALERI ---- */
+  var gFotoData = null;
+  document.getElementById("gFoto").addEventListener("change", function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    compressImage_(file, 1000, 0.75).then(function(dataUrl){
+      gFotoData = dataUrl;
+      document.getElementById("gPreview").src = dataUrl;
+      document.getElementById("gPreviewWrap").style.display = "block";
+    }).catch(function(){ showToast("Gagal membaca foto, coba foto lain."); });
+  });
+  document.getElementById("formGaleri").addEventListener("submit", function(e){
+    e.preventDefault();
+    var judul = document.getElementById("gJudul").value.trim();
+    var keterangan = document.getElementById("gKeterangan").value.trim();
+    if (!judul) { showToast("Judul foto wajib diisi."); return; }
+    if (!gFotoData) { showToast("Pilih foto dulu."); return; }
+    var btn = document.getElementById("btnSimpanGaleri");
+    btn.disabled = true; btn.textContent = "Mengunggah...";
+    db.ref("galeri").push({
+      judul: judul, keterangan: keterangan, foto: gFotoData,
+      createdAt: firebase.database.ServerValue.TIMESTAMP
+    }).then(function(){
+      showToast("Foto tersimpan dan otomatis tampil di halaman Galeri.");
+      document.getElementById("formGaleri").reset();
+      document.getElementById("gPreviewWrap").style.display = "none";
+      gFotoData = null;
+    }).catch(function(){ showToast("Gagal mengunggah. Coba lagi dengan foto lebih kecil."); })
+    .finally(function(){ btn.disabled = false; btn.textContent = "➕ Simpan Foto"; });
+  });
+  db.ref("galeri").on("value", function(snap){
+    var val = snap.val() || {};
+    var items = Object.keys(val).map(function(k){ return Object.assign({ id:k }, val[k]); });
+    items.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+    var box = document.getElementById("listGaleri");
+    if (items.length === 0) { box.innerHTML = '<div class="empty-note">Belum ada foto. Tambahkan lewat form di atas.</div>'; return; }
+    box.innerHTML = items.map(function(it){
+      return '<div class="thumb-item"><img src="' + it.foto + '" alt="' + esc_(it.judul) + '">' +
+        '<div class="thumb-cap">' + esc_(it.judul) + '</div>' +
+        '<button class="thumb-del" data-id="' + it.id + '" data-node="galeri" title="Hapus">✕</button></div>';
+    }).join("");
+  });
+
+  /* ---- UMKM ---- */
+  var uFotoData = null;
+  document.getElementById("uFoto").addEventListener("change", function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    compressImage_(file, 800, 0.75).then(function(dataUrl){
+      uFotoData = dataUrl;
+      document.getElementById("uPreview").src = dataUrl;
+      document.getElementById("uPreviewWrap").style.display = "block";
+    }).catch(function(){ showToast("Gagal membaca foto, coba foto lain."); });
+  });
+  document.getElementById("formUmkm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var nama = document.getElementById("uNama").value.trim();
+    var kategori = document.getElementById("uKategori").value;
+    var deskripsi = document.getElementById("uDeskripsi").value.trim();
+    var wa = document.getElementById("uWa").value.trim();
+    if (!nama) { showToast("Nama usaha wajib diisi."); return; }
+    db.ref("umkm").push({
+      nama: nama, kategori: kategori, deskripsi: deskripsi, wa: wa, foto: uFotoData || "",
+      createdAt: firebase.database.ServerValue.TIMESTAMP
+    }).then(function(){
+      showToast("Usaha tersimpan dan otomatis tampil di halaman UMKM.");
+      document.getElementById("formUmkm").reset();
+      document.getElementById("uPreviewWrap").style.display = "none";
+      uFotoData = null;
+    }).catch(function(){ showToast("Gagal menyimpan. Coba lagi."); });
+  });
+  db.ref("umkm").on("value", function(snap){
+    var val = snap.val() || {};
+    var items = Object.keys(val).map(function(k){ return Object.assign({ id:k }, val[k]); });
+    items.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+    var box = document.getElementById("listUmkm");
+    if (items.length === 0) { box.innerHTML = '<div class="empty-note">Belum ada usaha terdaftar.</div>'; return; }
+    box.innerHTML = items.map(function(it){
+      var img = it.foto ? '<img src="' + it.foto + '" alt="' + esc_(it.nama) + '">'
+        : '<div style="display:grid;place-items:center;height:100%;font-size:26px">🛍️</div>';
+      return '<div class="thumb-item">' + img +
+        '<div class="thumb-cap">' + esc_(it.nama) + '</div>' +
+        '<button class="thumb-del" data-id="' + it.id + '" data-node="umkm" title="Hapus">✕</button></div>';
+    }).join("");
+  });
+
+  /* ---- KEUANGAN ---- */
+  document.getElementById("kTanggal").value = today;
+  document.getElementById("formKeuangan").addEventListener("submit", function(e){
+    e.preventDefault();
+    var tanggal = document.getElementById("kTanggal").value;
+    var jenis = document.getElementById("kJenis").value;
+    var keterangan = document.getElementById("kKeterangan").value.trim();
+    var kategori = document.getElementById("kKategori").value.trim();
+    var jumlah = parseFloat(document.getElementById("kJumlah").value);
+    if (!tanggal || !keterangan || !jumlah || jumlah <= 0) { showToast("Lengkapi tanggal, keterangan, dan jumlah."); return; }
+    db.ref("keuangan").push({
+      tanggal: tanggal, jenis: jenis, keterangan: keterangan, kategori: kategori, jumlah: jumlah,
+      createdAt: firebase.database.ServerValue.TIMESTAMP
+    }).then(function(){
+      showToast("Transaksi tersimpan dan otomatis masuk ke Laporan Keuangan.");
+      document.getElementById("formKeuangan").reset();
+      document.getElementById("kTanggal").value = today;
+    }).catch(function(){ showToast("Gagal menyimpan. Coba lagi."); });
+  });
+  db.ref("keuangan").on("value", function(snap){
+    var val = snap.val() || {};
+    var items = Object.keys(val).map(function(k){ return Object.assign({ id:k }, val[k]); });
+    items.sort(function(a,b){ return (b.tanggal||"").localeCompare(a.tanggal||"") || (b.createdAt||0)-(a.createdAt||0); });
+
+    var totalMasuk = 0, totalKeluar = 0, bulanMasuk = 0, bulanKeluar = 0;
+    var ym = new Date().toISOString().slice(0, 7);
+    items.forEach(function(it){
+      var j = parseFloat(it.jumlah) || 0;
+      if (it.jenis === "masuk") { totalMasuk += j; if ((it.tanggal||"").slice(0,7) === ym) bulanMasuk += j; }
+      else { totalKeluar += j; if ((it.tanggal||"").slice(0,7) === ym) bulanKeluar += j; }
+    });
+    document.getElementById("financeSummary").innerHTML =
+      '<div class="fs-item"><span>Saldo Kas Total</span><strong>' + fmtRp_(totalMasuk - totalKeluar) + '</strong></div>' +
+      '<div class="fs-item masuk"><span>Pemasukan Bulan Ini</span><strong>' + fmtRp_(bulanMasuk) + '</strong></div>' +
+      '<div class="fs-item keluar"><span>Pengeluaran Bulan Ini</span><strong>' + fmtRp_(bulanKeluar) + '</strong></div>';
+
+    var box = document.getElementById("listKeuangan");
+    if (items.length === 0) { box.innerHTML = '<div class="empty-note">Belum ada transaksi. Tambahkan lewat form di atas.</div>'; return; }
+    box.innerHTML = items.map(function(it){
+      var j = parseFloat(it.jumlah) || 0;
+      var amountHtml = it.jenis === "masuk"
+        ? '<span class="entry-amount masuk">+' + fmtRp_(j) + '</span>'
+        : '<span class="entry-amount keluar">-' + fmtRp_(j) + '</span>';
+      var dt = fmtTanggal_(it.tanggal);
+      return '<div class="entry-row">' +
+        '<div class="entry-date">' + dt.d + '<small>' + dt.m + '</small></div>' +
+        '<div class="entry-body"><h4>' + esc_(it.keterangan) + '</h4><p>' + esc_(it.kategori || "-") + ' • ' + amountHtml + '</p></div>' +
+        '<button class="entry-del" data-id="' + it.id + '" data-node="keuangan" title="Hapus">✕</button>' +
+        '</div>';
+    }).join("");
+  });
+
+  /* ---- DELETE (delegasi klik untuk semua daftar) ---- */
   document.getElementById("dashboard").addEventListener("click", function(e){
-    var btn = e.target.closest(".entry-del");
+    var btn = e.target.closest(".entry-del") || e.target.closest(".thumb-del");
     if (!btn) return;
     var id = btn.getAttribute("data-id");
     var node = btn.getAttribute("data-node");

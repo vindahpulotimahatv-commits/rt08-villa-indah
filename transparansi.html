@@ -183,7 +183,8 @@ img,svg{max-width:100%;display:block}
 table{width:100%;border-collapse:collapse;min-width:680px}
 th,td{padding:14px 16px;text-align:left;border-bottom:1px solid #e9eef7;font-size:13px}
 th{background:#eef1f9;color:#4f5c78;font-size:10px;text-transform:uppercase;letter-spacing:.55px}
-.amount{font-weight:900}.in{color:var(--green)}.out{color:var(--red)}
+.amount{font-weight:900}.in{color:#1c8a4e}.out{color:var(--red)}
+.section-subtitle{font-size:20px;letter-spacing:-.5px;margin:0 0 14px}
 
 .service-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .service-card{background:#fff;border:1px solid var(--line);border-radius:23px;padding:21px;transition:.22s;position:relative;overflow:hidden}
@@ -325,15 +326,14 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
   <div class="finance-card"><span>Pemasukan Bulan Ini</span><strong id="finMasuk">Rp —</strong></div>
   <div class="finance-card"><span>Pengeluaran Bulan Ini</span><strong id="finKeluar">Rp —</strong></div>
 </div>
-<div style="height:18px"></div>
-<!-- Admin: baris transaksi di bawah ini diedit langsung di HTML sesuai catatan kas bulanan -->
+<div style="height:30px"></div>
+<h2 class="section-subtitle">Rekap Bulanan</h2>
+<div class="table-wrap"><table><thead><tr><th>Bulan</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo Akhir Bulan</th></tr></thead>
+<tbody id="tbodyRekap"><tr><td colspan="4">Memuat data...</td></tr></tbody></table></div>
+<div style="height:30px"></div>
+<h2 class="section-subtitle">Riwayat Transaksi</h2>
 <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th>Masuk</th><th>Keluar</th></tr></thead>
-<tbody>
-<tr><td>01/08/2026</td><td>Iuran warga</td><td>Iuran</td><td class="amount in">Rp —</td><td>-</td></tr>
-<tr><td>05/08/2026</td><td>Kebersihan lingkungan</td><td>Operasional</td><td>-</td><td class="amount out">Rp —</td></tr>
-<tr><td>10/08/2026</td><td>Keamanan</td><td>Operasional</td><td>-</td><td class="amount out">Rp —</td></tr>
-<tr><td>17/08/2026</td><td>Kegiatan warga</td><td>Kegiatan</td><td class="amount in">Rp —</td><td class="amount out">Rp —</td></tr>
-</tbody></table></div>
+<tbody id="tbodyTransaksi"><tr><td colspan="5">Memuat data...</td></tr></tbody></table></div>
 <div style="height:18px"></div>
 <div class="callout"><div><h3>Privasi warga tetap dijaga</h3><p>Daftar tunggakan individu tidak perlu tampil di halaman publik. Data pribadi sebaiknya hanya di area login.</p></div><a class="btn btn-brand" href="#" id="btnTanyaBendahara">Tanya Bendahara</a></div>
 </div></section>
@@ -351,16 +351,95 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
       <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a><a href="admin.html">🔐 Admin</a>
     </div>
   </div>
-</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>☰</b>Menu</a></nav><script src="config.js"></script><script>
+</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>☰</b>Menu</a></nav><script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script>
+var BULAN_ID_T = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+function escT_(s){
+  return String(s || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+function fmtRpT_(n){ return "Rp " + Math.round(n||0).toLocaleString("id-ID"); }
+function fmtTglT_(iso){
+  if(!iso) return "-";
+  const p = iso.split("-");
+  return p[2] + "/" + p[1] + "/" + p[0];
+}
+function loadKeuangan_(){
+  const cfg = (RT_CONFIG.firebaseConfig || {});
+  const tbodyRekap = document.getElementById("tbodyRekap");
+  const tbodyTx = document.getElementById("tbodyTransaksi");
+  if (!(cfg.apiKey && cfg.databaseURL && cfg.appId)) {
+    document.getElementById("finSaldo").textContent = "Rp —";
+    document.getElementById("finMasuk").textContent = "Rp —";
+    document.getElementById("finKeluar").textContent = "Rp —";
+    tbodyRekap.innerHTML = '<tr><td colspan="4">Laporan keuangan belum dikonfigurasi admin.</td></tr>';
+    tbodyTx.innerHTML = '<tr><td colspan="5">Laporan keuangan belum dikonfigurasi admin.</td></tr>';
+    return;
+  }
+  if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(cfg);
+  const db = firebase.database();
+  db.ref("keuangan").on("value", snap => {
+    const val = snap.val() || {};
+    const items = Object.keys(val).map(k => Object.assign({ id:k }, val[k]));
+    items.sort((a,b) => (a.tanggal||"").localeCompare(b.tanggal||"") || (a.createdAt||0)-(b.createdAt||0));
+
+    if (items.length === 0) {
+      document.getElementById("finSaldo").textContent = "Rp 0";
+      document.getElementById("finMasuk").textContent = "Rp 0";
+      document.getElementById("finKeluar").textContent = "Rp 0";
+      tbodyRekap.innerHTML = '<tr><td colspan="4">Belum ada transaksi tercatat.</td></tr>';
+      tbodyTx.innerHTML = '<tr><td colspan="5">Belum ada transaksi tercatat.</td></tr>';
+      return;
+    }
+
+    // Rekap per bulan (urut kronologis untuk hitung saldo berjalan, lalu dibalik untuk tampilan)
+    const perBulan = {};
+    items.forEach(it => {
+      const ym = (it.tanggal || "").slice(0,7);
+      if (!perBulan[ym]) perBulan[ym] = { masuk:0, keluar:0 };
+      const j = parseFloat(it.jumlah) || 0;
+      if (it.jenis === "masuk") perBulan[ym].masuk += j; else perBulan[ym].keluar += j;
+    });
+    const bulanKeys = Object.keys(perBulan).sort();
+    let saldoBerjalan = 0;
+    const rekapRows = bulanKeys.map(ym => {
+      saldoBerjalan += perBulan[ym].masuk - perBulan[ym].keluar;
+      const parts = ym.split("-");
+      const label = (BULAN_ID_T[parseInt(parts[1],10)-1] || "-") + " " + parts[0];
+      return { label, masuk: perBulan[ym].masuk, keluar: perBulan[ym].keluar, saldo: saldoBerjalan };
+    });
+    tbodyRekap.innerHTML = rekapRows.slice().reverse().map(r =>
+      "<tr><td>" + r.label + "</td><td class=\"amount in\">" + fmtRpT_(r.masuk) + "</td><td class=\"amount out\">" + fmtRpT_(r.keluar) + "</td><td class=\"amount\">" + fmtRpT_(r.saldo) + "</td></tr>"
+    ).join("");
+
+    const totalMasuk = items.reduce((s,it)=> s + (it.jenis==="masuk" ? (parseFloat(it.jumlah)||0) : 0), 0);
+    const totalKeluar = items.reduce((s,it)=> s + (it.jenis==="keluar" ? (parseFloat(it.jumlah)||0) : 0), 0);
+    const ymNow = new Date().toISOString().slice(0,7);
+    const bulanMasuk = (perBulan[ymNow]||{masuk:0}).masuk;
+    const bulanKeluar = (perBulan[ymNow]||{keluar:0}).keluar;
+    document.getElementById("finSaldo").textContent = fmtRpT_(totalMasuk - totalKeluar);
+    document.getElementById("finMasuk").textContent = fmtRpT_(bulanMasuk);
+    document.getElementById("finKeluar").textContent = fmtRpT_(bulanKeluar);
+
+    tbodyTx.innerHTML = items.slice().reverse().map(it => {
+      const j = fmtRpT_(it.jumlah);
+      const masukCell = it.jenis === "masuk" ? '<td class="amount in">' + j + '</td>' : '<td>-</td>';
+      const keluarCell = it.jenis === "keluar" ? '<td class="amount out">' + j + '</td>' : '<td>-</td>';
+      return "<tr><td>" + fmtTglT_(it.tanggal) + "</td><td>" + escT_(it.keterangan) + "</td><td>" + escT_(it.kategori||"-") + "</td>" + masukCell + keluarCell + "</tr>";
+    }).join("");
+  }, () => {
+    tbodyRekap.innerHTML = '<tr><td colspan="4">Gagal memuat data. Periksa koneksi internet.</td></tr>';
+    tbodyTx.innerHTML = '<tr><td colspan="5">Gagal memuat data. Periksa koneksi internet.</td></tr>';
+  });
+}
 document.addEventListener("DOMContentLoaded",()=>{
   const g=document.getElementById("navGrupWA");
   if(g){
     if(RT_CONFIG.linkGrupWA){ g.href=RT_CONFIG.linkGrupWA; g.target="_blank"; g.rel="noopener"; }
     else { g.href="kontak.html"; g.removeAttribute("target"); }
   }
-  const sSaldo=document.getElementById("finSaldo"); if(sSaldo) sSaldo.textContent = RT_CONFIG.saldoKas || "Rp —";
-  const sMasuk=document.getElementById("finMasuk"); if(sMasuk) sMasuk.textContent = RT_CONFIG.pemasukanBulanIni || "Rp —";
-  const sKeluar=document.getElementById("finKeluar"); if(sKeluar) sKeluar.textContent = RT_CONFIG.pengeluaranBulanIni || "Rp —";
+  loadKeuangan_();
   const btnB=document.getElementById("btnTanyaBendahara");
   if(btnB){
     btnB.addEventListener("click", e=>{

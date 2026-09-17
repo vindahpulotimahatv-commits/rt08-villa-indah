@@ -60,20 +60,42 @@ daftar hadir. Realtime Database pakai format **JSON**, berbeda dari Firestore:
            ".write": "!data.exists() || (newData.child('nama').val() === data.child('nama').val() && newData.child('rumah').val() === data.child('rumah').val())",
            ".validate": "newData.hasChildren(['nama','rumah','waktu','status'])"
          }
-       }
+       },
+       "agenda": { ".read": true, ".write": true },
+       "informasi": { ".read": true, ".write": true },
+       "galeri": { ".read": true, ".write": true },
+       "umkm": { ".read": true, ".write": true },
+       "keuangan": { ".read": true, ".write": true }
      }
    }
    ```
 3. Klik **Publish**.
 
-Aturan di atas mengizinkan siapa pun mendaftar (menulis data baru) selama
-entri untuk rumah itu belum ada, dan mengizinkan panitia mengubah `status`
-(untuk tandai menang) tanpa bisa mengganti `nama`/`rumah` yang sudah
-tersimpan atau menghapus data.
+Penjelasan tiap node:
+- **daftarHadir** — dipakai halaman Daftar Hadir & Doorprize. 1 rumah = 1 entri
+  (anti-duplikat), panitia hanya bisa ubah status menang, tidak bisa hapus.
+- **agenda, informasi, galeri, umkm, keuangan** — dikelola lewat halaman
+  `admin.html` yang dikunci password (`adminPassword` di `config.js`). Karena
+  kuncinya di sisi tampilan (bukan Firebase Auth), siapa pun yang tahu URL
+  API bisa menulis langsung tanpa lewat password — risiko yang sama seperti
+  sebelumnya, cukup aman untuk skala RT selama URL/config project tidak
+  disebar sembarangan.
 
 > Catatan: karena tidak ada login, aturan ini tidak bisa mencegah 100% orang
 > iseng mengisi data asal-asalan — sama seperti keterbatasan versi Google
 > Apps Script sebelumnya. Untuk acara RT skala kecil ini biasanya cukup aman.
+
+## 4b. Tentang foto di Galeri & UMKM
+
+Foto yang diupload admin di `admin.html` otomatis dikompres di browser (resize
++ diubah ke JPEG kualitas ~75%) sebelum disimpan sebagai teks base64 langsung
+di Realtime Database — **bukan** Firebase Storage, supaya tidak perlu upgrade
+ke paket berbayar (Blaze). Konsekuensinya:
+- Setiap foto biasanya jadi ~50–200 KB setelah dikompres.
+- Paket gratis (Spark) punya kuota 1 GB penyimpanan & 10 GB/bulan unduhan —
+  cukup untuk ratusan foto pada penggunaan skala RT.
+- Kalau ke depannya foto makin banyak dan mendekati batas, admin bisa hapus
+  foto lama lewat `admin.html` (tab Galeri/UMKM, tombol ✕ di tiap foto).
 
 ## 5. Uji coba
 

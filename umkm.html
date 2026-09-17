@@ -204,7 +204,7 @@ input:focus,textarea:focus,select:focus{border-color:#7d9fd6;box-shadow:0 0 0 4p
 .umkm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .umkm-card{background:#fff;border:1px solid var(--line);border-radius:24px;overflow:hidden;transition:.22s}
 .umkm-card:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
-.umkm-cover{height:155px;display:grid;place-items:center;font-size:50px;background:
+.umkm-cover{height:155px;display:grid;place-items:center;font-size:50px;background-size:cover;background-position:center;background:
 radial-gradient(circle at 70% 20%,rgba(255,255,255,.55),transparent 20%),
 linear-gradient(135deg,#dde7f8,#f8e8bc)}
 .umkm-body{padding:18px}.umkm-body h3{margin:0 0 4px}.umkm-body p{margin:0 0 12px;color:var(--muted);font-size:12px;line-height:1.5}
@@ -338,36 +338,58 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
       <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a><a href="admin.html">🔐 Admin</a>
     </div>
   </div>
-</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>☰</b>Menu</a></nav><script src="config.js"></script><script>
+</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>☰</b>Menu</a></nav><script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script>
+function escU_(s){
+  return String(s || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+function loadUmkm_(){
+  const grid = document.getElementById("umkmGrid");
+  if (!grid) return;
+  const icon = { Kuliner:"🍱", Jasa:"🔧", Kue:"🧁", Otomotif:"🚗" };
+  const cfg = (RT_CONFIG.firebaseConfig || {});
+  if (!(cfg.apiKey && cfg.databaseURL && cfg.appId)) {
+    grid.innerHTML = "<p class=\"meta\">Direktori UMKM belum dikonfigurasi admin. Hubungi panitia RT.</p>";
+    return;
+  }
+  if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(cfg);
+  const db = firebase.database();
+  db.ref("umkm").on("value", snap => {
+    const val = snap.val() || {};
+    const list = Object.keys(val).map(k => Object.assign({ id:k }, val[k]));
+    list.sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
+    if (list.length === 0) {
+      grid.innerHTML = "<p class=\"meta\">Belum ada usaha yang terdaftar. Jadilah yang pertama mendaftar!</p>";
+      return;
+    }
+    grid.innerHTML = list.map((u,i) => {
+      const cover = u.foto ? "background-image:url('" + u.foto + "')" : "";
+      return "<article class=\"umkm-card\"><div class=\"umkm-cover\" style=\"" + cover + "\">" + (u.foto ? "" : (icon[u.kategori]||"🛍️")) + "</div>" +
+        "<div class=\"umkm-body\"><h3>" + escU_(u.nama) + "</h3><p>" + escU_(u.deskripsi||"") + "</p>" +
+        "<div class=\"tags\"><span class=\"tag\">" + escU_(u.kategori||"Usaha") + "</span></div>" +
+        "<a class=\"btn btn-brand\" href=\"#\" id=\"umkm" + i + "\">Hubungi</a></div></article>";
+    }).join("");
+    list.forEach((u,i) => {
+      const el = document.getElementById("umkm"+i);
+      if (!el) return;
+      el.addEventListener("click", e => {
+        e.preventDefault();
+        rtOpenWa(u.wa, "Halo, saya lihat usaha \"" + u.nama + "\" di direktori UMKM RT 08. Saya ingin bertanya...", "Nomor WhatsApp usaha ini belum diisi admin.");
+      });
+    });
+  }, () => {
+    grid.innerHTML = "<p class=\"meta\">Gagal memuat data UMKM. Periksa koneksi internet.</p>";
+  });
+}
 document.addEventListener("DOMContentLoaded",()=>{
   const g=document.getElementById("navGrupWA");
   if(g){
     if(RT_CONFIG.linkGrupWA){ g.href=RT_CONFIG.linkGrupWA; g.target="_blank"; g.rel="noopener"; }
     else { g.href="kontak.html"; g.removeAttribute("target"); }
   }
-  const grid=document.getElementById("umkmGrid");
-  if(grid){
-    const icon={Kuliner:"🍱",Jasa:"🔧",Kue:"🧁",Otomotif:"🚗"};
-    const list = RT_CONFIG.umkm || [];
-    if(list.length===0){
-      grid.innerHTML = "<p class=\"meta\">Belum ada usaha yang terdaftar. Jadilah yang pertama mendaftar!</p>";
-    } else {
-      grid.innerHTML = list.map((u,i)=>
-        "<article class=\"umkm-card\"><div class=\"umkm-cover\">"+(icon[u.kategori]||"🛍️")+"</div>"+
-        "<div class=\"umkm-body\"><h3>"+u.nama+"</h3><p>"+(u.deskripsi||"")+"</p>"+
-        "<div class=\"tags\"><span class=\"tag\">"+(u.kategori||"Usaha")+"</span></div>"+
-        "<a class=\"btn btn-brand\" href=\"#\" id=\"umkm"+i+"\">Hubungi</a></div></article>"
-      ).join("");
-      list.forEach((u,i)=>{
-        const el=document.getElementById("umkm"+i);
-        if(!el) return;
-        el.addEventListener("click", e=>{
-          e.preventDefault();
-          rtOpenWa(u.wa, "Halo, saya lihat usaha \""+u.nama+"\" di direktori UMKM RT 08. Saya ingin bertanya...", "Nomor WhatsApp usaha ini belum diisi admin di config.js.");
-        });
-      });
-    }
-  }
+  loadUmkm_();
   const btnDaftar=document.getElementById("btnDaftarUMKM");
   if(btnDaftar){
     btnDaftar.addEventListener("click", e=>{

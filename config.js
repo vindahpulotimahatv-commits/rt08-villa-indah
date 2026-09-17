@@ -46,10 +46,11 @@ const RT_CONFIG = {
   teleponAmbulans: "119",
   teleponPolisi: "110",
 
-  // ---------- Ringkasan Kas RT (halaman Transparansi) ----------
-  saldoKas: "Rp —",
-  pemasukanBulanIni: "Rp —",
-  pengeluaranBulanIni: "Rp —",
+  // ---------- Ringkasan Kas RT ----------
+  // Sudah TIDAK dipakai lagi — Saldo Kas, Pemasukan, dan Pengeluaran sekarang
+  // dihitung otomatis dari catatan transaksi yang diinput di admin.html (tab
+  // 💰 Keuangan), tersimpan di Firebase. Field di bawah ini dibiarkan saja,
+  // aman untuk dihapus.
 
   // Link folder dokumen RT (Google Drive, dsb). Kosongkan jika belum tersedia.
   linkDokumen: "",
@@ -99,8 +100,9 @@ const RT_CONFIG = {
   ],
 
   // ---------- Direktori UMKM warga ----------
-  // Tambah / hapus / edit baris sesuai kebutuhan. Kategori bebas, contoh:
-  // "Kuliner", "Jasa", "Kue", "Otomotif"
+  // Sudah TIDAK dipakai lagi — direktori UMKM sekarang diisi lewat admin.html
+  // (tab 🛍️ UMKM, termasuk upload foto usaha), tersimpan di Firebase.
+  // Array di bawah ini dibiarkan saja, aman untuk dihapus.
   umkm: [
     { nama: "Dapur Warga", kategori: "Kuliner", deskripsi: "Catering, nasi box, dan snack untuk kegiatan.", wa: "" },
     { nama: "Jasa Service", kategori: "Jasa", deskripsi: "Servis dan perbaikan oleh warga.", wa: "" },

@@ -218,6 +218,9 @@ linear-gradient(135deg,#dde7f8,#f8e8bc)}
 .gallery-item:nth-child(1){grid-column:span 7;min-height:310px;background:linear-gradient(135deg,#2c7d56,#c49325)}
 .gallery-item:nth-child(2){grid-column:span 5;min-height:310px;background:linear-gradient(135deg,#426f9e,#1e405e)}
 .gallery-item:nth-child(3),.gallery-item:nth-child(4),.gallery-item:nth-child(5){grid-column:span 4}
+.gallery-grid.is-dynamic{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.gallery-grid.is-dynamic .gallery-item{grid-column:auto!important;min-height:220px!important;background-size:cover;background-position:center}
+.gallery-item .meta{color:rgba(255,255,255,.82)}
 
 .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .contact-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:18px;display:flex;gap:14px;align-items:center;transition:.2s}
@@ -319,13 +322,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 </header>
 <main>
 <section class="page-hero"><div class="container"><div class="breadcrumb">BERANDA / GALERI</div><h1>Galeri Kebersamaan</h1><p>Layout dibuat bergaya editorial supaya tidak seperti grid foto biasa.</p></div></section>
-<section class="section"><div class="container"><div class="gallery-grid">
-  <div class="gallery-item"><div><h3>🇮🇩 HUT RI 2026</h3><p class="meta" style="color:#fff">Malam puncak dan kegiatan warga</p></div></div>
-  <div class="gallery-item"><div><h3>🧹 Kerja Bakti</h3><p class="meta" style="color:#fff">Kebersamaan menjaga lingkungan</p></div></div>
-  <div class="gallery-item"><div><h3>⚽ Kegiatan Pemuda</h3></div></div>
-  <div class="gallery-item"><div><h3>👨‍👩‍👧‍👦 Acara Warga</h3></div></div>
-  <div class="gallery-item"><div><h3>🌿 Lingkungan</h3></div></div>
-</div></div></section>
+<section class="section"><div class="container"><div class="gallery-grid" id="galleryGrid"><div class="meta">Memuat foto...</div></div></div></section>
 </main>
 <footer class="footer">
   <div class="container footer-grid">
@@ -340,14 +337,50 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
       <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a><a href="admin.html">🔐 Admin</a>
     </div>
   </div>
-</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>☰</b>Menu</a></nav><script src="config.js"></script><script>
+</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>☰</b>Menu</a></nav><script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script>
 document.addEventListener("DOMContentLoaded",()=>{
   const g=document.getElementById("navGrupWA");
   if(g){
     if(RT_CONFIG.linkGrupWA){ g.href=RT_CONFIG.linkGrupWA; g.target="_blank"; g.rel="noopener"; }
     else { g.href="kontak.html"; g.removeAttribute("target"); }
   }
+  loadGaleri_();
 });
+function escG_(s){
+  return String(s || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+function loadGaleri_(){
+  const box = document.getElementById("galleryGrid");
+  const cfg = (RT_CONFIG.firebaseConfig || {});
+  if (!(cfg.apiKey && cfg.databaseURL && cfg.appId)) {
+    box.innerHTML = '<p class="meta">Galeri belum dikonfigurasi admin. Hubungi panitia RT.</p>';
+    return;
+  }
+  if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(cfg);
+  const db = firebase.database();
+  db.ref("galeri").on("value", snap => {
+    const val = snap.val() || {};
+    const items = Object.keys(val).map(k => Object.assign({ id:k }, val[k]));
+    items.sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
+    if (items.length === 0) {
+      box.className = "gallery-grid";
+      box.innerHTML = '<p class="meta">Belum ada foto kegiatan yang diunggah. Nantikan dokumentasi acara berikutnya!</p>';
+      return;
+    }
+    box.className = "gallery-grid is-dynamic";
+    box.innerHTML = items.map(it =>
+      '<div class="gallery-item" style="background-image:url(\'' + it.foto + '\')">' +
+        '<div><h3>' + escG_(it.judul) + '</h3>' +
+        (it.keterangan ? '<p class="meta">' + escG_(it.keterangan) + '</p>' : '') +
+        '</div></div>'
+    ).join("");
+  }, () => {
+    box.innerHTML = '<p class="meta">Gagal memuat galeri. Periksa koneksi internet.</p>';
+  });
+}
 function showToast(msg){
   let t=document.querySelector(".toast");
   if(!t){t=document.createElement("div");t.className="toast";document.body.appendChild(t)}
