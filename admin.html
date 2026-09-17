@@ -1,0 +1,367 @@
+<!DOCTYPE html><html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#123a6b">
+<meta name="robots" content="noindex,nofollow">
+<title>Admin | RT 08 Villa Indah Pulo Timaha</title><style>
+:root{
+  --green:#123a6b;
+  --green2:#1c4a86;
+  --green3:#081c38;
+  --mint:#e7edf9;
+  --mint2:#dbe6f9;
+  --gold:#d5a62b;
+  --cream:#fff7e8;
+  --blue:#315f9e;
+  --red:#c74444;
+  --ink:#12213f;
+  --muted:#59657f;
+  --line:#dbe2f0;
+  --bg:#eef1f9;
+  --white:#fff;
+  --shadow:0 14px 40px rgba(10,25,56,.10);
+  --shadow-lg:0 30px 80px rgba(5,15,36,.18);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:
+    linear-gradient(180deg,rgba(6,16,36,.72),rgba(8,20,44,.55) 40%,rgba(10,25,56,.85)),
+    url("assets/bg-navy.jpg") center top/cover no-repeat fixed;
+  color:var(--ink);
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  min-height:100vh
+}
+a{text-decoration:none;color:inherit}
+button{font:inherit}
+.container{width:min(760px,calc(100% - 28px));margin:auto}
+
+.topbar{
+  position:sticky;top:0;z-index:50;background:linear-gradient(180deg,rgba(8,20,44,.94),rgba(10,26,58,.88));backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(213,166,43,.28);padding:14px 0;box-shadow:0 12px 30px rgba(3,10,26,.35)
+}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:950;color:#fff;font-size:13px}
+.brand-mark{width:38px;height:38px;border-radius:50%;object-fit:cover;display:block;box-shadow:0 0 0 2px rgba(213,166,43,.6)}
+.badge-panitia{background:#fdeaea;color:var(--red);font-size:10px;font-weight:900;padding:5px 9px;border-radius:999px;letter-spacing:.4px}
+.back-link{font-size:12px;font-weight:900;color:#f3cf6a}
+
+/* ---------- Gate (kunci password) ---------- */
+.gate-wrap{min-height:calc(100vh - 68px);display:flex;align-items:center;justify-content:center;padding:30px 14px}
+.gate-card{
+  background:#fff;border-radius:26px;padding:34px 26px;max-width:380px;width:100%;
+  box-shadow:var(--shadow-lg);text-align:center
+}
+.gate-card .emoji{font-size:38px;margin-bottom:10px}
+.gate-card h2{margin:0 0 6px;font-size:20px}
+.gate-card p{margin:0 0 22px;color:var(--muted);font-size:13px;line-height:1.6}
+.gate-card input{
+  width:100%;border:1px solid var(--line);background:#f8f9fc;padding:14px 15px;border-radius:13px;
+  outline:none;color:var(--ink);font-size:16px;text-align:center;letter-spacing:2px;margin-bottom:12px
+}
+.gate-card input:focus{border-color:#7d9fd6;box-shadow:0 0 0 4px rgba(18,58,107,.08)}
+.gate-card .err{color:var(--red);font-size:12px;font-weight:800;margin:-4px 0 12px;display:none}
+.btn{width:100%;min-height:50px;padding:0 18px;border:none;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:900;cursor:pointer;transition:.2s;font-size:15px}
+.btn:hover{transform:translateY(-2px)}
+.btn:disabled{opacity:.6;cursor:default;transform:none}
+.btn-gold{background:var(--gold);color:#231e11}
+.btn-brand{background:var(--green);color:#fff}
+.btn-ghost{background:#fdeaea;color:var(--red)}
+.btn-sm{min-height:38px;font-size:12.5px;padding:0 14px;border-radius:11px}
+
+/* ---------- Dashboard ---------- */
+#dashboard{display:none;padding:22px 0 60px}
+.tabs{display:flex;gap:8px;margin-bottom:18px;background:rgba(255,255,255,.12);padding:6px;border-radius:16px}
+.tab-btn{flex:1;border:none;background:transparent;color:rgba(255,255,255,.75);padding:11px 10px;border-radius:12px;font-weight:900;font-size:13px;cursor:pointer}
+.tab-btn.active{background:#fff;color:var(--green)}
+.panel{display:none}
+.panel.active{display:block}
+.form-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:0 10px 30px rgba(10,25,56,.08);margin-bottom:18px}
+.form-card h3{margin:0 0 4px;font-size:16px}
+.form-card .sub{margin:0 0 16px;color:var(--muted);font-size:12.5px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{display:grid;gap:6px;margin-bottom:12px}
+.field.full{grid-column:1/-1}
+label{font-size:11px;font-weight:900;color:#445069}
+input,select,textarea{width:100%;border:1px solid var(--line);background:#f8f9fc;padding:12px 13px;border-radius:12px;outline:none;color:var(--ink);font-size:14px;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:#7d9fd6;box-shadow:0 0 0 4px rgba(18,58,107,.08)}
+textarea{min-height:76px;resize:vertical}
+
+.list-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:8px;box-shadow:0 10px 30px rgba(10,25,56,.08)}
+.list-card .list-title{padding:12px 14px 6px;font-size:12px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.entry-row{display:flex;gap:12px;align-items:flex-start;padding:13px 14px;border-top:1px solid var(--line)}
+.entry-row:first-of-type{border-top:0}
+.entry-date{
+  flex:0 0 52px;width:52px;text-align:center;background:linear-gradient(145deg,var(--green2),var(--green3));
+  color:#fff;border-radius:13px;padding:7px 3px;font-weight:900
+}
+.entry-date small{display:block;font-size:9px;text-transform:uppercase;opacity:.8}
+.entry-body{flex:1;min-width:0}
+.entry-body h4{margin:0 0 3px;font-size:14px}
+.entry-body p{margin:0;font-size:12px;color:var(--muted);line-height:1.5}
+.entry-badge{display:inline-block;font-size:10px;font-weight:900;padding:3px 9px;border-radius:999px;margin-bottom:5px}
+.entry-badge.penting{background:#fdeaea;color:var(--red)}
+.entry-badge.kegiatan{background:#dde7f8;color:var(--green)}
+.entry-badge.fasilitas{background:#dfeafa;color:var(--blue)}
+.entry-badge.keamanan{background:#fff7e8;color:#8a6a10}
+.entry-del{flex:0 0 auto;border:none;background:#fdeaea;color:var(--red);width:32px;height:32px;border-radius:10px;font-weight:900;cursor:pointer}
+.empty-note{padding:22px 14px;text-align:center;color:var(--muted);font-size:13px}
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translate(-50%,10px);background:#0b2144;color:#fff;
+  padding:12px 18px;border-radius:14px;font-size:13px;font-weight:800;box-shadow:var(--shadow-lg);
+  opacity:0;pointer-events:none;transition:.25s;z-index:200;max-width:88%;text-align:center
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.warn-card{background:#fff7e8;border:1px solid #ecd8a0;border-radius:18px;padding:16px;color:#5c4c1a;font-size:13px;margin-bottom:16px;line-height:1.6}
+</style>
+</head><body>
+<header class="topbar"><div class="container topbar-inner">
+  <div class="brand"><img class="brand-mark" src="assets/logo-badge.png" alt="Logo RT 08"><span>Admin RT 08<span class="badge-panitia">🔒 PENGURUS</span></span></div>
+  <a class="back-link" href="index.html">← Beranda</a>
+</div></header>
+
+<div class="gate-wrap" id="gateWrap">
+  <div class="gate-card">
+    <div class="emoji">🔐</div>
+    <h2>Halaman Khusus Pengurus</h2>
+    <p>Masukkan password admin untuk mengelola Agenda &amp; Informasi warga. Konten yang ditambahkan di sini otomatis tampil di halaman Agenda, Informasi, dan Beranda.</p>
+    <input type="password" id="gatePass" placeholder="Password admin" autocomplete="off">
+    <p class="err" id="gateErr">Password salah. Coba lagi.</p>
+    <button class="btn btn-gold" id="btnMasuk">Masuk</button>
+  </div>
+</div>
+
+<div id="dashboard"><div class="container">
+  <div class="warn-card" id="warnCard" style="display:none">⚠️ Firebase belum dikonfigurasi di <code>config.js</code>. Data tidak bisa disimpan/ditampilkan sampai diatur admin teknis.</div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="agenda">📅 Agenda</button>
+    <button class="tab-btn" data-tab="info">📢 Informasi</button>
+  </div>
+
+  <!-- ===== PANEL AGENDA ===== -->
+  <div class="panel active" id="panel-agenda">
+    <div class="form-card">
+      <h3>Tambah Agenda</h3>
+      <p class="sub">Isi tanggal, waktu, dan jenis kegiatan. Otomatis muncul di halaman Agenda &amp; Beranda, terurut dari yang terdekat.</p>
+      <form id="formAgenda">
+        <div class="form-grid">
+          <div class="field"><label>Tanggal</label><input type="date" id="agTanggal" required></div>
+          <div class="field"><label>Waktu (opsional)</label><input type="time" id="agWaktu"></div>
+          <div class="field full"><label>Jenis / Judul Agenda</label><input id="agJudul" required placeholder="Contoh: Kerja Bakti Lingkungan"></div>
+          <div class="field full"><label>Lokasi (opsional)</label><input id="agLokasi" placeholder="Contoh: Area RT 08"></div>
+          <div class="field full"><label>Keterangan tambahan (opsional)</label><textarea id="agKeterangan" placeholder="Detail acara, siapa yang perlu hadir, dsb."></textarea></div>
+        </div>
+        <button class="btn btn-brand" type="submit">➕ Simpan Agenda</button>
+      </form>
+    </div>
+    <div class="list-card">
+      <div class="list-title">Daftar Agenda Tersimpan</div>
+      <div id="listAgenda"><div class="empty-note">Memuat data...</div></div>
+    </div>
+  </div>
+
+  <!-- ===== PANEL INFORMASI ===== -->
+  <div class="panel" id="panel-info">
+    <div class="form-card">
+      <h3>Tambah Informasi / Pengumuman</h3>
+      <p class="sub">Otomatis muncul di halaman Informasi &amp; Beranda, terurut dari yang terbaru.</p>
+      <form id="formInfo">
+        <div class="form-grid">
+          <div class="field"><label>Kategori</label>
+            <select id="inKategori">
+              <option value="Penting">🔴 Penting</option>
+              <option value="Kegiatan">🟢 Kegiatan</option>
+              <option value="Fasilitas">🔵 Fasilitas</option>
+              <option value="Keamanan">🛡️ Keamanan</option>
+            </select>
+          </div>
+          <div class="field"><label>Tanggal</label><input type="date" id="inTanggal" required></div>
+          <div class="field full"><label>Judul</label><input id="inJudul" required placeholder="Contoh: Pengecekan Lampu Jalan"></div>
+          <div class="field full"><label>Isi / Keterangan (opsional)</label><textarea id="inIsi" placeholder="Detail informasi untuk warga..."></textarea></div>
+        </div>
+        <button class="btn btn-brand" type="submit">➕ Simpan Informasi</button>
+      </form>
+    </div>
+    <div class="list-card">
+      <div class="list-title">Daftar Informasi Tersimpan</div>
+      <div id="listInfo"><div class="empty-note">Memuat data...</div></div>
+    </div>
+  </div>
+
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="config.js"></script>
+<script>
+var db = null;
+var BULAN_ID = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+
+function firebaseReady_(){
+  var cfg = RT_CONFIG.firebaseConfig || {};
+  return !!(cfg.apiKey && cfg.databaseURL && cfg.appId);
+}
+function esc_(s){
+  return String(s || "").replace(/[&<>"']/g, function(c){
+    return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+  });
+}
+function showToast(msg){
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(showToast._tm);
+  showToast._tm = setTimeout(function(){ t.classList.remove("show"); }, 2600);
+}
+function fmtTanggal_(iso){
+  if(!iso) return { d:"--", m:"-" };
+  var parts = iso.split("-");
+  var d = parseInt(parts[2], 10);
+  var m = BULAN_ID[parseInt(parts[1], 10) - 1] || "-";
+  return { d: (d<10?"0"+d:d), m: m };
+}
+
+/* ---------------- GATE ---------------- */
+document.addEventListener("DOMContentLoaded", function(){
+  var SESSION_KEY = "rt08_admin_unlocked";
+  var gateWrap = document.getElementById("gateWrap");
+  var dashboard = document.getElementById("dashboard");
+
+  function unlock(){
+    gateWrap.style.display = "none";
+    dashboard.style.display = "block";
+    initDashboard_();
+  }
+
+  if (sessionStorage.getItem(SESSION_KEY) === "1") {
+    unlock();
+  }
+
+  document.getElementById("btnMasuk").addEventListener("click", function(){
+    var val = document.getElementById("gatePass").value;
+    if (val && val === (RT_CONFIG.adminPassword || "")) {
+      sessionStorage.setItem(SESSION_KEY, "1");
+      document.getElementById("gateErr").style.display = "none";
+      unlock();
+    } else {
+      document.getElementById("gateErr").style.display = "block";
+    }
+  });
+  document.getElementById("gatePass").addEventListener("keydown", function(e){
+    if (e.key === "Enter") document.getElementById("btnMasuk").click();
+  });
+
+  /* ---------------- TABS ---------------- */
+  document.querySelectorAll(".tab-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      document.querySelectorAll(".tab-btn").forEach(function(b){ b.classList.remove("active"); });
+      document.querySelectorAll(".panel").forEach(function(p){ p.classList.remove("active"); });
+      btn.classList.add("active");
+      document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+    });
+  });
+});
+
+/* ---------------- DASHBOARD LOGIC ---------------- */
+var dashboardInited_ = false;
+function initDashboard_(){
+  if (dashboardInited_) return;
+  dashboardInited_ = true;
+
+  if (!firebaseReady_()) {
+    document.getElementById("warnCard").style.display = "block";
+    return;
+  }
+  firebase.initializeApp(RT_CONFIG.firebaseConfig);
+  db = firebase.database();
+
+  var today = new Date().toISOString().slice(0, 10);
+  document.getElementById("agTanggal").value = today;
+  document.getElementById("inTanggal").value = today;
+
+  /* ---- AGENDA ---- */
+  document.getElementById("formAgenda").addEventListener("submit", function(e){
+    e.preventDefault();
+    var tanggal = document.getElementById("agTanggal").value;
+    var waktu = document.getElementById("agWaktu").value.trim();
+    var judul = document.getElementById("agJudul").value.trim();
+    var lokasi = document.getElementById("agLokasi").value.trim();
+    var keterangan = document.getElementById("agKeterangan").value.trim();
+    if (!tanggal || !judul) { showToast("Tanggal dan Judul agenda wajib diisi."); return; }
+    db.ref("agenda").push({
+      tanggal: tanggal, waktu: waktu, judul: judul, lokasi: lokasi, keterangan: keterangan,
+      createdAt: firebase.database.ServerValue.TIMESTAMP
+    }).then(function(){
+      showToast("Agenda tersimpan dan otomatis tampil di halaman Agenda & Beranda.");
+      document.getElementById("formAgenda").reset();
+      document.getElementById("agTanggal").value = today;
+    }).catch(function(){ showToast("Gagal menyimpan. Periksa koneksi internet."); });
+  });
+
+  db.ref("agenda").on("value", function(snap){
+    var val = snap.val() || {};
+    var items = Object.keys(val).map(function(k){ return Object.assign({ id:k }, val[k]); });
+    items.sort(function(a,b){ return (a.tanggal||"").localeCompare(b.tanggal||""); });
+    var box = document.getElementById("listAgenda");
+    if (items.length === 0) { box.innerHTML = '<div class="empty-note">Belum ada agenda. Tambahkan lewat form di atas.</div>'; return; }
+    box.innerHTML = items.map(function(it){
+      var dt = fmtTanggal_(it.tanggal);
+      var meta = [it.waktu ? it.waktu + " WIB" : "", it.lokasi || ""].filter(Boolean).join(" • ");
+      return '<div class="entry-row">' +
+        '<div class="entry-date">' + dt.d + '<small>' + dt.m + '</small></div>' +
+        '<div class="entry-body"><h4>' + esc_(it.judul) + '</h4><p>' + esc_(meta || it.keterangan || "-") + '</p></div>' +
+        '<button class="entry-del" data-id="' + it.id + '" data-node="agenda" title="Hapus">✕</button>' +
+        '</div>';
+    }).join("");
+  });
+
+  /* ---- INFORMASI ---- */
+  document.getElementById("formInfo").addEventListener("submit", function(e){
+    e.preventDefault();
+    var kategori = document.getElementById("inKategori").value;
+    var tanggal = document.getElementById("inTanggal").value;
+    var judul = document.getElementById("inJudul").value.trim();
+    var isi = document.getElementById("inIsi").value.trim();
+    if (!tanggal || !judul) { showToast("Tanggal dan Judul informasi wajib diisi."); return; }
+    db.ref("informasi").push({
+      kategori: kategori, tanggal: tanggal, judul: judul, isi: isi,
+      createdAt: firebase.database.ServerValue.TIMESTAMP
+    }).then(function(){
+      showToast("Informasi tersimpan dan otomatis tampil di halaman Informasi & Beranda.");
+      document.getElementById("formInfo").reset();
+      document.getElementById("inTanggal").value = today;
+    }).catch(function(){ showToast("Gagal menyimpan. Periksa koneksi internet."); });
+  });
+
+  db.ref("informasi").on("value", function(snap){
+    var val = snap.val() || {};
+    var items = Object.keys(val).map(function(k){ return Object.assign({ id:k }, val[k]); });
+    items.sort(function(a,b){ return (b.tanggal||"").localeCompare(a.tanggal||"") || (b.createdAt||0)-(a.createdAt||0); });
+    var box = document.getElementById("listInfo");
+    if (items.length === 0) { box.innerHTML = '<div class="empty-note">Belum ada informasi. Tambahkan lewat form di atas.</div>'; return; }
+    box.innerHTML = items.map(function(it){
+      var dt = fmtTanggal_(it.tanggal);
+      var kelas = (it.kategori || "kegiatan").toLowerCase();
+      return '<div class="entry-row">' +
+        '<div class="entry-date">' + dt.d + '<small>' + dt.m + '</small></div>' +
+        '<div class="entry-body"><span class="entry-badge ' + esc_(kelas) + '">' + esc_(it.kategori || "-") + '</span><h4>' + esc_(it.judul) + '</h4><p>' + esc_(it.isi || "-") + '</p></div>' +
+        '<button class="entry-del" data-id="' + it.id + '" data-node="informasi" title="Hapus">✕</button>' +
+        '</div>';
+    }).join("");
+  });
+
+  /* ---- DELETE (delegasi klik untuk kedua daftar) ---- */
+  document.getElementById("dashboard").addEventListener("click", function(e){
+    var btn = e.target.closest(".entry-del");
+    if (!btn) return;
+    var id = btn.getAttribute("data-id");
+    var node = btn.getAttribute("data-node");
+    if (!confirm("Hapus data ini? Tindakan tidak bisa dibatalkan.")) return;
+    db.ref(node + "/" + id).remove().then(function(){
+      showToast("Data dihapus.");
+    }).catch(function(){ showToast("Gagal menghapus. Coba lagi."); });
+  });
+}
+</script>
+</body></html>

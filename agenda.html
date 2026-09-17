@@ -321,10 +321,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <section class="page-hero"><div class="container"><div class="breadcrumb">BERANDA / AGENDA</div><h1>Agenda & Kalender Warga</h1><p>Jadwal kegiatan ditampilkan seperti timeline agar mudah dibaca dan tidak memenuhi halaman.</p></div></section>
 <section class="section"><div class="container grid-2">
   <div class="card"><h3>Agenda Terdekat</h3>
-    <div class="agenda-item"><div class="datebox">30<small>Agu</small></div><div><h4>Kerja Bakti Lingkungan</h4><p class="meta">07.00–10.00 WIB • Area RT 08</p></div></div>
-    <div class="agenda-item"><div class="datebox">05<small>Sep</small></div><div><h4>Rapat Pengurus RT</h4><p class="meta">Koordinasi kegiatan dan administrasi.</p></div></div>
-    <div class="agenda-item"><div class="datebox">12<small>Sep</small></div><div><h4>Kegiatan Karang Taruna</h4><p class="meta">Agenda pemuda dan persiapan kegiatan warga.</p></div></div>
-    <div class="agenda-item"><div class="datebox">19<small>Sep</small></div><div><h4>Malam Puncak RT 08</h4><p class="meta">20.00 WIB • Area E6 & E7</p></div></div>
+    <div id="agendaListPage"><div class="agenda-item"><p class="meta">Memuat agenda...</p></div></div>
   </div>
   <div class="card"><h3>Jenis Agenda</h3><div class="feature-list">
     <div class="feature"><div class="feature-icon">👥</div><div><h4>Rapat</h4><p>Rapat pengurus maupun rapat warga.</p></div></div>
@@ -344,16 +341,51 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
       <a href="informasi.html">Pengumuman</a><a href="agenda.html">Agenda</a>
       <a href="layanan.html">Layanan Warga</a><a href="transparansi.html">Kas RT</a>
       <a href="umkm.html">UMKM Warga</a><a href="galeri.html">Galeri</a>
-      <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a>
+      <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a><a href="admin.html">🔐 Admin</a>
     </div>
   </div>
-</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="active" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>☰</b>Menu</a></nav><script src="config.js"></script><script>
+</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="active" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>☰</b>Menu</a></nav>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="config.js"></script><script>
+var BULAN_ID_=["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+function fmtTgl_(iso){
+  if(!iso) return {d:"--",m:"-"};
+  var p=iso.split("-"); var d=parseInt(p[2],10); var m=BULAN_ID_[parseInt(p[1],10)-1]||"-";
+  return {d:(d<10?"0"+d:d),m:m};
+}
+function escA_(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function renderAgendaList_(items, el, limit){
+  var today = new Date().toISOString().slice(0,10);
+  var upcoming = items.filter(function(it){ return (it.tanggal||"") >= today; });
+  var list = (upcoming.length ? upcoming : items).slice(0, limit || 999);
+  if(list.length===0){ el.innerHTML='<div class="agenda-item"><p class="meta">Belum ada agenda terjadwal. Nantikan info dari pengurus RT.</p></div>'; return; }
+  el.innerHTML = list.map(function(it){
+    var dt=fmtTgl_(it.tanggal);
+    var meta=[it.waktu?it.waktu+" WIB":"", it.lokasi||""].filter(Boolean).join(" • ") || it.keterangan || "";
+    return '<div class="agenda-item"><div class="datebox">'+dt.d+'<small>'+dt.m+'</small></div><div><h4>'+escA_(it.judul)+'</h4><p class="meta">'+escA_(meta||"-")+'</p></div></div>';
+  }).join("");
+}
 document.addEventListener("DOMContentLoaded",()=>{
   const g=document.getElementById("navGrupWA");
   if(g){
     if(RT_CONFIG.linkGrupWA){ g.href=RT_CONFIG.linkGrupWA; g.target="_blank"; g.rel="noopener"; }
     else { g.href="kontak.html"; g.removeAttribute("target"); }
   }
+  var elPage = document.getElementById("agendaListPage");
+  var cfg = RT_CONFIG.firebaseConfig || {};
+  if(!(cfg.apiKey && cfg.databaseURL && cfg.appId)){
+    if(elPage) elPage.innerHTML='<div class="agenda-item"><p class="meta">Belum ada agenda terjadwal.</p></div>';
+    return;
+  }
+  if(!firebase.apps.length) firebase.initializeApp(cfg);
+  var db = firebase.database();
+  db.ref("agenda").on("value", function(snap){
+    var val = snap.val() || {};
+    var items = Object.keys(val).map(function(k){ return val[k]; });
+    items.sort(function(a,b){ return (a.tanggal||"").localeCompare(b.tanggal||""); });
+    if(elPage) renderAgendaList_(items, elPage);
+  });
 });
 function showToast(msg){
   let t=document.querySelector(".toast");

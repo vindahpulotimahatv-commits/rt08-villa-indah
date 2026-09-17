@@ -14,6 +14,12 @@ const RT_CONFIG = {
   namaKompleks: "Villa Indah Pulo Timaha",
   jumlahKK: "—", // contoh: "142"
 
+  // ---------- Password Halaman Admin (admin.html) ----------
+  // Dipakai untuk mengunci halaman kelola Agenda & Informasi.
+  // GANTI password ini secara berkala. Catatan: ini hanya kunci tampilan
+  // (bukan keamanan tingkat server), jadi tetap jangan bagikan sembarangan.
+  adminPassword: "rt08admin2026",
+
   // ---------- Nomor WhatsApp pengurus (WAJIB diisi agar tombol berfungsi) ----------
   // Format: kode negara 62 + nomor tanpa angka 0 di depan.
   // Contoh nomor 0812-3456-7890 ditulis: "6281234567890"
