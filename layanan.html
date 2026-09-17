@@ -195,6 +195,9 @@ th{background:#eef1f9;color:#4f5c78;font-size:10px;text-transform:uppercase;lett
 
 .form-card{background:#fff;border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 10px 30px rgba(10,25,56,.05)}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.followup-box{background:#fff8e8;border:1px solid #ecd8a0;border-radius:16px;padding:16px}
+.followup-box p{margin:0 0 12px;font-size:13px;color:#5c4c1a;line-height:1.6}
+.followup-box .btn{width:auto;padding:0 18px;min-height:44px}
 .field{display:grid;gap:7px}.field.full{grid-column:1/-1}
 label{font-size:11px;font-weight:900;color:#445069}
 input,textarea,select{width:100%;border:1px solid var(--line);background:#f8f9fc;padding:13px 14px;border-radius:13px;outline:none;color:var(--ink)}
@@ -334,7 +337,13 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
   <div class="field"><label>Kategori</label><select id="lpKategori"><option>Keamanan</option><option>Lampu Jalan</option><option>Sampah</option><option>Drainase</option><option>Jalan</option><option>Fasilitas Umum</option><option>Lainnya</option></select></div>
   <div class="field"><label>Nomor WhatsApp</label><input id="lpWA" placeholder="08xxxxxxxxxx"></div>
   <div class="field full"><label>Keterangan</label><textarea id="lpKeterangan" required placeholder="Jelaskan laporan secara singkat dan jelas..."></textarea></div>
-  <div class="field full"><button class="btn btn-gold" type="submit">Kirim Laporan</button></div>
+  <div class="field full"><button class="btn btn-gold" type="submit" id="btnKirimLapor">Kirim Laporan</button></div>
+  <div class="field full" id="laporFollowup" style="display:none">
+    <div class="followup-box">
+      <p>✅ Laporan sudah terkirim ke <b>Pak RT</b>. Karena kategorinya <b>Keamanan</b>, teruskan juga ke petugas keamanan:</p>
+      <button type="button" class="btn btn-brand" id="btnKirimKeamanan">🛡️ Kirim juga ke Keamanan (Pak Jati)</button>
+    </div>
+  </div>
 </div></form></div></section>
 </main>
 <footer class="footer">
@@ -395,14 +404,35 @@ document.addEventListener("DOMContentLoaded",()=>{
       const ket=document.getElementById("lpKeterangan").value.trim();
       if(!nama || !blok || !ket){ showToast("Mohon lengkapi Nama, Blok/No Rumah, dan Keterangan."); return; }
       const pesan = "🚨 LAPORAN WARGA RT 08\nNama: "+nama+"\nBlok/No Rumah: "+blok+"\nKategori: "+kategori+"\nNomor WhatsApp pelapor: "+(wa||"-")+"\nKeterangan: "+ket;
-      const nomor = RT_CONFIG.waKeamanan || RT_CONFIG.waKetua;
-      const link = rtWaLink(nomor, pesan);
-      if(link){
-        window.open(link, "_blank", "noopener");
-        showToast("WhatsApp terbuka — silakan tekan kirim untuk melaporkan.");
-        form.reset();
+
+      // Laporan SELALU dikirim ke Pak RT (Ketua) terlebih dulu.
+      const nomorKetua = RT_CONFIG.waKetua;
+      const linkKetua = rtWaLink(nomorKetua, pesan);
+      if(!linkKetua){
+        showToast("Nomor WhatsApp Ketua RT belum diatur admin di config.js.");
+        return;
+      }
+      window.open(linkKetua, "_blank", "noopener");
+      form.reset();
+
+      if(kategori === "Keamanan"){
+        // Khusus kategori Keamanan, tampilkan tombol lanjutan untuk kirim juga ke Keamanan.
+        document.getElementById("laporFollowup").style.display = "block";
+        const btnKeamanan = document.getElementById("btnKirimKeamanan");
+        btnKeamanan.onclick = () => {
+          const nomorKeamanan = RT_CONFIG.waKeamanan;
+          const linkKeamanan = rtWaLink(nomorKeamanan, pesan);
+          if(linkKeamanan){
+            window.open(linkKeamanan, "_blank", "noopener");
+            showToast("WhatsApp Keamanan terbuka — silakan tekan kirim.");
+          } else {
+            showToast("Nomor WhatsApp Keamanan belum diatur admin di config.js.");
+          }
+        };
+        showToast("Laporan terkirim ke Pak RT. Lanjut kirim ke Keamanan di bawah ini.");
       } else {
-        showToast("Nomor WhatsApp keamanan belum diatur admin di config.js.");
+        document.getElementById("laporFollowup").style.display = "none";
+        showToast("WhatsApp terbuka — silakan tekan kirim untuk melaporkan ke Pak RT.");
       }
     });
   }

@@ -17,19 +17,25 @@ const RT_CONFIG = {
   // ---------- Nomor WhatsApp pengurus (WAJIB diisi agar tombol berfungsi) ----------
   // Format: kode negara 62 + nomor tanpa angka 0 di depan.
   // Contoh nomor 0812-3456-7890 ditulis: "6281234567890"
-  waKetua: "",
-  waSekretaris: "",
-  waBendahara: "",
-  waKeamanan: "",
+  waKetua: "6287788676667",
+  waSekretaris: "6285643013072",
+  waBendahara: "6285770053707",
+  waKeamanan: "6285811522118",
+
+  // Nama pengurus (ditampilkan di halaman Kontak)
+  namaKetua: "Abdul Avies",
+  namaSekretaris: "Syarif",
+  namaBendahara: "Hendyanto",
+  namaKeamanan: "Jati",
 
   // Link undangan Grup WhatsApp warga (opsional, kosongkan jika belum ada)
   linkGrupWA: "",
 
   // ---------- Nomor telepon untuk ditampilkan di halaman Kontak ----------
-  teleponKetua: "08xx-xxxx-xxxx",
-  teleponSekretaris: "08xx-xxxx-xxxx",
-  teleponBendahara: "08xx-xxxx-xxxx",
-  teleponKeamanan: "08xx-xxxx-xxxx",
+  teleponKetua: "0877-8867-6667",
+  teleponSekretaris: "0856-4301-3072",
+  teleponBendahara: "0857-7005-3707",
+  teleponKeamanan: "0858-1152-2118",
   teleponPemadam: "113",
   teleponAmbulans: "119",
   teleponPolisi: "110",

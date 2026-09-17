@@ -224,6 +224,7 @@ linear-gradient(135deg,#dde7f8,#f8e8bc)}
 .contact-card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
 .contact-icon{width:50px;height:50px;border-radius:15px;background:var(--mint);display:grid;place-items:center;font-size:22px}
 .contact-card strong{display:block}.contact-card span{font-size:12px;color:var(--muted)}
+.contact-name{display:block;font-size:11px;color:#c49325;font-weight:800;margin-top:2px}
 
 .callout{
   background:linear-gradient(135deg,#fff8e8,#fff);border:1px solid #ecd8a0;border-radius:24px;padding:22px;
@@ -321,10 +322,10 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <section class="page-hero"><div class="container"><div class="breadcrumb">BERANDA / KONTAK</div><h1>Kontak & Nomor Penting</h1><p>Kontak pengurus, keamanan, dan layanan darurat ditempatkan terpisah agar mudah dicari saat dibutuhkan.</p></div></section>
 <section class="section"><div class="container">
 <div class="contact-grid">
-  <div class="contact-card"><div class="contact-icon">👨‍💼</div><div><strong>Ketua RT</strong><span id="cKetua">08xx xxxx xxxx</span></div></div>
-  <div class="contact-card"><div class="contact-icon">📝</div><div><strong>Sekretaris</strong><span id="cSekretaris">08xx xxxx xxxx</span></div></div>
-  <div class="contact-card"><div class="contact-icon">💰</div><div><strong>Bendahara</strong><span id="cBendahara">08xx xxxx xxxx</span></div></div>
-  <div class="contact-card"><div class="contact-icon">🛡️</div><div><strong>Keamanan</strong><span id="cKeamanan">08xx xxxx xxxx</span></div></div>
+  <div class="contact-card"><div class="contact-icon">👨‍💼</div><div><strong>Ketua RT</strong><span id="cKetua">08xx xxxx xxxx</span><small id="cNamaKetua" class="contact-name"></small></div></div>
+  <div class="contact-card"><div class="contact-icon">📝</div><div><strong>Sekretaris</strong><span id="cSekretaris">08xx xxxx xxxx</span><small id="cNamaSekretaris" class="contact-name"></small></div></div>
+  <div class="contact-card"><div class="contact-icon">💰</div><div><strong>Bendahara</strong><span id="cBendahara">08xx xxxx xxxx</span><small id="cNamaBendahara" class="contact-name"></small></div></div>
+  <div class="contact-card"><div class="contact-icon">🛡️</div><div><strong>Keamanan</strong><span id="cKeamanan">08xx xxxx xxxx</span><small id="cNamaKeamanan" class="contact-name"></small></div></div>
   <div class="contact-card"><div class="contact-icon">🚒</div><div><strong>Pemadam Kebakaran</strong><span id="cPemadam">113</span></div></div>
   <div class="contact-card"><div class="contact-icon">🚑</div><div><strong>Ambulans / Faskes</strong><span id="cAmbulans">119</span></div></div>
 </div>
@@ -371,6 +372,14 @@ document.addEventListener("DOMContentLoaded",()=>{
   setContact("cKeamanan", RT_CONFIG.teleponKeamanan);
   setContact("cPemadam", RT_CONFIG.teleponPemadam);
   setContact("cAmbulans", RT_CONFIG.teleponAmbulans);
+  function setName(id, value){
+    const el = document.getElementById(id);
+    if (el && value) el.textContent = "Pak " + value;
+  }
+  setName("cNamaKetua", RT_CONFIG.namaKetua);
+  setName("cNamaSekretaris", RT_CONFIG.namaSekretaris);
+  setName("cNamaBendahara", RT_CONFIG.namaBendahara);
+  setName("cNamaKeamanan", RT_CONFIG.namaKeamanan);
 
   const btnH=document.getElementById("btnHubKeamanan");
   if(btnH){
