@@ -98,6 +98,8 @@ img,svg{max-width:100%;display:block}
 .live{display:inline-flex;gap:7px;align-items:center;font-size:11px;font-weight:900;color:var(--green)}
 .live:before{content:"";width:8px;height:8px;border-radius:50%;background:#3fa9e8;box-shadow:0 0 0 5px rgba(63,169,232,.14)}
 .house-art{margin:12px 0 6px;position:relative;z-index:1}
+.hero-photo{width:100%;height:220px;object-fit:cover;border-radius:26px;display:block;border:1px solid rgba(18,58,107,.08)}
+@media(max-width:640px){.hero-photo{height:190px}}
 .board-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;position:relative;z-index:1}
 .board-stat{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px}
 .board-stat strong{display:block;color:var(--green);font-size:18px}
@@ -352,24 +354,11 @@ body.bumper-lock{overflow:hidden}
   <div class="visual-board">
     <div class="visual-board-inner">
       <div class="visual-top"><strong>Villa Indah Pulo Timaha</strong><span class="live">Portal Aktif</span></div>
-      <div class="house-art"><svg viewBox="0 0 520 250" xmlns="http://www.w3.org/2000/svg">
-<defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e7edf9"/><stop offset="1" stop-color="#d7e3f7"/></linearGradient></defs>
-<rect x="8" y="8" width="504" height="234" rx="26" fill="url(#g1)"/>
-<circle cx="430" cy="56" r="26" fill="#d5a62b" opacity=".85"/>
-<rect x="72" y="140" width="380" height="58" rx="18" fill="#ffffff" opacity=".98"/>
-<path d="M110 140 L180 86 L248 140 Z" fill="#123a6b"/>
-<path d="M228 140 L304 74 L390 140 Z" fill="#1f4f8f"/>
-<rect x="132" y="127" width="28" height="71" rx="6" fill="#dbe7f8"/>
-<rect x="260" y="118" width="34" height="80" rx="7" fill="#e8eff9"/>
-<rect x="319" y="119" width="42" height="32" rx="6" fill="#d8e5f7"/>
-<rect x="88" y="198" width="345" height="10" rx="5" fill="#c3d3ef"/>
-<circle cx="100" cy="187" r="24" fill="#5f83c0"/><circle cx="414" cy="187" r="26" fill="#587bb8"/>
-<rect x="96" y="184" width="7" height="24" rx="3.5" fill="#5c6478"/><rect x="411" y="184" width="7" height="25" rx="3.5" fill="#5c6478"/>
-</svg></div>
+      <div class="house-art"><img class="hero-photo" src="assets/foto-warga-hut-ri.jpg" alt="Warga RT 08 Villa Indah Pulo Timaha merayakan HUT RI" loading="eager"></div>
       <div class="board-stats">
         <div class="board-stat"><strong id="statKK">—</strong><span>Jumlah KK</span></div>
-        <div class="board-stat"><strong>3</strong><span>Agenda Aktif</span></div>
-        <div class="board-stat"><strong>24/7</strong><span>Akses Portal</span></div>
+        <div class="board-stat"><strong id="statAgenda">—</strong><span>Agenda Aktif</span></div>
+        <div class="board-stat"><strong id="statInfo">—</strong><span>Pengumuman</span></div>
       </div>
     </div><div class="quick-floating">✨ Portal Warga Modern</div>
   </div>
@@ -473,10 +462,14 @@ document.addEventListener("DOMContentLoaded",()=>{
   }
   var elInfo = document.getElementById("infoListHome");
   var elAgenda = document.getElementById("agendaListHome");
+  var statAgendaEl = document.getElementById("statAgenda");
+  var statInfoEl = document.getElementById("statInfo");
   var cfgH = RT_CONFIG.firebaseConfig || {};
   if(!(cfgH.apiKey && cfgH.databaseURL && cfgH.appId)){
     if(elInfo) elInfo.innerHTML='<div class="announcement"><p class="meta">Belum ada pengumuman.</p></div>';
     if(elAgenda) elAgenda.innerHTML='<div class="agenda-item"><p class="meta">Belum ada agenda terjadwal.</p></div>';
+    if(statAgendaEl) statAgendaEl.textContent="0";
+    if(statInfoEl) statInfoEl.textContent="0";
     return;
   }
   if(!firebase.apps.length) firebase.initializeApp(cfgH);
@@ -486,6 +479,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     var val = snap.val() || {};
     var items = Object.keys(val).map(function(k){ return val[k]; });
     items.sort(function(a,b){ return (b.tanggal||"").localeCompare(a.tanggal||"") || (b.createdAt||0)-(a.createdAt||0); });
+    if(statInfoEl) statInfoEl.textContent = items.length;
     if(!elInfo) return;
     var list = items.slice(0,3);
     if(list.length===0){ elInfo.innerHTML='<div class="announcement"><p class="meta">Belum ada pengumuman.</p></div>'; return; }
@@ -503,6 +497,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     items.sort(function(a,b){ return (a.tanggal||"").localeCompare(b.tanggal||""); });
     var today = new Date().toISOString().slice(0,10);
     var upcoming = items.filter(function(it){ return (it.tanggal||"") >= today; });
+    if(statAgendaEl) statAgendaEl.textContent = upcoming.length;
     var list = (upcoming.length ? upcoming : items).slice(0,3);
     if(!elAgenda) return;
     if(list.length===0){ elAgenda.innerHTML='<div class="agenda-item"><p class="meta">Belum ada agenda terjadwal.</p></div>'; return; }
