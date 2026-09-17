@@ -1,1 +1,59 @@
 
+name: Build APK RT 08 (Warga & Admin)
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'android/**'
+      - '.github/workflows/build-apk.yml'
+  workflow_dispatch: {}
+
+jobs:
+  build-warga:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build APK Warga (debug)
+        working-directory: android/warga
+        run: gradle assembleDebug
+
+      - name: Upload APK Warga
+        uses: actions/upload-artifact@v4
+        with:
+          name: RT08-Warga-APK
+          path: android/warga/app/build/outputs/apk/debug/app-debug.apk
+
+  build-admin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build APK Admin (debug)
+        working-directory: android/admin
+        run: gradle assembleDebug
+
+      - name: Upload APK Admin
+        uses: actions/upload-artifact@v4
+        with:
+          name: RT08-Admin-APK
+          path: android/admin/app/build/outputs/apk/debug/app-debug.apk
