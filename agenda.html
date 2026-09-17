@@ -354,6 +354,7 @@ function fmtTgl_(iso){
   var p=iso.split("-"); var d=parseInt(p[2],10); var m=BULAN_ID_[parseInt(p[1],10)-1]||"-";
   return {d:(d<10?"0"+d:d),m:m};
 }
+var ICON_JENIS_AGENDA_ = { "Rapat":"👥", "Lingkungan":"🧹", "Acara Warga":"🎉", "Pemuda & Olahraga":"⚽", "Lainnya":"📌" };
 function escA_(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 function renderAgendaList_(items, el, limit){
   var today = new Date().toISOString().slice(0,10);
@@ -362,8 +363,9 @@ function renderAgendaList_(items, el, limit){
   if(list.length===0){ el.innerHTML='<div class="agenda-item"><p class="meta">Belum ada agenda terjadwal. Nantikan info dari pengurus RT.</p></div>'; return; }
   el.innerHTML = list.map(function(it){
     var dt=fmtTgl_(it.tanggal);
+    var icon = ICON_JENIS_AGENDA_[it.jenis] || "📅";
     var meta=[it.waktu?it.waktu+" WIB":"", it.lokasi||""].filter(Boolean).join(" • ") || it.keterangan || "";
-    return '<div class="agenda-item"><div class="datebox">'+dt.d+'<small>'+dt.m+'</small></div><div><h4>'+escA_(it.judul)+'</h4><p class="meta">'+escA_(meta||"-")+'</p></div></div>';
+    return '<div class="agenda-item"><div class="datebox">'+dt.d+'<small>'+dt.m+'</small></div><div><h4>'+icon+' '+escA_(it.judul)+'</h4><p class="meta">'+escA_(meta||"-")+'</p></div></div>';
   }).join("");
 }
 document.addEventListener("DOMContentLoaded",()=>{

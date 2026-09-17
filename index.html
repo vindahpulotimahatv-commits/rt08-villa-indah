@@ -458,6 +458,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
   var ICON_KATEGORI_H={Penting:"📣",Kegiatan:"🧹",Fasilitas:"💡",Keamanan:"🛡️"};
   var BADGE_KATEGORI_H={Penting:"",Kegiatan:"green",Fasilitas:"blue",Keamanan:"gold"};
+  var ICON_JENIS_AGENDA_H={"Rapat":"👥","Lingkungan":"🧹","Acara Warga":"🎉","Pemuda & Olahraga":"⚽","Lainnya":"📌"};
   var BULAN_ID_H=["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
   function escH_(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
   function fmtTglLongH_(iso){
@@ -507,8 +508,9 @@ document.addEventListener("DOMContentLoaded",()=>{
     if(list.length===0){ elAgenda.innerHTML='<div class="agenda-item"><p class="meta">Belum ada agenda terjadwal.</p></div>'; return; }
     elAgenda.innerHTML = list.map(function(it){
       var dt=fmtTglH_(it.tanggal);
+      var icon = ICON_JENIS_AGENDA_H[it.jenis] || "📅";
       var meta=[it.waktu?it.waktu+" WIB":"", it.lokasi||""].filter(Boolean).join(" • ") || it.keterangan || "-";
-      return '<div class="agenda-item"><div class="datebox">'+dt.d+'<small>'+dt.m+'</small></div><div><h4>'+escH_(it.judul)+'</h4><p class="meta">'+escH_(meta)+'</p></div></div>';
+      return '<div class="agenda-item"><div class="datebox">'+dt.d+'<small>'+dt.m+'</small></div><div><h4>'+icon+' '+escH_(it.judul)+'</h4><p class="meta">'+escH_(meta)+'</p></div></div>';
     }).join("");
   });
 });

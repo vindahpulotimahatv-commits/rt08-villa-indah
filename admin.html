@@ -169,7 +169,16 @@ textarea{min-height:76px;resize:vertical}
         <div class="form-grid">
           <div class="field"><label>Tanggal</label><input type="date" id="agTanggal" required></div>
           <div class="field"><label>Waktu (opsional)</label><input type="time" id="agWaktu"></div>
-          <div class="field full"><label>Jenis / Judul Agenda</label><input id="agJudul" required placeholder="Contoh: Kerja Bakti Lingkungan"></div>
+          <div class="field"><label>Jenis Kegiatan</label>
+            <select id="agJenis">
+              <option value="Rapat">👥 Rapat</option>
+              <option value="Lingkungan">🧹 Lingkungan</option>
+              <option value="Acara Warga">🎉 Acara Warga</option>
+              <option value="Pemuda & Olahraga">⚽ Pemuda & Olahraga</option>
+              <option value="Lainnya">📌 Lainnya</option>
+            </select>
+          </div>
+          <div class="field"><label>Judul Agenda</label><input id="agJudul" required placeholder="Contoh: Kerja Bakti Lingkungan"></div>
           <div class="field full"><label>Lokasi (opsional)</label><input id="agLokasi" placeholder="Contoh: Area RT 08"></div>
           <div class="field full"><label>Keterangan tambahan (opsional)</label><textarea id="agKeterangan" placeholder="Detail acara, siapa yang perlu hadir, dsb."></textarea></div>
         </div>
@@ -320,6 +329,7 @@ function fmtTanggal_(iso){
   var m = BULAN_ID[parseInt(parts[1], 10) - 1] || "-";
   return { d: (d<10?"0"+d:d), m: m };
 }
+var ICON_JENIS_AGENDA = { "Rapat":"👥", "Lingkungan":"🧹", "Acara Warga":"🎉", "Pemuda & Olahraga":"⚽", "Lainnya":"📌" };
 function fmtRp_(n){
   return "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 }
@@ -410,12 +420,13 @@ function initDashboard_(){
     e.preventDefault();
     var tanggal = document.getElementById("agTanggal").value;
     var waktu = document.getElementById("agWaktu").value.trim();
+    var jenis = document.getElementById("agJenis").value;
     var judul = document.getElementById("agJudul").value.trim();
     var lokasi = document.getElementById("agLokasi").value.trim();
     var keterangan = document.getElementById("agKeterangan").value.trim();
     if (!tanggal || !judul) { showToast("Tanggal dan Judul agenda wajib diisi."); return; }
     db.ref("agenda").push({
-      tanggal: tanggal, waktu: waktu, judul: judul, lokasi: lokasi, keterangan: keterangan,
+      tanggal: tanggal, waktu: waktu, jenis: jenis, judul: judul, lokasi: lokasi, keterangan: keterangan,
       createdAt: firebase.database.ServerValue.TIMESTAMP
     }).then(function(){
       showToast("Agenda tersimpan dan otomatis tampil di halaman Agenda & Beranda.");
@@ -435,7 +446,7 @@ function initDashboard_(){
       var meta = [it.waktu ? it.waktu + " WIB" : "", it.lokasi || ""].filter(Boolean).join(" • ");
       return '<div class="entry-row">' +
         '<div class="entry-date">' + dt.d + '<small>' + dt.m + '</small></div>' +
-        '<div class="entry-body"><h4>' + esc_(it.judul) + '</h4><p>' + esc_(meta || it.keterangan || "-") + '</p></div>' +
+        '<div class="entry-body"><h4>' + (ICON_JENIS_AGENDA[it.jenis] || "📅") + ' ' + esc_(it.judul) + '</h4><p>' + esc_(meta || it.keterangan || "-") + '</p></div>' +
         '<button class="entry-del" data-id="' + it.id + '" data-node="agenda" title="Hapus">✕</button>' +
         '</div>';
     }).join("");
