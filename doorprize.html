@@ -213,7 +213,7 @@ document.addEventListener("DOMContentLoaded", function(){
   firebase.initializeApp(RT_CONFIG.firebaseConfig);
   db = firebase.database();
 
-  document.getElementById("btnReload").addEventListener("click", loadData);
+  document.getElementById("btnReload").addEventListener("click", reloadAndReset);
   document.getElementById("btnSpin").addEventListener("click", spin);
   document.getElementById("btnToggleList").addEventListener("click", function(){
     var el = document.getElementById("pesertaList");
@@ -242,6 +242,33 @@ function loadData(){
     })
     .catch(function(){ showToast("Tidak bisa terhubung ke server. Periksa koneksi internet."); })
     .finally(function(){ btn.disabled = false; btn.textContent = "🔄 Muat Ulang Data"; });
+}
+
+// Tombol "Muat Ulang Data": selain menarik data terbaru, pemenang yang sudah ada
+// dikembalikan ke daftar (status "menang" -> "belum") supaya masuk roda lagi.
+// Kalau ada pemenang, panitia diminta konfirmasi dulu; pilih Batal = muat ulang
+// saja tanpa reset. Nama & nomor rumah peserta tidak diubah.
+// Catatan: pemuatan otomatis saat halaman dibuka (loadData) TIDAK mereset.
+function reloadAndReset(){
+  if (state.spinning) { showToast("Tunggu roda selesai berputar dulu."); return; }
+  var btn = document.getElementById("btnReload");
+  btn.disabled = true; btn.textContent = "Memeriksa...";
+  db.ref("daftarHadir").once("value")
+    .then(function(snap){
+      var updates = {}, count = 0;
+      snap.forEach(function(child){
+        var d = child.val() || {};
+        if (d.status === "menang") { updates[child.key + "/status"] = "belum"; count++; }
+      });
+      if (!count) return;
+      if (!confirm("Ada " + count + " pemenang.\n\nOK = reset pemenang (masuk roda lagi) & muat ulang data.\nBatal = muat ulang data saja, pemenang tetap.")) return;
+      btn.textContent = "Mereset...";
+      return db.ref("daftarHadir").update(updates).then(function(){
+        showToast(count + " pemenang dikembalikan ke daftar.");
+      });
+    })
+    .catch(function(){ showToast("Gagal mereset pemenang. Periksa koneksi lalu coba lagi."); })
+    .then(function(){ loadData(); });
 }
 
 function remaining_(){
