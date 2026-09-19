@@ -1,0 +1,224 @@
+<!DOCTYPE html><html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#123a6b">
+<title>Spin Doorprize | Host</title><style>
+:root{
+  --green:#123a6b;
+  --gold:#d5a62b;
+  --mint:#e7edf9;
+  --muted:#59657f;
+  --shadow-lg:0 30px 80px rgba(5,15,36,.25);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;
+  padding:24px;text-align:center;
+  background:
+    linear-gradient(180deg,rgba(6,16,36,.72),rgba(8,20,44,.55) 40%,rgba(10,25,56,.85)),
+    url("assets/bg-navy.jpg") center top/cover no-repeat fixed;
+  color:#fff;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.title{font-weight:900;font-size:clamp(14px,3vw,18px);letter-spacing:.4px;opacity:.85}
+
+.spin-btn{
+  min-height:110px;min-width:min(80vw,320px);border:none;border-radius:26px;
+  background:var(--gold);color:#231e11;font-weight:950;font-size:clamp(20px,5vw,30px);cursor:pointer;letter-spacing:.3px;
+  box-shadow:0 20px 44px rgba(213,166,43,.4);transition:.2s
+}
+.spin-btn:hover:not(:disabled){transform:translateY(-2px)}
+.spin-btn:disabled{opacity:.55;cursor:default;transform:none}
+
+.result-card{
+  display:none;background:#fff;color:var(--green);border-radius:28px;padding:34px 30px;max-width:420px;width:min(88vw,420px);
+  box-shadow:var(--shadow-lg)
+}
+.result-card.show{display:block}
+.result-card .em{font-size:52px;margin-bottom:6px}
+.result-card .label{font-size:12.5px;font-weight:800;color:var(--muted);letter-spacing:.4px;margin-bottom:6px}
+.winner-name{font-size:clamp(22px,5vw,30px);font-weight:950;margin-bottom:10px;line-height:1.2}
+.winner-rumah{display:inline-block;background:var(--mint);border-radius:16px;padding:10px 22px;font-weight:900;font-size:clamp(16px,3.6vw,20px)}
+
+.win-actions{display:grid;gap:9px;margin-top:22px}
+.win-actions .btn{min-height:52px;border:none;border-radius:14px;font-weight:900;cursor:pointer;font-size:14.5px}
+.win-actions .btn:disabled{opacity:.55;cursor:default}
+.btn-confirm{background:var(--green);color:#fff}
+.btn-cancel{background:#eef1f9;color:#4f5c78}
+
+.empty-msg{max-width:340px;opacity:.85;font-size:14px;line-height:1.7;display:none}
+
+.warn-card{background:#fff7e8;color:#5c4c1a;border-radius:16px;padding:14px 18px;font-size:12.5px;line-height:1.6;max-width:360px;display:none}
+
+.confetti-piece{position:fixed;top:-14px;width:9px;height:15px;z-index:60;opacity:.95;border-radius:2px;pointer-events:none;animation:confetti-fall linear forwards}
+@keyframes confetti-fall{to{transform:translateY(105vh) rotate(540deg);opacity:.2}}
+</style>
+</head><body>
+
+<div class="title" id="eventTitle">Roda Doorprize RT 08</div>
+
+<div id="warnCard" class="warn-card">⚠️ Firebase belum dikonfigurasi di config.js. Hubungi panitia teknis.</div>
+
+<button class="spin-btn" id="btnSpin">🎉 SPIN SEKARANG</button>
+
+<div class="result-card" id="resultCard">
+  <div class="em">🎊</div>
+  <div class="label">PEMENANG</div>
+  <div class="winner-name" id="winnerName">-</div>
+  <div class="winner-rumah" id="winnerRumah">-</div>
+  <div class="win-actions">
+    <button class="btn btn-confirm" id="btnConfirmWin">✅ Konfirmasi Menang & Lanjut</button>
+    <button class="btn btn-cancel" id="btnCancelWin">↩️ Batalkan Undian Ini</button>
+  </div>
+</div>
+
+<div class="empty-msg" id="emptyMsg">🎉 Semua peserta terdaftar sudah mendapat doorprize!</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="config.js"></script>
+<script>
+// Halaman khusus HOST/MC: hanya tombol spin + nama pemenang.
+// Tetap mengirim event ke Firebase ("liveSpin") supaya layar output (vMix) ikut berputar,
+// dan menandai pemenang langsung (tanpa langkah konfirmasi terpisah).
+
+var state = { peserta: [], rotation: 0, spinning: false };
+var db = null;
+
+function firebaseReady_(){
+  var cfg = RT_CONFIG.firebaseConfig || {};
+  return !!(cfg.apiKey && cfg.databaseURL && cfg.appId);
+}
+function normalizeRumah_(v){
+  return String(v || "").trim().toLowerCase().replace(/[.#$\[\]\/\s]/g, "");
+}
+function remaining_(){
+  return state.peserta.filter(function(p){ return p.status !== "menang"; });
+}
+
+document.addEventListener("DOMContentLoaded", function(){
+  document.getElementById("eventTitle").textContent = "🎉 " + (RT_CONFIG.namaAcaraDoorprize || "Acara RT 08");
+
+  if (!firebaseReady_()) {
+    document.getElementById("warnCard").style.display = "block";
+    document.getElementById("btnSpin").disabled = true;
+    return;
+  }
+  firebase.initializeApp(RT_CONFIG.firebaseConfig);
+  db = firebase.database();
+
+  document.getElementById("btnSpin").addEventListener("click", spin);
+  document.getElementById("btnConfirmWin").addEventListener("click", confirmWin);
+  document.getElementById("btnCancelWin").addEventListener("click", cancelWin);
+  loadData();
+});
+
+function loadData(){
+  db.ref("daftarHadir").once("value").then(function(snap){
+    var rows = [];
+    snap.forEach(function(child){
+      var d = child.val();
+      rows.push({ nama: d.nama || "", rumah: d.rumah || "", status: d.status || "belum" });
+    });
+    state.peserta = rows;
+    updateAvailability_();
+  });
+}
+
+function updateAvailability_(){
+  var rem = remaining_();
+  var btn = document.getElementById("btnSpin");
+  var empty = document.getElementById("emptyMsg");
+  if (rem.length === 0) {
+    btn.style.display = "none";
+    empty.style.display = "block";
+  } else {
+    btn.style.display = "inline-block";
+    empty.style.display = "none";
+    btn.disabled = state.spinning;
+  }
+}
+
+function spin(){
+  var rem = remaining_();
+  if (rem.length === 0 || state.spinning) return;
+  state.spinning = true;
+  document.getElementById("btnSpin").disabled = true;
+  document.getElementById("resultCard").classList.remove("show");
+
+  var n = rem.length;
+  var idx = Math.floor(Math.random() * n);
+  var seg = 360 / n;
+  var midpoint = idx * seg + seg / 2;
+  var jitter = (Math.random() - 0.5) * seg * 0.6;
+  var target = ((360 - (midpoint + jitter)) % 360 + 360) % 360;
+
+  var currentMod = ((state.rotation % 360) + 360) % 360;
+  var delta = ((target - currentMod) % 360 + 360) % 360;
+  var extraSpins = 6 + Math.floor(Math.random() * 3);
+  state.rotation = state.rotation + delta + extraSpins * 360;
+
+  var winner = rem[idx];
+  state.lastWinner = winner;
+
+  // Kirim ke Firebase supaya layar output (vMix) ikut berputar & menampilkan hasil yang sama.
+  db.ref("liveSpin").set({
+    order: rem.map(function(p){ return { nama: p.nama, rumah: p.rumah }; }),
+    rotation: state.rotation,
+    winnerIdx: idx,
+    ts: firebase.database.ServerValue.TIMESTAMP
+  });
+
+  setTimeout(function(){
+    showWinner_(winner);
+  }, 5300);
+}
+
+function confirmWin(){
+  var p = state.lastWinner;
+  if (!p) return;
+  var btn = document.getElementById("btnConfirmWin");
+  btn.disabled = true; btn.textContent = "Menyimpan...";
+  db.ref("daftarHadir/" + normalizeRumah_(p.rumah) + "/status").set("menang")
+    .then(function(){
+      var found = state.peserta.find(function(x){ return x.rumah === p.rumah; });
+      if (found) found.status = "menang";
+      state.spinning = false;
+      document.getElementById("resultCard").classList.remove("show");
+      updateAvailability_();
+    })
+    .finally(function(){
+      btn.disabled = false; btn.textContent = "✅ Konfirmasi Menang & Lanjut";
+    });
+}
+
+function cancelWin(){
+  state.spinning = false;
+  document.getElementById("resultCard").classList.remove("show");
+  updateAvailability_();
+}
+
+function showWinner_(p){
+  document.getElementById("winnerName").textContent = p.nama;
+  document.getElementById("winnerRumah").textContent = "No. " + p.rumah;
+  document.getElementById("resultCard").classList.add("show");
+  burstConfetti_();
+}
+
+function burstConfetti_(){
+  var colors = ["#123a6b","#d5a62b","#1c4a86","#c74444","#315f9e"];
+  for (var i = 0; i < 60; i++) {
+    (function(){
+      var el = document.createElement("div");
+      el.className = "confetti-piece";
+      el.style.left = (Math.random() * 100) + "vw";
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      var dur = 2.6 + Math.random() * 1.6;
+      el.style.animationDuration = dur + "s";
+      el.style.animationDelay = (Math.random() * 0.4) + "s";
+      document.body.appendChild(el);
+      setTimeout(function(){ el.remove(); }, (dur + 1) * 1000);
+    })();
+  }
+}
+</script>
+</body></html>
