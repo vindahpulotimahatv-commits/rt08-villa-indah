@@ -366,6 +366,14 @@ function spin(){
   state.lastWinnerIdx = idx;
   state.lastWinner = rem[idx];
 
+  // Kirim ke Firebase supaya halaman output (vMix) ikut berputar secara real-time.
+  db.ref("liveSpin").set({
+    order: rem.map(function(p){ return { nama: p.nama, rumah: p.rumah }; }),
+    rotation: state.rotation,
+    winnerIdx: idx,
+    ts: firebase.database.ServerValue.TIMESTAMP
+  });
+
   setTimeout(function(){
     state.spinning = false;
     showWinner(rem[idx]);
