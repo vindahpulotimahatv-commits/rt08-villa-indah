@@ -154,7 +154,7 @@ button{font:inherit}
         <div class="pointer"></div>
         <div class="wheel-outer">
           <div class="wheel-wrap" id="wheelWrap">
-            <canvas id="wheelCanvas" width="520" height="520"></canvas>
+            <canvas id="wheelCanvas" width="900" height="900"></canvas>
           </div>
         </div>
         <div class="hub"></div>
@@ -298,7 +298,10 @@ function drawWheel(rem){
   var size = canvas.width;
   var cx = size / 2, cy = size / 2, r = size / 2;
   var seg = (Math.PI * 2) / n;
-  var showLabels = n <= 22;
+  // Below this count there's room for both the name and the house number.
+  // Above it, we keep just the house number so labels stay legible instead of vanishing.
+  var showName = n <= 40;
+  var margin = r * 0.055;
 
   ctx.clearRect(0, 0, size, size);
   for (var i = 0; i < n; i++) {
@@ -311,24 +314,31 @@ function drawWheel(rem){
     ctx.fillStyle = COLORS[i % COLORS.length];
     ctx.fill();
 
-    if (showLabels) {
-      var nameSize = Math.max(10, Math.min(15, 200 / n));
-      var rumahSize = Math.max(9, nameSize - 2);
-      var nameTxt = String(rem[i].nama || "").trim();
-      var rumahTxt = "No. " + String(rem[i].rumah || "").trim();
-      var maxChars = Math.max(6, Math.round(240 / n));
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(start + seg / 2);
-      ctx.textAlign = "right";
+    var nameTxt = String(rem[i].nama || "").trim();
+    var rumahTxt = "No. " + String(rem[i].rumah || "").trim();
+    var maxChars = Math.max(4, Math.round(320 / n));
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(start + seg / 2);
+    ctx.textAlign = "right";
+
+    if (showName) {
+      var nameSize = Math.max(9, Math.min(15, 220 / n));
+      var rumahSize = Math.max(8, nameSize - 2);
       ctx.fillStyle = "#fff";
       ctx.font = "800 " + nameSize + "px Inter, sans-serif";
-      ctx.fillText(nameTxt.slice(0, maxChars), r - 16, -3);
+      ctx.fillText(nameTxt.slice(0, maxChars), r - margin, -3);
       ctx.fillStyle = "#f3cf6a";
       ctx.font = "700 " + rumahSize + "px Inter, sans-serif";
-      ctx.fillText(rumahTxt.slice(0, maxChars), r - 16, rumahSize + 3);
-      ctx.restore();
+      ctx.fillText(rumahTxt.slice(0, maxChars), r - margin, rumahSize + 3);
+    } else {
+      var soloSize = Math.max(8, Math.min(13, 260 / n));
+      ctx.fillStyle = "#fff";
+      ctx.font = "800 " + soloSize + "px Inter, sans-serif";
+      ctx.fillText(rumahTxt.slice(0, maxChars), r - margin, soloSize / 3);
     }
+    ctx.restore();
   }
 }
 
