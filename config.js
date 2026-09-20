@@ -37,6 +37,13 @@ const RT_CONFIG = {
   // Link undangan Grup WhatsApp warga (opsional, kosongkan jika belum ada)
   linkGrupWA: "",
 
+  // ---------- Kop & tempat surat PDF (halaman Layanan) ----------
+  // tempatSurat  : tulisan sebelum tanggal di tanda tangan, mis. "Bekasi" → "Bekasi, 20 September 2026"
+  // alamatKopSurat : baris alamat kecil di bawah nama RT pada kop surat (opsional, kosongkan jika tidak perlu)
+  //                  contoh: "Kel. ..., Kec. ..., Kota/Kab. ..."
+  tempatSurat: "Villa Indah Pulo Timaha",
+  alamatKopSurat: "",
+
   // ---------- Nomor telepon untuk ditampilkan di halaman Kontak ----------
   teleponKetua: "0877-8867-6667",
   teleponSekretaris: "0856-4301-3072",

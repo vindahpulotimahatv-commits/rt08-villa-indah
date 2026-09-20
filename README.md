@@ -37,6 +37,26 @@ Lihat **`PANDUAN-FIREBASE.md`** untuk langkah lengkap membuat project Firebase,
 mengisi `firebaseConfig`, dan memasang security rules-nya (wajib, ada di
 panduan tersebut).
 
+## Layanan → Surat PDF (siap tanda tangan & stempel)
+
+Empat layanan di `layanan.html` — **Surat Pengantar, Warga Baru, Warga Pindah, Pinjam Fasilitas** —
+sekarang membuat **surat PDF** (lengkap kop RT, nomor, tabel data, ruang tanda tangan & stempel Ketua RT),
+bukan lagi sekadar pesan teks WhatsApp. Aspirasi, Dokumen RT, dan Lapor Lingkungan tetap lewat WhatsApp teks.
+
+Alur warga: isi form → **Buat Surat PDF** → **Kirim ke WhatsApp** pengurus → pengurus cetak/tanda tangan/stempel.
+
+- File baru: **`surat-pdf.js`** (pembuat PDF tanpa library luar; wajib ikut di-upload bersama `layanan.html`).
+  Kolom form dan redaksi tiap surat ada di objek `JENIS` di file itu — boleh diedit.
+- `config.js` punya 2 isian baru: `tempatSurat` (tulisan sebelum tanggal) dan `alamatKopSurat` (baris alamat di kop, opsional).
+  Nama RT/RW, kompleks, dan nama Ketua diambil dari isian yang sudah ada.
+- Nomor surat dibiarkan titik-titik (`........ / RT.08 / RW.021 / IX / 2026`) untuk diisi pengurus.
+- PDF dibuat di HP warga; **tidak disimpan di server/Firebase**.
+
+Cara PDF sampai ke WhatsApp (WhatsApp tidak mengizinkan situs mengirim file otomatis, jadi warga tetap menekan Kirim):
+1. **Aplikasi Android Warga versi 1.1+** — membuka chat pengurus dengan PDF sudah terlampir (perlu build ulang APK, lihat `android/`).
+2. **Browser HP (Chrome/Safari)** — muncul lembar bagikan dengan PDF terlampir → pilih WhatsApp → pilih kontak pengurus.
+3. **Cadangan (laptop/aplikasi lama)** — PDF terunduh dan chat WhatsApp pengurus terbuka; PDF dilampirkan manual.
+
 ## Cara kerja fitur (tanpa server/backend)
 
 Karena situs ini murni statis (cocok untuk GitHub Pages), semua form dan tombol aksi (Lapor Lingkungan, Ajukan Surat, Hubungi UMKM, dll) bekerja dengan cara membuka chat WhatsApp berisi pesan otomatis ke nomor pengurus terkait — bukan mengirim ke database. Ini yang membuat portal bisa langsung dipakai warga tanpa perlu membangun server sendiri.

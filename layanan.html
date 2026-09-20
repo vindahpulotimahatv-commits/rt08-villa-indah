@@ -304,6 +304,24 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 }
 .visual-board{position:relative}
 @media(max-width:640px){.quick-floating{right:3px;bottom:20px}}
+
+/* ===== Form surat PDF (modal) ===== */
+.sm-overlay{position:fixed;inset:0;background:rgba(6,16,36,.72);z-index:300;display:flex;align-items:flex-end;justify-content:center}
+.sm-overlay[hidden]{display:none}
+.sm-box{background:#fff;width:100%;max-width:600px;max-height:94vh;overflow:auto;border-radius:24px 24px 0 0;padding:22px 20px 28px;position:relative;box-shadow:var(--shadow-lg)}
+@media(min-width:641px){.sm-overlay{align-items:center;padding:20px}.sm-box{border-radius:24px}}
+.sm-box h2{margin:0 36px 4px 0;font-size:20px}
+.sm-sub{margin:0 0 16px;color:var(--muted);font-size:12px;line-height:1.55}
+.sm-close{position:absolute;right:14px;top:14px;width:34px;height:34px;border-radius:50%;border:none;background:var(--mint);cursor:pointer;font-weight:900;color:var(--green)}
+.sm-req{color:var(--red)}
+.sm-box textarea{min-height:84px}
+.sm-actions{display:grid;gap:10px;margin-top:16px}
+.sm-actions .btn{width:100%}
+.sm-btn-line{background:#fff;color:var(--green);border:1px solid var(--line)}
+.sm-ok{background:#eef8f0;border:1px solid #bfe0c6;border-radius:16px;padding:14px;font-size:13px;line-height:1.65;color:#1d4a2a;margin-top:6px}
+.sm-ok b{color:#12341d}
+.sm-file{margin-top:10px;font-size:11px;color:var(--muted);word-break:break-all}
+.toast{z-index:400}
 </style>
 </head><body>
 <div class="ticker"><div class="container"><div class="ticker-track">
@@ -323,10 +341,10 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <main>
 <section class="page-hero"><div class="container"><div class="breadcrumb">BERANDA / LAYANAN</div><h1>Layanan Warga</h1><p>Halaman layanan dibuat seperti menu aplikasi agar warga langsung tahu harus klik ke mana.</p></div></section>
 <section class="section"><div class="container"><div class="service-grid">
-  <div class="service-card"><div class="icon">📝</div><h3>Surat Pengantar</h3><p>Ajukan kebutuhan surat pengantar RT secara digital.</p><a class="btn btn-brand" href="#" id="svcSurat">Ajukan</a></div>
-  <div class="service-card"><div class="icon">🏠</div><h3>Warga Baru</h3><p>Pelaporan warga baru atau perubahan domisili.</p><a class="btn btn-brand" href="#" id="svcWargaBaru">Isi Form</a></div>
-  <div class="service-card"><div class="icon">🚚</div><h3>Warga Pindah</h3><p>Pelaporan perpindahan domisili warga.</p><a class="btn btn-brand" href="#" id="svcWargaPindah">Laporkan</a></div>
-  <div class="service-card"><div class="icon">🏟️</div><h3>Pinjam Fasilitas</h3><p>Ajukan penggunaan fasilitas lingkungan.</p><a class="btn btn-brand" href="#" id="svcPinjamFasilitas">Ajukan</a></div>
+  <div class="service-card"><div class="icon">📝</div><h3>Surat Pengantar</h3><p>Isi data, langsung jadi surat PDF siap tanda tangan &amp; stempel pengurus.</p><a class="btn btn-brand" href="#" id="svcSurat">Ajukan</a></div>
+  <div class="service-card"><div class="icon">🏠</div><h3>Warga Baru</h3><p>Lapor warga baru — otomatis jadi surat PDF untuk ditandatangani pengurus.</p><a class="btn btn-brand" href="#" id="svcWargaBaru">Isi Form</a></div>
+  <div class="service-card"><div class="icon">🚚</div><h3>Warga Pindah</h3><p>Lapor pindah domisili — otomatis jadi surat PDF untuk ditandatangani pengurus.</p><a class="btn btn-brand" href="#" id="svcWargaPindah">Laporkan</a></div>
+  <div class="service-card"><div class="icon">🏟️</div><h3>Pinjam Fasilitas</h3><p>Ajukan penggunaan fasilitas — otomatis jadi surat permohonan PDF.</p><a class="btn btn-brand" href="#" id="svcPinjamFasilitas">Ajukan</a></div>
   <div class="service-card"><div class="icon">💡</div><h3>Aspirasi Warga</h3><p>Sampaikan ide dan saran untuk lingkungan.</p><a class="btn btn-brand" href="#" id="svcAspirasi">Kirim</a></div>
   <div class="service-card"><div class="icon">📄</div><h3>Dokumen RT</h3><p>Akses tata tertib, surat edaran, atau dokumen umum.</p><a class="btn btn-brand" href="#" id="svcDokumen">Buka</a></div>
 </div></div></section>
@@ -359,7 +377,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
       <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a><a href="admin.html">🔐 Admin</a>
     </div>
   </div>
-</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="active" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>☰</b>Menu</a></nav><script src="config.js"></script><script>
+</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="active" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>☰</b>Menu</a></nav><script src="config.js"></script><script src="surat-pdf.js"></script><script>
 document.addEventListener("DOMContentLoaded",()=>{
   const g=document.getElementById("navGrupWA");
   if(g){
@@ -375,10 +393,6 @@ document.addEventListener("DOMContentLoaded",()=>{
       rtOpenWa(nomor, pesanBuilder(), "Nomor WhatsApp pengurus belum diatur admin di config.js. Silakan hubungi lewat halaman Kontak.");
     });
   }
-  wireService("svcSurat","waSekretaris",()=> "Halo Admin RT 08, saya ingin mengajukan Surat Pengantar.\nNama:\nBlok/No Rumah:\nKeperluan surat:");
-  wireService("svcWargaBaru","waSekretaris",()=> "Halo Admin RT 08, saya warga baru dan ingin melapor.\nNama:\nBlok/No Rumah:\nAsal domisili sebelumnya:");
-  wireService("svcWargaPindah","waSekretaris",()=> "Halo Admin RT 08, saya ingin melaporkan perpindahan domisili.\nNama:\nBlok/No Rumah:\nTanggal pindah:");
-  wireService("svcPinjamFasilitas","waKetua",()=> "Halo Pengurus RT 08, saya ingin mengajukan peminjaman fasilitas lingkungan.\nNama:\nBlok/No Rumah:\nFasilitas yang dipinjam:\nTanggal & keperluan:");
   wireService("svcAspirasi","waKetua",()=> "Halo Pengurus RT 08, saya ingin menyampaikan aspirasi/saran untuk lingkungan.\nNama:\nBlok/No Rumah:\nAspirasi/saran:");
 
   const dokumenBtn=document.getElementById("svcDokumen");
@@ -444,4 +458,124 @@ function showToast(msg){
   clearTimeout(window.toastTimer);
   window.toastTimer=setTimeout(()=>t.classList.remove("show"),2600);
 }
-</script></body></html>
+</script><div class="sm-overlay" id="smOverlay" hidden><div class="sm-box" role="dialog" aria-modal="true" aria-labelledby="smJudul"><button type="button" class="sm-close" id="smClose" aria-label="Tutup">✕</button><div id="smBody"></div></div></div>
+<datalist id="smRumah"></datalist>
+<script>
+/* ===== Layanan Surat → PDF → kirim ke WhatsApp pengurus ===== */
+(function(){
+  var MAP={svcSurat:"suratPengantar",svcWargaBaru:"wargaBaru",svcWargaPindah:"wargaPindah",svcPinjamFasilitas:"pinjamFasilitas"};
+  var ov=document.getElementById("smOverlay"), body=document.getElementById("smBody");
+  var logo=null, hasil=null, key=null, dataForm={};
+  if(typeof RTSurat==="undefined"){ console.error("surat-pdf.js belum termuat"); return; }
+  RTSurat.muatLogo("assets/logo-badge.png").then(function(l){ logo=l; });
+
+  var dl=document.getElementById("smRumah");
+  dl.innerHTML=(RT_CONFIG.daftarRumah||[]).map(function(r){return '<option value="'+esc(r)+'">';}).join("");
+
+  function esc(v){ return String(v==null?"":v).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function buka(){ ov.hidden=false; document.body.style.overflow="hidden"; ov.scrollTop=0; body.parentNode.scrollTop=0; }
+  function tutup(){ ov.hidden=true; document.body.style.overflow=""; }
+  document.getElementById("smClose").onclick=tutup;
+  ov.addEventListener("click",function(e){ if(e.target===ov) tutup(); });
+  document.addEventListener("keydown",function(e){ if(e.key==="Escape"&&!ov.hidden) tutup(); });
+
+  Object.keys(MAP).forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.addEventListener("click",function(e){ e.preventDefault(); tampilForm(MAP[id]); });
+  });
+
+  function pengurus(J){ return RT_CONFIG[J.pengurus]||"Pengurus RT"; }
+  function nomorWA(J){ return String(RT_CONFIG[J.nomorWA]||RT_CONFIG.waKetua||"").replace(/[^0-9]/g,""); }
+
+  function tampilForm(k){
+    key=k; var J=RTSurat.JENIS[k];
+    var h='<h2 id="smJudul">'+J.ikon+' '+esc(J.judul)+'</h2>'+
+      '<p class="sm-sub">Isi data di bawah — sistem membuatkan surat <b>PDF</b> otomatis. Setelah sampai di WhatsApp pengurus, tinggal ditandatangani &amp; distempel.</p>'+
+      '<form id="smForm" novalidate><div class="form-grid">';
+    J.fields.forEach(function(f){
+      var id="sm_"+f.id, t=f.type||"text", inp;
+      var ph=f.ph?' placeholder="'+esc(f.ph)+'"':"";
+      var val=dataForm[f.id]!=null?dataForm[f.id]:"";
+      if(t==="textarea") inp='<textarea id="'+id+'"'+ph+'>'+esc(val)+'</textarea>';
+      else if(t==="select") inp='<select id="'+id+'"><option value="">Pilih…</option>'+f.opts.map(function(o){return '<option'+(o===val?' selected':'')+'>'+esc(o)+'</option>';}).join("")+'</select>';
+      else {
+        var type="text", extra="";
+        if(t==="nik"){ extra=' inputmode="numeric" maxlength="16" autocomplete="off"'; }
+        else if(t==="tel"){ type="tel"; }
+        else if(t==="date"){ type="date"; }
+        else if(t==="number"){ type="number"; extra=' min="1" inputmode="numeric"'; }
+        else if(t==="rumah"){ extra=' list="smRumah" autocomplete="off"'; ph=' placeholder="Cari / ketik, contoh: E6 No.12"'; }
+        var listId="";
+        if(f.opts&&t==="text"){ listId="smL_"+f.id; extra+=' list="'+listId+'"'; }
+        inp='<input id="'+id+'" type="'+type+'"'+extra+ph+' value="'+esc(val)+'">';
+        if(listId) inp+='<datalist id="'+listId+'">'+f.opts.map(function(o){return '<option value="'+esc(o)+'">';}).join("")+'</datalist>';
+      }
+      h+='<div class="field'+(f.full?' full':'')+'"><label for="'+id+'">'+esc(f.label)+(f.req?' <span class="sm-req">*</span>':'')+'</label>'+inp+'</div>';
+    });
+    h+='</div><div class="sm-actions"><button class="btn btn-gold" type="submit">📄 Buat Surat PDF</button></div></form>';
+    body.innerHTML=h; buka();
+    document.getElementById("smForm").addEventListener("submit",function(e){
+      e.preventDefault();
+      var d={}; J.fields.forEach(function(f){ d[f.id]=document.getElementById("sm_"+f.id).value; });
+      dataForm=d;
+      var err=RTSurat.validasi(k,d);
+      if(err){ showToast(err); return; }
+      try{ hasil=RTSurat.buat(k,d,RT_CONFIG,logo); }
+      catch(ex){ console.error(ex); showToast("Maaf, gagal membuat PDF. Coba lagi."); return; }
+      tampilHasil();
+    });
+  }
+
+  function tampilHasil(){
+    var J=RTSurat.JENIS[key], nama=pengurus(J);
+    body.innerHTML='<h2 id="smJudul">✅ Surat PDF siap</h2>'+
+      '<div class="sm-ok">Surat <b>'+esc(J.judul)+'</b> atas nama <b>'+esc(hasil.data.nama)+'</b> sudah dibuat.<br>'+
+      'Tekan tombol di bawah untuk mengirimnya ke WhatsApp <b>'+esc(nama)+'</b>. Pengurus akan menandatangani &amp; mencap surat lalu mengirim balik.</div>'+
+      '<div class="sm-actions">'+
+        '<button class="btn btn-gold" type="button" id="smKirim">📤 Kirim ke WhatsApp '+esc(nama)+'</button>'+
+        '<button class="btn sm-btn-line" type="button" id="smUnduh">⬇️ Unduh PDF</button>'+
+        '<button class="btn sm-btn-line" type="button" id="smUbah">✏️ Ubah data</button>'+
+      '</div>'+
+      '<p class="sm-file">📎 '+esc(hasil.namaFile)+'<br>Surat dibuat di HP Anda dan tidak disimpan di server. Belum sah sebelum ditandatangani &amp; distempel pengurus.</p>';
+    document.getElementById("smKirim").onclick=kirim;
+    document.getElementById("smUnduh").onclick=function(){ unduh(); showToast("PDF diunduh."); };
+    document.getElementById("smUbah").onclick=function(){ tampilForm(key); };
+    body.parentNode.scrollTop=0;
+  }
+
+  function b64(bytes){
+    var s="", CH=0x8000;
+    for(var i=0;i<bytes.length;i+=CH) s+=String.fromCharCode.apply(null,bytes.subarray(i,i+CH));
+    return btoa(s);
+  }
+  function unduh(){
+    var url=URL.createObjectURL(new Blob([hasil.bytes],{type:"application/pdf"}));
+    var a=document.createElement("a"); a.href=url; a.download=hasil.namaFile;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); },30000);
+  }
+
+  async function kirim(){
+    var J=RTSurat.JENIS[key], nomor=nomorWA(J);
+    if(!nomor){ showToast("Nomor WhatsApp pengurus belum diatur admin di config.js."); return; }
+    // 1) Aplikasi Android Warga (terbaru): buka chat pengurus + PDF terlampir
+    if(window.RTAndroid && typeof window.RTAndroid.sharePdf==="function"){
+      try{ if(window.RTAndroid.sharePdf(b64(hasil.bytes),hasil.namaFile,nomor,hasil.pesan)) return; }catch(e){ console.warn(e); }
+    }
+    // 2) Browser HP (Chrome/Safari): lembar bagikan dengan PDF terlampir → pilih WhatsApp → pilih pengurus
+    try{
+      var file=new File([hasil.bytes],hasil.namaFile,{type:"application/pdf"});
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],text:hasil.pesan});
+        showToast("Pilih WhatsApp lalu kontak "+pengurus(J)+" untuk mengirim.");
+        return;
+      }
+    }catch(e){ if(e && e.name==="AbortError") return; console.warn(e); }
+    // 3) Cadangan: unduh PDF + buka chat WhatsApp pengurus, lampirkan manual
+    unduh();
+    rtOpenWa(nomor, hasil.pesan+"\n\n(PDF sudah diunduh — mohon dilampirkan di chat ini.)");
+    showToast("PDF diunduh. Di WhatsApp, tekan 📎 lalu lampirkan file PDF tadi.");
+  }
+})();
+</script>
+</body></html>
