@@ -38,10 +38,10 @@ const RT_CONFIG = {
   linkGrupWA: "",
 
   // ---------- Kop & tempat surat PDF (halaman Layanan) ----------
-  // tempatSurat  : tulisan sebelum tanggal di tanda tangan, mis. "Bekasi" → "Bekasi, 20 September 2026"
+  // tempatSurat  : tulisan sebelum tanggal di tanda tangan, contoh hasil: "Bekasi, 20 September 2026"
   // alamatKopSurat : baris alamat kecil di bawah nama RT pada kop surat (opsional, kosongkan jika tidak perlu)
   //                  contoh: "Kel. ..., Kec. ..., Kota/Kab. ..."
-  tempatSurat: "Villa Indah Pulo Timaha",
+  tempatSurat: "Bekasi",
   alamatKopSurat: "",
 
   // ---------- Nomor telepon untuk ditampilkan di halaman Kontak ----------
@@ -135,3 +135,93 @@ function rtOpenWa(nomor, pesan, fallbackMsg) {
     showToast(fallbackMsg || "Nomor WhatsApp belum diatur admin di config.js");
   }
 }
+
+/* ============================================================
+   MENU BAWAH (HP) — navigasi bawah: tombol "Kontak Penting" tersendiri +
+   tombol "Menu" yang bisa dibuka/ditutup berisi Galeri, UMKM Warga, Kas RT.
+   Kode ini ada di config.js karena semua halaman sudah memuat file ini,
+   jadi tidak perlu mengubah 8 halaman satu per satu.
+   Mau ubah isi menu? Edit daftar MENU_BAWAH_ITEM di bawah.
+   ============================================================ */
+(function () {
+  if (typeof document === "undefined") return;
+
+  var MENU_BAWAH_ITEM = [
+    { ikon: "🖼️", teks: "Galeri",       href: "galeri.html" },
+    { ikon: "🛍️", teks: "UMKM Warga",   href: "umkm.html" },
+    { ikon: "💰", teks: "Kas RT",       href: "transparansi.html" }
+  ];
+
+  function pasang() {
+    var nav = document.querySelector("nav.mobile-nav");
+    if (!nav || nav.getAttribute("data-menu-siap")) return;
+    var lama = nav.querySelector('a[href="kontak.html"]');   // tombol "Menu" lama (link biasa ke kontak.html)
+    if (!lama) return;
+    nav.setAttribute("data-menu-siap", "1");
+
+    var halaman = (location.pathname.split("/").pop() || "index.html").toLowerCase();
+    var diMenu = MENU_BAWAH_ITEM.some(function (m) { return m.href === halaman; });
+
+    /* gaya */
+    var st = document.createElement("style");
+    st.textContent =
+      ".mobile-nav .mn-btn{text-align:center;padding:7px 3px;border-radius:13px;font-size:9px;font-weight:900;color:rgba(255,255,255,.65);background:none;border:0;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}" +
+      ".mobile-nav .mn-btn.active,.mobile-nav .mn-btn[aria-expanded=true]{background:rgba(213,166,43,.18);color:#f3cf6a}" +
+      ".mn-scrim{position:fixed;inset:0;z-index:118;display:none;background:transparent}" +
+      ".mn-scrim.open{display:block}" +
+      ".mn-panel{position:fixed;right:10px;width:min(300px,calc(100vw - 20px));z-index:119;padding:8px;border-radius:21px;" +
+        "background:rgba(8,20,44,.98);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);border:1px solid rgba(213,166,43,.28);box-shadow:0 16px 45px rgba(0,0,0,.45);" +
+        "visibility:hidden;opacity:0;transform:translateY(12px) scale(.98);transform-origin:bottom right;transition:opacity .18s,transform .18s,visibility .18s}" +
+      ".mn-panel.open{visibility:visible;opacity:1;transform:none}" +
+      ".mn-panel a{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:14px;color:#fff;font-size:14px;font-weight:800}" +
+      ".mn-panel a:active,.mn-panel a.cur{background:rgba(213,166,43,.18);color:#f3cf6a}" +
+      ".mn-panel a span{font-size:19px;width:26px;text-align:center}" +
+      ".mn-panel a i{margin-left:auto;font-style:normal;opacity:.45}" +
+      ".mn-panel hr{border:0;border-top:1px solid rgba(255,255,255,.14);margin:6px 8px}" +
+      "@media(min-width:981px){.mn-panel,.mn-scrim{display:none!important}}";
+    document.head.appendChild(st);
+
+    /* tombol Menu (menggantikan link ke kontak.html; tetap link biasa bila JS gagal) */
+    var btn = document.createElement("button");
+    btn.type = "button"; btn.className = "mn-btn" + (diMenu ? " active" : "");
+    btn.setAttribute("aria-expanded", "false"); btn.setAttribute("aria-controls", "mnPanel");
+    btn.innerHTML = "<b>☰</b>Menu";
+    lama.parentNode.replaceChild(btn, lama);
+
+    /* tombol Kontak Penting tersendiri, tepat sebelum Menu */
+    var kontak = document.createElement("a");
+    kontak.href = "kontak.html"; kontak.title = "Kontak Penting";
+    kontak.className = halaman === "kontak.html" ? "active" : "";
+    kontak.innerHTML = "<b>📞</b>Kontak";
+    nav.insertBefore(kontak, btn);
+    nav.style.gridTemplateColumns = "repeat(6,1fr)";   // sekarang 6 tombol
+
+    /* panel isi menu */
+    var panel = document.createElement("div");
+    panel.id = "mnPanel"; panel.className = "mn-panel"; panel.setAttribute("role", "menu");
+    panel.innerHTML = MENU_BAWAH_ITEM.map(function (m) {
+      if (m.garis) return "<hr>";
+      return '<a role="menuitem" href="' + m.href + '"' + (m.href === halaman ? ' class="cur"' : "") + "><span>" + m.ikon + "</span>" + m.teks + "<i>›</i></a>";
+    }).join("");
+    var scrim = document.createElement("div"); scrim.className = "mn-scrim";
+    document.body.appendChild(scrim); document.body.appendChild(panel);
+
+    function tampil(buka) {
+      if (buka) {  // letakkan tepat di atas navigasi bawah
+        var top = nav.getBoundingClientRect().top;
+        panel.style.bottom = Math.max(8, window.innerHeight - top + 8) + "px";
+      }
+      panel.classList.toggle("open", buka); scrim.classList.toggle("open", buka);
+      btn.setAttribute("aria-expanded", buka ? "true" : "false");
+      btn.firstChild.textContent = buka ? "✕" : "☰";
+    }
+    btn.addEventListener("click", function () { tampil(!panel.classList.contains("open")); });
+    scrim.addEventListener("click", function () { tampil(false); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") tampil(false); });
+    window.addEventListener("resize", function () { tampil(false); });
+    window.addEventListener("pageshow", function () { tampil(false); });   // tombol "kembali" di browser
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", pasang);
+  else pasang();
+})();
