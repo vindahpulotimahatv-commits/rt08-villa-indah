@@ -47,8 +47,11 @@ Alur warga: isi form → **Buat Surat PDF** → **Kirim ke WhatsApp** pengurus �
 
 - File baru: **`surat-pdf.js`** (pembuat PDF tanpa library luar; wajib ikut di-upload bersama `layanan.html`).
   Kolom form dan redaksi tiap surat ada di objek `JENIS` di file itu — boleh diedit.
-- `config.js` punya 2 isian baru: `tempatSurat` (tulisan sebelum tanggal) dan `alamatKopSurat` (baris alamat di kop, opsional).
-  Nama RT/RW, kompleks, dan nama Ketua diambil dari isian yang sudah ada.
+- **Kop surat resmi**: Pemerintah Kabupaten Bekasi → Kecamatan Babelan → RT 008 / RW 021 → alamat perumahan → email,
+  dengan **logo RW (kiri)** dan **logo RT (kanan)** serta garis ganda. Teks kop diatur di `config.js`
+  (`kopPemerintah`, `kopKecamatan`, `kopRTRW`, `alamatKopSurat`, `emailKopSurat`, plus `tempatSurat`).
+  Logo ada di `assets/logo-rw.png` dan `assets/logo-rt.png` — ganti file itu (nama sama) kalau logo berubah.
+  Nama Ketua diambil dari isian `namaKetua`.
 - Nomor surat dibiarkan titik-titik (`........ / RT.08 / RW.021 / IX / 2026`) untuk diisi pengurus.
 - PDF dibuat di HP warga; **tidak disimpan di server/Firebase**.
 

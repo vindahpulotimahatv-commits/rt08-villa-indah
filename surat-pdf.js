@@ -282,20 +282,49 @@
   function rapikan(s) { return String(s == null ? "" : s).replace(/[ \t]+/g, " ").replace(/^\s+|\s+$/g, ""); }
 
   /* ---------- Kop surat & footer ---------- */
+  /* Kop resmi: 2 logo (RW di kiri, RT di kanan) mengapit 5 baris teks di tengah,
+     lalu garis ganda. Teks otomatis diperkecil kalau terlalu panjang untuk muat. */
+  function fitSize(s, font, size, maxW) {
+    while (size > 7 && textWidth(s, font, size) > maxW) size -= 0.25;
+    return size;
+  }
   function kop(L, c, logo) {
-    var d = L.doc, top = 40;
-    if (logo) d.drawImage(d.addImage(logo.bytes, logo.w, logo.h), L.ml, top, 64, 64 * logo.h / logo.w);
-    var l1 = norm("RUKUN TETANGGA " + c.rt + " / RUKUN WARGA " + c.rw);
-    var l2 = norm("PERUMAHAN " + String(c.kompleks).toUpperCase());
-    d.text((PAGE_W - textWidth(l1, "B", 14)) / 2, top + 20, l1, "B", 14);
-    d.text((PAGE_W - textWidth(l2, "B", 13)) / 2, top + 38, l2, "B", 13);
-    var next = top + 38;
-    if (c.alamatKop) {
-      var l3 = norm(c.alamatKop);
-      d.text((PAGE_W - textWidth(l3, "I", 10)) / 2, top + 53, l3, "I", 10);
-      next = top + 53;
+    var d = L.doc, top = 36, H = 62, gap = 10;
+    var lg = logo || {};
+    if (lg.bytes) lg = { rw: lg, rt: null };          // kompatibel dengan 1 logo saja
+    var sideW = 72;                                     // lebar sisi yang disisihkan untuk logo
+    var textW = PAGE_W - L.ml - L.mr - 2 * (sideW + gap);
+
+    var lines = [
+      { s: c.kopPemerintah, f: "B", z: 14 },
+      { s: c.kopKecamatan,  f: "B", z: 13 },
+      { s: c.kopRTRW,       f: "B", z: 14 },
+      { s: c.alamatKop,     f: "B", z: 11 },
+      { s: c.emailKop ? "email : " + c.emailKop : "", f: "R", z: 10.5 }
+    ].filter(function (t) { return t.s; });
+    lines.forEach(function (t) {
+      t.s = norm(t.s); t.z = fitSize(t.s, t.f, t.z, textW); t.h = t.z * 1.22;
+    });
+    var blockH = lines.reduce(function (a, t) { return a + t.h; }, 0);
+    var contentH = Math.max(blockH, H);
+
+    var y = top + (contentH - blockH) / 2;
+    lines.forEach(function (t) {
+      d.text((PAGE_W - textWidth(t.s, t.f, t.z)) / 2, y + t.z * 0.95, t.s, t.f, t.z);
+      y += t.h;
+    });
+
+    function logoAt(im, side) {
+      if (!im) return;
+      var h = H, w = H * im.w / im.h;
+      if (w > sideW) { w = sideW; h = w * im.h / im.w; }
+      var x = side === "L" ? L.ml : PAGE_W - L.mr - w;
+      d.drawImage(d.addImage(im.bytes, im.w, im.h), x, top + (contentH - h) / 2, w, h);
     }
-    var ly = Math.max(top + 70, next + 14);
+    logoAt(lg.rw, "L");
+    logoAt(lg.rt, "R");
+
+    var ly = top + contentH + 7;
     d.line(L.ml, ly, PAGE_W - L.mr, ly, 2.2);
     d.line(L.ml, ly + 3.6, PAGE_W - L.mr, ly + 3.6, 0.6);
     L.y = ly + 26;
@@ -465,7 +494,11 @@
       rt: rt, rw: rw, kompleks: kompleks,
       ketua: cfg.namaKetua || "Ketua RT",
       tempat: cfg.tempatSurat || kompleks,
-      alamatKop: cfg.alamatKopSurat || "",
+      kopPemerintah: cfg.kopPemerintah || "PEMERINTAH KABUPATEN BEKASI",
+      kopKecamatan: cfg.kopKecamatan || "KECAMATAN BABELAN",
+      kopRTRW: cfg.kopRTRW || ("RUKUN TETANGGA " + ("000" + rt).slice(-3) + ", RUKUN WARGA " + ("000" + rw).slice(-3)),
+      alamatKop: cfg.alamatKopSurat || ("Perumahan " + kompleks + ", Desa Babelan Kota"),
+      emailKop: cfg.emailKopSurat != null ? cfg.emailKopSurat : "rt008rw021vipt@gmail.com",
       tglHariIni: now.getDate() + " " + BULAN[now.getMonth()] + " " + now.getFullYear(),
       bulanRomawi: ROMAWI[now.getMonth()], tahun: now.getFullYear()
     };
@@ -518,13 +551,13 @@
   }
 
   /* Muat logo (PNG/JPG) → JPEG untuk ditanam di PDF. Hanya di browser. */
-  function muatLogo(src) {
+  function muatLogo(src, lebar) {
     return new Promise(function (resolve) {
       try {
         var img = new Image();
         img.onload = function () {
           try {
-            var w = 220, h = Math.round(w * img.naturalHeight / img.naturalWidth);
+            var w = lebar || 220, h = Math.round(w * img.naturalHeight / img.naturalWidth);
             var cv = document.createElement("canvas"); cv.width = w; cv.height = h;
             var g = cv.getContext("2d");
             g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);

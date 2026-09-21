@@ -519,7 +519,7 @@ function showToast(msg){
   var ov=document.getElementById("smOverlay"), body=document.getElementById("smBody");
   var logo=null, hasil=null, key=null, dataForm={};
   if(typeof RTSurat==="undefined"){ console.error("surat-pdf.js belum termuat"); return; }
-  RTSurat.muatLogo("assets/logo-badge.png").then(function(l){ logo=l; });
+  Promise.all([RTSurat.muatLogo("assets/logo-rw.png",360),RTSurat.muatLogo("assets/logo-rt.png",360)]).then(function(a){ logo={rw:a[0],rt:a[1]}; });
 
   var dl=document.getElementById("smRumah");
   dl.innerHTML=(RT_CONFIG.daftarRumah||[]).map(function(r){return '<option value="'+esc(r)+'">';}).join("");

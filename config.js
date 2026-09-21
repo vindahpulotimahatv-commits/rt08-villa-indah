@@ -29,7 +29,7 @@ const RT_CONFIG = {
   waKeamanan: "6285811522118",
 
   // Nama pengurus (ditampilkan di halaman Kontak)
-  namaKetua: "Abdul Avies",
+  namaKetua: "Abd Hafiz",
   namaSekretaris: "Syarif",
   namaBendahara: "Hendyanto",
   namaKeamanan: "Jati",
@@ -38,11 +38,15 @@ const RT_CONFIG = {
   linkGrupWA: "",
 
   // ---------- Kop & tempat surat PDF (halaman Layanan) ----------
-  // tempatSurat  : tulisan sebelum tanggal di tanda tangan, contoh hasil: "Bekasi, 20 September 2026"
-  // alamatKopSurat : baris alamat kecil di bawah nama RT pada kop surat (opsional, kosongkan jika tidak perlu)
-  //                  contoh: "Kel. ..., Kec. ..., Kota/Kab. ..."
+  // Kop surat: logo RW (kiri) + logo RT (kanan) di assets/logo-rw.png & assets/logo-rt.png.
+  // Semua baris di bawah boleh dikosongkan ("") untuk memakai isian bawaan / menyembunyikan baris.
+  // tempatSurat    : tulisan sebelum tanggal di tanda tangan, contoh hasil: "Bekasi, 20 September 2026"
   tempatSurat: "Bekasi",
-  alamatKopSurat: "",
+  kopPemerintah: "PEMERINTAH KABUPATEN BEKASI",
+  kopKecamatan: "KECAMATAN BABELAN",
+  kopRTRW: "RUKUN TETANGGA 008, RUKUN WARGA 021",
+  alamatKopSurat: "Perumahan Villa Indah Pulo Timaha, Desa Babelan Kota",
+  emailKopSurat: "rt008rw021vipt@gmail.com",
 
   // ---------- Nomor telepon untuk ditampilkan di halaman Kontak ----------
   teleponKetua: "0877-8867-6667",
