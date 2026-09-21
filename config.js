@@ -145,6 +145,78 @@ function rtOpenWa(nomor, pesan, fallbackMsg) {
 }
 
 /* ============================================================
+   DATA RUMAH RESMI — dasar SEMUA form (surat, lapor, aspirasi, daftar UMKM, dst)
+   ------------------------------------------------------------
+   Sumber data: daftarRumah (di atas). Warga TIDAK mengetik bebas: harus memilih
+   Blok lalu Nomor rumah dari daftar. Nomor rumah yang tidak ada di daftar
+   = tidak bisa mengajukan apa pun. Rumah baru/berubah? Edit daftarRumah.
+   ============================================================ */
+function rtKunciRumah(v) {   // "Blok E2 No. 47" / "e2-47" / "E2 No.47" -> "e247"
+  return String(v || "").toLowerCase().replace(/nomor/g, "").replace(/blok/g, "").replace(/no/g, "").replace(/[^a-z0-9]/g, "");
+}
+function rtCocokRumah(v) {   // kembalikan tulisan resmi (mis. "E2 No.47") atau "" jika tidak terdaftar
+  const k = rtKunciRumah(v);
+  if (!k) return "";
+  const list = RT_CONFIG.daftarRumah || [];
+  for (let i = 0; i < list.length; i++) if (rtKunciRumah(list[i]) === k) return list[i];
+  return "";
+}
+function rtRumahTerpisah(r) { // "E2 No.3A" -> { blok:"E2", no:"3A" }
+  const m = /^(\S+)\s+No\.(.+)$/.exec(String(r || ""));
+  return m ? { blok: m[1], no: m[2] } : null;
+}
+function rtDaftarBlok() {
+  const out = [];
+  (RT_CONFIG.daftarRumah || []).forEach(function (r) {
+    const t = rtRumahTerpisah(r);
+    if (t && out.indexOf(t.blok) < 0) out.push(t.blok);
+  });
+  return out;
+}
+function rtDaftarNomor(blok) {
+  const out = [];
+  (RT_CONFIG.daftarRumah || []).forEach(function (r) {
+    const t = rtRumahTerpisah(r);
+    if (t && t.blok === blok) out.push(t.no);
+  });
+  return out;
+}
+/* Pemilih rumah: dua pilihan (Blok, lalu Nomor). Pakai:
+     <div id="xRumah"></div>  →  rtRumahPasang("xRumah", nilaiAwalOpsional)
+     rtRumahNilai("xRumah")   →  "E2 No.47" atau "" bila belum dipilih
+     rtRumahReset("xRumah")   →  kosongkan pilihan                                  */
+function rtRumahPasang(id, awal) {
+  const box = document.getElementById(id);
+  if (!box) return;
+  if (!document.getElementById("rt-rumah-css")) {
+    const st = document.createElement("style"); st.id = "rt-rumah-css";
+    st.textContent = ".rumah-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px}.rumah-pick select:disabled{opacity:.55}";
+    document.head.appendChild(st);
+  }
+  const bloks = rtDaftarBlok();
+  box.className = (box.className ? box.className + " " : "") + "rumah-pick";
+  box.innerHTML = '<select id="' + id + '_blok" aria-label="Blok"><option value="">Pilih Blok…</option>' +
+    bloks.map(function (b) { return '<option value="' + b + '">Blok ' + b + '</option>'; }).join("") + '</select>' +
+    '<select id="' + id + '_no" aria-label="Nomor rumah" disabled><option value="">Nomor rumah…</option></select>';
+  const sb = document.getElementById(id + "_blok"), sn = document.getElementById(id + "_no");
+  function isiNomor(blok, pilih) {
+    sn.innerHTML = '<option value="">Nomor rumah…</option>' +
+      rtDaftarNomor(blok).map(function (n) { return '<option value="' + n + '"' + (n === pilih ? " selected" : "") + '>No. ' + n + '</option>'; }).join("");
+    sn.disabled = !blok;
+  }
+  sb.addEventListener("change", function () { isiNomor(sb.value, ""); });
+  const t = rtRumahTerpisah(rtCocokRumah(awal));
+  if (t) { sb.value = t.blok; isiNomor(t.blok, t.no); }
+}
+function rtRumahNilai(id) {
+  const sb = document.getElementById(id + "_blok"), sn = document.getElementById(id + "_no");
+  if (!sb || !sn || !sb.value || !sn.value) return "";
+  return rtCocokRumah(sb.value + " No." + sn.value);
+}
+function rtRumahReset(id) { rtRumahPasang(id, ""); }
+const RT_PESAN_RUMAH = "Pilih Blok & Nomor Rumah dulu. Tanpa nomor rumah yang terdaftar, pengajuan tidak bisa dikirim.";
+
+/* ============================================================
    MENU BAWAH (HP) — navigasi bawah: tombol "Kontak Penting" tersendiri +
    tombol "Menu" yang bisa dibuka/ditutup berisi Galeri, UMKM Warga, Kas RT.
    Kode ini ada di config.js karena semua halaman sudah memuat file ini,

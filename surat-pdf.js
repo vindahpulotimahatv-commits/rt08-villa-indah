@@ -559,10 +559,21 @@
   }
 
   /* Validasi sederhana. Mengembalikan pesan kesalahan, atau "" jika lolos. */
-  function validasi(key, data) {
+  function kunciRumah(v) { return String(v || "").toLowerCase().replace(/nomor/g, "").replace(/blok/g, "").replace(/no/g, "").replace(/[^a-z0-9]/g, ""); }
+  function rumahTerdaftar(list, v) {
+    var k = kunciRumah(v);
+    for (var i = 0; i < list.length; i++) if (kunciRumah(list[i]) === k) return true;
+    return false;
+  }
+  function validasi(key, data, cfg) {
     var J = JENIS[key], f, v;
     for (var i = 0; i < J.fields.length; i++) {
       f = J.fields[i]; v = rapikan(data[f.id]);
+      if (f.type === "rumah") {                       // nomor rumah WAJIB dan harus ada di data RT
+        var list = (cfg && cfg.daftarRumah) || [];
+        if (!v) return "Pilih Blok & Nomor Rumah dulu. Tanpa nomor rumah yang terdaftar, pengajuan tidak bisa dikirim.";
+        if (list.length && !rumahTerdaftar(list, v)) return "Blok/Nomor rumah tidak terdaftar di data RT. Pilih dari daftar.";
+      }
       if (f.req && !v) return "Mohon isi: " + f.label;
       if (f.type === "nik" && v && !/^\d{16}$/.test(v)) return "NIK harus 16 digit angka.";
       if (f.type === "tel" && v && !/^[0-9+\- ]{8,16}$/.test(v)) return "Nomor WhatsApp tidak valid.";

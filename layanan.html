@@ -352,7 +352,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <section class="section-tight" id="lapor"><div class="container"><div class="section-heading"><div><h2>🚨 Lapor Lingkungan</h2><p>Isi form berikut, boleh sertakan foto — laporan langsung masuk ke pengurus RT secara real-time.</p></div></div>
 <form class="form-card" id="reportForm"><div class="form-grid">
   <div class="field"><label>Nama</label><input id="lpNama" required placeholder="Nama warga"></div>
-  <div class="field"><label>Blok / Nomor Rumah</label><input id="lpBlok" required placeholder="Contoh: E6 / 12"></div>
+  <div class="field"><label>Blok / Nomor Rumah</label><div id="lpRumah"></div></div>
   <div class="field"><label>Kategori</label><select id="lpKategori"><option>Keamanan</option><option>Lampu Jalan</option><option>Sampah</option><option>Drainase</option><option>Jalan</option><option>Fasilitas Umum</option><option>Lainnya</option></select></div>
   <div class="field"><label>Nomor WhatsApp</label><input id="lpWA" placeholder="08xxxxxxxxxx"></div>
   <div class="field full"><label>Keterangan</label><textarea id="lpKeterangan" required placeholder="Jelaskan laporan secara singkat dan jelas..."></textarea></div>
@@ -420,7 +420,16 @@ document.addEventListener("DOMContentLoaded",()=>{
       rtOpenWa(nomor, pesanBuilder(), "Nomor WhatsApp pengurus belum diatur admin di config.js. Silakan hubungi lewat halaman Kontak.");
     });
   }
-  wireService("svcAspirasi","waKetua",()=> "Halo Pengurus RT 08, saya ingin menyampaikan aspirasi/saran untuk lingkungan.\nNama:\nBlok/No Rumah:\nAspirasi/saran:");
+  const aspBtn=document.getElementById("svcAspirasi");
+  if(aspBtn) aspBtn.addEventListener("click", e=>{
+    e.preventDefault();
+    window.rtFormSederhana({
+      ikon:"💡", judul:"Aspirasi Warga", sub:"Sampaikan ide dan saran untuk lingkungan. Wajib memilih nomor rumah yang terdaftar.",
+      nomor: RT_CONFIG.waKetua, tombol:"📤 Kirim ke WhatsApp Pengurus",
+      teks:{ id:"aspirasi", label:"Aspirasi / saran", ph:"Tulis ide atau saran Anda..." },
+      pesan:function(d){ return "Halo Pengurus RT 08, saya ingin menyampaikan aspirasi/saran untuk lingkungan.\nNama: "+d.nama+"\nBlok/No Rumah: "+d.rumah+"\nAspirasi/saran: "+d.aspirasi; }
+    });
+  });
 
   const dokumenBtn=document.getElementById("svcDokumen");
   if(dokumenBtn){
@@ -429,11 +438,17 @@ document.addEventListener("DOMContentLoaded",()=>{
       if(RT_CONFIG.linkDokumen){
         window.open(RT_CONFIG.linkDokumen, "_blank", "noopener");
       } else {
-        rtOpenWa(RT_CONFIG.waSekretaris || RT_CONFIG.waKetua, "Halo Admin RT 08, saya ingin meminta dokumen RT (tata tertib/surat edaran).", "Dokumen belum diunggah admin. Silakan hubungi pengurus lewat halaman Kontak.");
+        window.rtFormSederhana({
+          ikon:"📄", judul:"Minta Dokumen RT", sub:"Dokumen belum tersedia online. Ajukan permintaan ke pengurus — wajib memilih nomor rumah yang terdaftar.",
+          nomor: RT_CONFIG.waSekretaris || RT_CONFIG.waKetua, tombol:"📤 Kirim ke WhatsApp Pengurus",
+          teks:{ id:"dokumen", label:"Dokumen yang diminta", ph:"Contoh: Tata tertib RT / surat edaran terbaru" },
+          pesan:function(d){ return "Halo Admin RT 08, saya ingin meminta dokumen RT.\nNama: "+d.nama+"\nBlok/No Rumah: "+d.rumah+"\nDokumen yang diminta: "+d.dokumen; }
+        });
       }
     });
   }
 
+  rtRumahPasang("lpRumah");
   const form=document.getElementById("reportForm");
   var lpFotoData = null;
   const lpFotoInput = document.getElementById("lpFoto");
@@ -452,11 +467,12 @@ document.addEventListener("DOMContentLoaded",()=>{
     form.addEventListener("submit", e=>{
       e.preventDefault();
       const nama=document.getElementById("lpNama").value.trim();
-      const blok=document.getElementById("lpBlok").value.trim();
+      const blok=rtRumahNilai("lpRumah");
       const kategori=document.getElementById("lpKategori").value;
       const wa=document.getElementById("lpWA").value.trim();
       const ket=document.getElementById("lpKeterangan").value.trim();
-      if(!nama || !blok || !ket){ showToast("Mohon lengkapi Nama, Blok/No Rumah, dan Keterangan."); return; }
+      if(!blok){ showToast(RT_PESAN_RUMAH); return; }
+      if(!nama || !ket){ showToast("Mohon lengkapi Nama dan Keterangan."); return; }
       const pesan = "🚨 LAPORAN WARGA RT 08\nNama: "+nama+"\nBlok/No Rumah: "+blok+"\nKategori: "+kategori+"\nNomor WhatsApp pelapor: "+(wa||"-")+"\nKeterangan: "+ket+(lpFotoData ? "\n📷 Foto bukti terlampir, cek di Admin > Laporan Warga." : "");
 
       const cfg = RT_CONFIG.firebaseConfig || {};
@@ -478,6 +494,7 @@ document.addEventListener("DOMContentLoaded",()=>{
       }
       window.open(linkKetua, "_blank", "noopener");
       form.reset();
+      rtRumahReset("lpRumah");
       lpFotoData = null;
       document.getElementById("lpPreviewWrap").style.display = "none";
 
@@ -511,18 +528,36 @@ function showToast(msg){
   window.toastTimer=setTimeout(()=>t.classList.remove("show"),2600);
 }
 </script><div class="sm-overlay" id="smOverlay" hidden><div class="sm-box" role="dialog" aria-modal="true" aria-labelledby="smJudul"><button type="button" class="sm-close" id="smClose" aria-label="Tutup">✕</button><div id="smBody"></div></div></div>
-<datalist id="smRumah"></datalist>
 <script>
 /* ===== Layanan Surat → PDF → kirim ke WhatsApp pengurus ===== */
 (function(){
   var MAP={svcSurat:"suratPengantar",svcWargaBaru:"wargaBaru",svcWargaPindah:"wargaPindah",svcPinjamFasilitas:"pinjamFasilitas"};
   var ov=document.getElementById("smOverlay"), body=document.getElementById("smBody");
   var logo=null, hasil=null, key=null, dataForm={};
+
+  /* Form ringkas (Aspirasi, minta Dokumen): Nama + Blok/No Rumah terdaftar + 1 isian teks → WhatsApp pengurus */
+  window.rtFormSederhana=function(o){
+    var h='<h2 id="smJudul">'+o.ikon+' '+esc(o.judul)+'</h2><p class="sm-sub">'+esc(o.sub)+'</p>'+
+      '<form id="smForm" novalidate><div class="form-grid">'+
+      '<div class="field full"><label for="fs_nama">Nama <span class="sm-req">*</span></label><input id="fs_nama" autocomplete="off"></div>'+
+      '<div class="field full"><label>Blok / No. Rumah <span class="sm-req">*</span></label><div id="fs_rumah"></div></div>'+
+      '<div class="field full"><label for="fs_teks">'+esc(o.teks.label)+' <span class="sm-req">*</span></label><textarea id="fs_teks" placeholder="'+esc(o.teks.ph)+'"></textarea></div>'+
+      '</div><div class="sm-actions"><button class="btn btn-gold" type="submit">'+esc(o.tombol)+'</button></div></form>';
+    body.innerHTML=h; buka(); rtRumahPasang("fs_rumah");
+    document.getElementById("smForm").addEventListener("submit",function(e){
+      e.preventDefault();
+      var rumah=rtRumahNilai("fs_rumah"), nama=document.getElementById("fs_nama").value.trim(), teks=document.getElementById("fs_teks").value.trim();
+      if(!rumah){ showToast(RT_PESAN_RUMAH); return; }
+      if(!nama||!teks){ showToast("Mohon lengkapi Nama dan "+o.teks.label.toLowerCase()+"."); return; }
+      var d={nama:nama,rumah:rumah}; d[o.teks.id]=teks;
+      if(!rtWaLink(o.nomor,"x")){ showToast("Nomor WhatsApp pengurus belum diatur admin di config.js."); return; }
+      rtOpenWa(o.nomor,o.pesan(d));
+      tutup(); showToast("WhatsApp terbuka — silakan tekan kirim.");
+    });
+  };
+
   if(typeof RTSurat==="undefined"){ console.error("surat-pdf.js belum termuat"); return; }
   Promise.all([RTSurat.muatLogo("assets/logo-rw.png",360),RTSurat.muatLogo("assets/logo-rt.png",360)]).then(function(a){ logo={rw:a[0],rt:a[1]}; });
-
-  var dl=document.getElementById("smRumah");
-  dl.innerHTML=(RT_CONFIG.daftarRumah||[]).map(function(r){return '<option value="'+esc(r)+'">';}).join("");
 
   function esc(v){ return String(v==null?"":v).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
   function buka(){ ov.hidden=false; document.body.style.overflow="hidden"; ov.scrollTop=0; body.parentNode.scrollTop=0; }
@@ -548,7 +583,8 @@ function showToast(msg){
       var id="sm_"+f.id, t=f.type||"text", inp;
       var ph=f.ph?' placeholder="'+esc(f.ph)+'"':"";
       var val=dataForm[f.id]!=null?dataForm[f.id]:"";
-      if(t==="textarea") inp='<textarea id="'+id+'"'+ph+'>'+esc(val)+'</textarea>';
+      if(t==="rumah") inp='<div id="'+id+'"></div>';
+      else if(t==="textarea") inp='<textarea id="'+id+'"'+ph+'>'+esc(val)+'</textarea>';
       else if(t==="select") inp='<select id="'+id+'"><option value="">Pilih…</option>'+f.opts.map(function(o){return '<option'+(o===val?' selected':'')+'>'+esc(o)+'</option>';}).join("")+'</select>';
       else {
         var type="text", extra="";
@@ -562,15 +598,16 @@ function showToast(msg){
         inp='<input id="'+id+'" type="'+type+'"'+extra+ph+' value="'+esc(val)+'">';
         if(listId) inp+='<datalist id="'+listId+'">'+f.opts.map(function(o){return '<option value="'+esc(o)+'">';}).join("")+'</datalist>';
       }
-      h+='<div class="field'+(f.full?' full':'')+'"><label for="'+id+'">'+esc(f.label)+(f.req?' <span class="sm-req">*</span>':'')+'</label>'+inp+'</div>';
+      h+='<div class="field'+(f.full?' full':'')+'"><label'+(t==="rumah"?'':' for="'+id+'"')+'>'+esc(f.label)+(f.req?' <span class="sm-req">*</span>':'')+'</label>'+inp+'</div>';
     });
     h+='</div><div class="sm-actions"><button class="btn btn-gold" type="submit">📄 Buat Surat PDF</button></div></form>';
     body.innerHTML=h; buka();
+    J.fields.forEach(function(f){ if(f.type==="rumah") rtRumahPasang("sm_"+f.id, dataForm[f.id]); });
     document.getElementById("smForm").addEventListener("submit",function(e){
       e.preventDefault();
-      var d={}; J.fields.forEach(function(f){ d[f.id]=document.getElementById("sm_"+f.id).value; });
+      var d={}; J.fields.forEach(function(f){ d[f.id]=(f.type==="rumah") ? rtRumahNilai("sm_"+f.id) : document.getElementById("sm_"+f.id).value; });
       dataForm=d;
-      var err=RTSurat.validasi(k,d);
+      var err=RTSurat.validasi(k,d,RT_CONFIG);
       if(err){ showToast(err); return; }
       try{ hasil=RTSurat.buat(k,d,RT_CONFIG,logo); }
       catch(ex){ console.error(ex); showToast("Maaf, gagal membuat PDF. Coba lagi."); return; }
