@@ -210,6 +210,27 @@ linear-gradient(135deg,#dde7f8,#f8e8bc)}
 .umkm-body{padding:18px}.umkm-body h3{margin:0 0 4px}.umkm-body p{margin:0 0 12px;color:var(--muted);font-size:12px;line-height:1.5}
 .tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}.tag{padding:6px 8px;border-radius:999px;background:#eef1f8;font-size:9px;font-weight:900;color:#4f5c78}
 
+/* ---------- Form Daftarkan Usaha (pop-up) ---------- */
+.df-overlay{position:fixed;inset:0;background:rgba(6,16,36,.72);z-index:300;display:flex;align-items:flex-end;justify-content:center}
+.df-overlay[hidden]{display:none}
+.df-box{background:#fff;width:100%;max-width:600px;max-height:94vh;overflow:auto;border-radius:24px 24px 0 0;padding:22px 20px 28px;position:relative;box-shadow:var(--shadow-lg)}
+@media(min-width:641px){.df-overlay{align-items:center;padding:20px}.df-box{border-radius:24px}}
+.df-box h2{margin:0 36px 4px 0;font-size:20px}
+.df-sub{margin:0 0 16px;color:var(--muted);font-size:12px;line-height:1.55}
+.df-close{position:absolute;right:14px;top:14px;width:34px;height:34px;border-radius:50%;border:none;background:var(--mint);cursor:pointer;font-weight:900;color:var(--green)}
+.df-req{color:var(--red)}
+.df-box .form-grid{gap:12px}
+.df-box textarea{min-height:70px;resize:vertical}
+.df-hint{font-size:10.5px;color:var(--muted);margin:0}
+.df-preview{display:none;margin-top:8px}
+.df-preview img{max-width:100%;max-height:190px;border-radius:14px;border:1px solid var(--line);display:block;object-fit:contain;background:#f2f5fb}
+.df-actions{display:grid;gap:10px;margin-top:16px}
+.df-actions .btn{width:100%}
+.df-btn-line{background:#fff;color:var(--green);border:1px solid var(--line)}
+.df-ok{background:#eef8f0;border:1px solid #bfe0c6;border-radius:16px;padding:14px;font-size:13px;line-height:1.65;color:#1d4a2a;margin-top:6px}
+.df-ok b{color:#12341d}
+.umkm-meta{margin:0 0 4px;font-size:11.5px;color:var(--muted);line-height:1.45}
+
 .gallery-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
 .gallery-item{border-radius:24px;min-height:190px;display:flex;align-items:end;padding:18px;color:#fff;overflow:hidden;position:relative;background:linear-gradient(135deg,#1f4f8f,#0d3a72);box-shadow:0 10px 26px rgba(8,28,56,.10)}
 .gallery-item:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 28%,rgba(0,0,0,.58))}
@@ -340,6 +361,37 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
     </div>
   </div>
 </footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>📞</b>Kontak</a></nav><script src="config.js"></script>
+<div class="df-overlay" id="dfOverlay" hidden><div class="df-box" role="dialog" aria-modal="true" aria-labelledby="dfJudul"><button type="button" class="df-close" id="dfClose" aria-label="Tutup">✕</button>
+<div id="dfForm">
+  <h2 id="dfJudul">🛍️ Daftarkan Usaha</h2>
+  <p class="df-sub">Isi data usaha Anda. Setelah dikirim, data masuk ke halaman admin dan WhatsApp pengurus RT. Usaha tampil di direktori setelah <b>disetujui pengurus</b>.</p>
+  <form id="dfFormEl" novalidate autocomplete="off">
+    <div class="form-grid">
+      <div class="field full"><label>Nama Usaha / Toko <span class="df-req">*</span></label><input id="dfNama" maxlength="60" placeholder="Contoh: Dapur Bu Rina"></div>
+      <div class="field"><label>Nama Pemilik <span class="df-req">*</span></label><input id="dfPemilik" maxlength="50" placeholder="Nama Anda"></div>
+      <div class="field"><label>Kategori <span class="df-req">*</span></label><select id="dfKategori"><option>Kuliner</option><option>Jasa</option><option>Kue</option><option>Otomotif</option><option>Lainnya</option></select></div>
+      <div class="field full"><label>Produk / Jasa yang Ditawarkan <span class="df-req">*</span></label><textarea id="dfDeskripsi" maxlength="200" placeholder="Contoh: Catering, nasi box, dan snack box harian"></textarea></div>
+      <div class="field full"><label>Alamat Usaha <span class="df-req">*</span></label><input id="dfAlamat" maxlength="100" placeholder="Contoh: Blok E2 No. 47, Villa Indah Pulo Timaha"></div>
+      <div class="field"><label>Nomor WhatsApp <span class="df-req">*</span></label><input id="dfWa" type="tel" inputmode="tel" maxlength="16" placeholder="08xxxxxxxxxx"></div>
+      <div class="field"><label>Jam Buka (opsional)</label><input id="dfJam" maxlength="40" placeholder="Contoh: 08.00 - 20.00"></div>
+      <div class="field full"><label>Foto Nama Usaha <span class="df-req">*</span></label><input type="file" id="dfFoto" accept="image/*"><p class="df-hint">Foto papan/spanduk nama usaha, logo, atau produk. Otomatis dikecilkan.</p>
+        <div class="df-preview" id="dfPreviewWrap"><img id="dfPreview" alt="Pratinjau foto usaha"></div></div>
+    </div>
+    <div class="df-actions">
+      <button class="btn btn-gold" type="submit" id="dfKirim">📨 Kirim Pendaftaran</button>
+      <button class="btn df-btn-line" type="button" id="dfBatal">Batal</button>
+    </div>
+  </form>
+</div>
+<div id="dfSukses" hidden>
+  <h2>✅ Pendaftaran Terkirim</h2>
+  <div class="df-ok" id="dfSuksesIsi"></div>
+  <div class="df-actions">
+    <button class="btn btn-brand" type="button" id="dfWaUlang">💬 Buka WhatsApp Pengurus</button>
+    <button class="btn df-btn-line" type="button" id="dfTutup">Selesai</button>
+  </div>
+</div>
+</div></div>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
 <script>
@@ -369,6 +421,8 @@ function loadUmkm_(){
       const cover = u.foto ? "background-image:url('" + u.foto + "')" : "";
       return "<article class=\"umkm-card\"><div class=\"umkm-cover\" style=\"" + cover + "\">" + (u.foto ? "" : (icon[u.kategori]||"🛍️")) + "</div>" +
         "<div class=\"umkm-body\"><h3>" + escU_(u.nama) + "</h3><p>" + escU_(u.deskripsi||"") + "</p>" +
+        (u.alamat ? "<p class=\"umkm-meta\">📍 " + escU_(u.alamat) + "</p>" : "") +
+        (u.jam ? "<p class=\"umkm-meta\">🕒 " + escU_(u.jam) + "</p>" : "") +
         "<div class=\"tags\"><span class=\"tag\">" + escU_(u.kategori||"Usaha") + "</span></div>" +
         "<a class=\"btn btn-brand\" href=\"#\" id=\"umkm" + i + "\">Hubungi</a></div></article>";
     }).join("");
@@ -390,15 +444,124 @@ document.addEventListener("DOMContentLoaded",()=>{
     if(RT_CONFIG.linkGrupWA){ g.href=RT_CONFIG.linkGrupWA; g.target="_blank"; g.rel="noopener"; }
     else { g.href="kontak.html"; g.removeAttribute("target"); }
   }
-  loadUmkm_();
-  const btnDaftar=document.getElementById("btnDaftarUMKM");
-  if(btnDaftar){
-    btnDaftar.addEventListener("click", e=>{
-      e.preventDefault();
-      rtOpenWa(RT_CONFIG.waKetua || RT_CONFIG.waSekretaris, "Halo Admin RT 08, saya ingin mendaftarkan usaha saya di direktori UMKM.\nNama usaha:\nKategori:\nNomor WhatsApp usaha:", "Nomor WhatsApp admin belum diatur di config.js.");
-    });
+  initDaftarUMKM_();   // dipasang lebih dulu: tombol tetap berfungsi walau Firebase gagal dimuat
+  try { loadUmkm_(); } catch (err) {
+    const grid = document.getElementById("umkmGrid");
+    if (grid) grid.innerHTML = "<p class=\"meta\">Gagal memuat data UMKM. Periksa koneksi internet.</p>";
   }
 });
+/* ===== Form "Daftarkan Usaha": simpan ke Firebase (menunggu persetujuan admin) + buka WhatsApp pengurus ===== */
+function initDaftarUMKM_(){
+  const $ = id => document.getElementById(id);
+  const btnDaftar = $("btnDaftarUMKM"), ov = $("dfOverlay");
+  if (!btnDaftar || !ov) return;
+  let fotoData = null, fotoBusy = false, waLink = null, sending = false;
+
+  function normWa(v){
+    let n = String(v || "").replace(/[^0-9]/g, "");
+    if (n.indexOf("62") === 0) return n;
+    if (n.indexOf("0") === 0) return "62" + n.slice(1);
+    if (n.indexOf("8") === 0) return "62" + n;
+    return n;
+  }
+  function compress(file, maxW, q){
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const sc = Math.min(1, maxW / img.width), w = Math.round(img.width * sc), h = Math.round(img.height * sc);
+          const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+          const g = cv.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);
+          resolve(cv.toDataURL("image/jpeg", q));
+        };
+        img.onerror = () => reject(new Error("gambar"));
+        img.src = e.target.result;
+      };
+      r.onerror = () => reject(new Error("file"));
+      r.readAsDataURL(file);
+    });
+  }
+  function buka(){
+    $("dfForm").hidden = false; $("dfSukses").hidden = true;
+    ov.hidden = false; document.body.style.overflow = "hidden";
+  }
+  function tutup(){ ov.hidden = true; document.body.style.overflow = ""; }
+  function reset(){
+    $("dfFormEl").reset(); fotoData = null; fotoBusy = false;
+    $("dfPreviewWrap").style.display = "none";
+  }
+
+  btnDaftar.addEventListener("click", e => { e.preventDefault(); buka(); });
+  $("dfClose").addEventListener("click", tutup);
+  $("dfBatal").addEventListener("click", tutup);
+  $("dfTutup").addEventListener("click", tutup);
+  ov.addEventListener("click", e => { if (e.target === ov) tutup(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !ov.hidden) tutup(); });
+
+  $("dfFoto").addEventListener("change", e => {
+    const f = e.target.files[0];
+    if (!f) { fotoData = null; $("dfPreviewWrap").style.display = "none"; return; }
+    fotoBusy = true;
+    compress(f, 900, 0.72).then(d => {
+      fotoData = d; fotoBusy = false;
+      $("dfPreview").src = d; $("dfPreviewWrap").style.display = "block";
+    }).catch(() => { fotoData = null; fotoBusy = false; showToast("Gagal membaca foto, coba foto lain."); });
+  });
+
+  $("dfWaUlang").addEventListener("click", () => {
+    if (waLink) window.open(waLink, "_blank", "noopener");
+    else showToast("Nomor WhatsApp pengurus belum diatur di config.js.");
+  });
+
+  $("dfFormEl").addEventListener("submit", e => {
+    e.preventDefault();
+    if (sending) return;
+    const nama = $("dfNama").value.trim(), pemilik = $("dfPemilik").value.trim(), kategori = $("dfKategori").value,
+          deskripsi = $("dfDeskripsi").value.trim(), alamat = $("dfAlamat").value.trim(),
+          wa = normWa($("dfWa").value), jam = $("dfJam").value.trim();
+    if (!nama) { showToast("Nama usaha / toko wajib diisi."); return; }
+    if (!pemilik) { showToast("Nama pemilik wajib diisi."); return; }
+    if (!deskripsi) { showToast("Isi produk / jasa yang ditawarkan."); return; }
+    if (!alamat) { showToast("Alamat usaha wajib diisi."); return; }
+    if (!/^62\d{8,13}$/.test(wa)) { showToast("Nomor WhatsApp tidak valid. Contoh: 08123456789"); return; }
+    if (fotoBusy) { showToast("Foto masih diproses, tunggu sebentar."); return; }
+    if (!fotoData) { showToast("Foto nama usaha wajib diunggah."); return; }
+
+    const cfg = RT_CONFIG.firebaseConfig || {};
+    const fbOk = !!(cfg.apiKey && cfg.databaseURL && cfg.appId);
+    const waTampil = "0" + wa.slice(2);
+    const pesan = "🛍️ PENDAFTARAN UMKM BARU — " + (RT_CONFIG.namaRT || "RT 08") + "\n" +
+      "Nama Usaha: " + nama + "\nPemilik: " + pemilik + "\nKategori: " + kategori + "\n" +
+      "Produk/Jasa: " + deskripsi + "\nAlamat: " + alamat + "\nWhatsApp: " + waTampil + "\n" +
+      "Jam Buka: " + (jam || "-") + "\n" +
+      (fbOk ? "📷 Foto sudah masuk di halaman Admin > UMKM > Pengajuan Masuk. Mohon dicek lalu Terima / Tolak."
+            : "📷 Foto belum bisa terkirim otomatis (database belum diatur). Mohon minta foto usaha ke pemilik.");
+    waLink = rtWaLink(RT_CONFIG.waUMKM || RT_CONFIG.waKetua || RT_CONFIG.waSekretaris, pesan);
+
+    sending = true;
+    const btn = $("dfKirim"); btn.disabled = true; btn.textContent = "Mengirim...";
+    if (fbOk) {
+      try {
+        if (!firebase.apps.length) firebase.initializeApp(cfg);
+        firebase.database().ref("umkmPengajuan").push({
+          nama: nama, pemilik: pemilik, kategori: kategori, deskripsi: deskripsi, alamat: alamat,
+          wa: wa, jam: jam, foto: fotoData, status: "menunggu",
+          createdAt: firebase.database.ServerValue.TIMESTAMP
+        }).catch(() => showToast("Data belum masuk ke admin. Tetap kirim lewat WhatsApp ya."));
+      } catch (err) { showToast("Data belum masuk ke admin. Tetap kirim lewat WhatsApp ya."); }
+    }
+    // Buka WhatsApp langsung dari aksi tekan tombol (agar tidak diblokir browser HP).
+    if (waLink) window.open(waLink, "_blank", "noopener");
+
+    $("dfSuksesIsi").innerHTML = "<b>" + escU_(nama) + "</b> sudah terkirim" + (fbOk ? " ke halaman admin" : "") +
+      " dan WhatsApp pengurus.<br>Usaha akan tampil di direktori setelah <b>disetujui pengurus RT</b>." +
+      (waLink ? "<br>Jika WhatsApp tidak terbuka otomatis, tekan tombol di bawah lalu kirim pesannya." : "<br>⚠️ Nomor WhatsApp pengurus belum diatur di config.js.");
+    $("dfForm").hidden = true; $("dfSukses").hidden = false;
+    reset();
+    sending = false; btn.disabled = false; btn.textContent = "📨 Kirim Pendaftaran";
+  });
+}
 function showToast(msg){
   let t=document.querySelector(".toast");
   if(!t){t=document.createElement("div");t.className="toast";document.body.appendChild(t)}

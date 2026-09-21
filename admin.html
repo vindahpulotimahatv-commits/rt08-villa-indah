@@ -130,6 +130,15 @@ textarea{min-height:76px;resize:vertical}
 .entry-amount{font-weight:900}
 .entry-amount.masuk{color:#1c8a4e}
 .entry-amount.keluar{color:var(--red)}
+.pill{display:inline-block;background:var(--red);color:#fff;border-radius:999px;font-size:10px;font-weight:900;padding:1px 7px;margin-left:5px;vertical-align:middle}
+.peng-card{padding:14px;border-top:1px solid var(--line)}
+.peng-card:first-of-type{border-top:0}
+.peng-card img.peng-foto{width:100%;max-width:340px;max-height:240px;object-fit:contain;background:#f2f5fb;border-radius:14px;border:1px solid var(--line);display:block;margin:8px 0}
+.peng-card h4{margin:0 0 4px;font-size:15px}
+.peng-card p{margin:0 0 3px;font-size:12.5px;color:var(--muted);line-height:1.5}
+.peng-card p b{color:var(--ink)}
+.peng-act{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.btn-tolak{background:#fdeaea;color:var(--red)}
 @media(max-width:480px){.finance-summary{grid-template-columns:1fr}}
 </style>
 </head><body>
@@ -158,7 +167,7 @@ textarea{min-height:76px;resize:vertical}
     <button class="tab-btn" data-tab="agenda">📅 Agenda</button>
     <button class="tab-btn" data-tab="info">📢 Informasi</button>
     <button class="tab-btn" data-tab="galeri">🖼️ Galeri</button>
-    <button class="tab-btn" data-tab="umkm">🛍️ UMKM</button>
+    <button class="tab-btn" data-tab="umkm" id="tabUmkmBtn">🛍️ UMKM</button>
     <button class="tab-btn" data-tab="keuangan">💰 Keuangan</button>
   </div>
 
@@ -263,6 +272,11 @@ textarea{min-height:76px;resize:vertical}
 
   <!-- ===== PANEL UMKM ===== -->
   <div class="panel" id="panel-umkm">
+    <div class="list-card" style="margin-bottom:18px">
+      <div class="list-title">📥 Pengajuan Usaha Masuk <span id="pengBadge"></span></div>
+      <p class="sub" style="padding:0 14px;margin:0 0 6px;color:var(--muted);font-size:12px">Dikirim warga lewat tombol “Daftarkan Usaha”. Tekan <b>Terima</b> agar tampil di halaman UMKM, atau <b>Tolak</b> untuk menghapus.</p>
+      <div id="listPengajuan"><div class="empty-note">Memuat data...</div></div>
+    </div>
     <div class="form-card">
       <h3>Tambah UMKM / Usaha Warga</h3>
       <p class="sub">Upload foto/logo usaha. Otomatis tampil di halaman UMKM.</p>
@@ -631,6 +645,65 @@ function initDashboard_(){
         '<div class="thumb-cap">' + esc_(it.nama) + '</div>' +
         '<button class="thumb-del" data-id="' + it.id + '" data-node="umkm" title="Hapus">✕</button></div>';
     }).join("");
+  });
+
+  /* ---- PENGAJUAN UMKM (dari tombol "Daftarkan Usaha") — tinggal Terima / Tolak ---- */
+  var pengajuanData_ = {};
+  function waTampilAdm_(n){ n = String(n || "").replace(/[^0-9]/g, ""); return n.indexOf("62") === 0 ? "0" + n.slice(2) : n; }
+  db.ref("umkmPengajuan").on("value", function(snap){
+    var val = snap.val() || {};
+    pengajuanData_ = val;
+    var items = Object.keys(val).map(function(k){ return Object.assign({ id:k }, val[k]); });
+    items.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+    var n = items.length;
+    document.getElementById("pengBadge").innerHTML = n ? '<span class="pill">' + n + ' baru</span>' : "";
+    document.getElementById("tabUmkmBtn").innerHTML = "🛍️ UMKM" + (n ? '<span class="pill">' + n + '</span>' : "");
+    var box = document.getElementById("listPengajuan");
+    if (n === 0) { box.innerHTML = '<div class="empty-note">Belum ada pengajuan baru.</div>'; return; }
+    box.innerHTML = items.map(function(it){
+      var wa = String(it.wa || "").replace(/[^0-9]/g, "");
+      var tgl = it.createdAt ? new Date(it.createdAt).toLocaleString("id-ID", { day:"numeric", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" }) : "";
+      return '<div class="peng-card">' +
+        '<span class="entry-badge kegiatan">' + esc_(it.kategori || "Usaha") + '</span>' +
+        '<h4>' + esc_(it.nama) + '</h4>' +
+        (it.foto ? '<img class="peng-foto" src="' + it.foto + '" alt="Foto ' + esc_(it.nama) + '">' : '<p><i>(tanpa foto)</i></p>') +
+        '<p><b>Pemilik:</b> ' + esc_(it.pemilik || "-") + '</p>' +
+        '<p><b>Produk/Jasa:</b> ' + esc_(it.deskripsi || "-") + '</p>' +
+        '<p><b>Alamat:</b> ' + esc_(it.alamat || "-") + '</p>' +
+        '<p><b>WhatsApp:</b> ' + esc_(waTampilAdm_(it.wa)) + (wa ? ' • <a href="https://wa.me/' + wa + '" target="_blank" rel="noopener">Hubungi</a>' : '') + '</p>' +
+        (it.jam ? '<p><b>Jam buka:</b> ' + esc_(it.jam) + '</p>' : '') +
+        (tgl ? '<p style="font-size:11px">Masuk: ' + esc_(tgl) + '</p>' : '') +
+        '<div class="peng-act"><button class="btn btn-brand btn-sm peng-btn" data-act="terima" data-id="' + it.id + '">✅ Terima</button>' +
+        '<button class="btn btn-tolak btn-sm peng-btn" data-act="tolak" data-id="' + it.id + '">❌ Tolak</button></div>' +
+      '</div>';
+    }).join("");
+  }, function(){
+    document.getElementById("listPengajuan").innerHTML = '<div class="empty-note">Gagal memuat pengajuan. Periksa koneksi / aturan Firebase (lihat PANDUAN-FIREBASE.md).</div>';
+  });
+  document.getElementById("listPengajuan").addEventListener("click", function(e){
+    var btn = e.target.closest(".peng-btn");
+    if (!btn || btn.disabled) return;
+    var id = btn.getAttribute("data-id"), act = btn.getAttribute("data-act"), it = pengajuanData_[id];
+    if (!it) { showToast("Data tidak ditemukan. Muat ulang halaman."); return; }
+    if (act === "tolak") {
+      if (!confirm("Tolak dan hapus pengajuan \"" + (it.nama || "") + "\"?")) return;
+      btn.disabled = true;
+      db.ref("umkmPengajuan/" + id).remove().then(function(){
+        showToast("Pengajuan ditolak dan dihapus.");
+      }).catch(function(){ btn.disabled = false; showToast("Gagal menolak. Coba lagi."); });
+      return;
+    }
+    btn.disabled = true; btn.textContent = "Memproses...";
+    var newKey = db.ref("umkm").push().key, upd = {};
+    upd["umkm/" + newKey] = {
+      nama: it.nama || "", kategori: it.kategori || "Lainnya", deskripsi: it.deskripsi || "",
+      wa: it.wa || "", alamat: it.alamat || "", jam: it.jam || "", pemilik: it.pemilik || "",
+      foto: it.foto || "", createdAt: firebase.database.ServerValue.TIMESTAMP
+    };
+    upd["umkmPengajuan/" + id] = null;
+    db.ref().update(upd).then(function(){
+      showToast("Usaha diterima dan tampil di halaman UMKM.");
+    }).catch(function(){ btn.disabled = false; btn.textContent = "✅ Terima"; showToast("Gagal menerima. Coba lagi."); });
   });
 
   /* ---- KEUANGAN ---- */

@@ -28,6 +28,10 @@ const RT_CONFIG = {
   waBendahara: "6285770053707",
   waKeamanan: "6285811522118",
 
+  // Nomor WhatsApp yang menerima pesan "Pendaftaran UMKM" dari halaman UMKM.
+  // Kosongkan ("") untuk memakai nomor Ketua RT (waKetua).
+  waUMKM: "",
+
   // Nama pengurus (ditampilkan di halaman Kontak)
   namaKetua: "Abd Hafiz",
   namaSekretaris: "Syarif",
