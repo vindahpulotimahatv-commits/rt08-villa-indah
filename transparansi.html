@@ -79,7 +79,7 @@ img,svg{max-width:100%;display:block}
 .hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1.06fr .94fr;gap:42px;align-items:center}
 .kicker{display:inline-flex;gap:8px;align-items:center;padding:9px 12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.09);border-radius:999px;font-size:11px;font-weight:900;letter-spacing:.7px}
 .hero h1{font-size:clamp(42px,6vw,74px);line-height:.97;letter-spacing:-3px;margin:18px 0}
-.hero p{max-width:690px;font-size:17px;line-height:1.72;color:rgba(255,255,255,.82)}
+.hero p{max-width:690px;font-size:17px;line-height:1.72;color:rgba(255,255,255,.94)}
 .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
 .btn{min-height:48px;padding:0 18px;border:none;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:900;cursor:pointer;transition:.2s}
 .btn:hover{transform:translateY(-2px)}
@@ -156,7 +156,7 @@ img,svg{max-width:100%;display:block}
 .page-hero:after{content:"";position:absolute;right:4%;top:28px;width:150px;height:150px;border:28px solid rgba(18,58,107,.06);border-radius:50%}
 .breadcrumb{font-size:11px;font-weight:900;color:var(--green);letter-spacing:.6px;margin-bottom:10px}
 .page-hero h1{font-size:clamp(36px,5vw,56px);letter-spacing:-1.8px;margin:0 0 10px}
-.page-hero p{max-width:760px;color:var(--muted);line-height:1.7;margin:0}
+.page-hero p{max-width:760px;color:rgba(255,255,255,.9);line-height:1.7;margin:0;text-shadow:0 1px 4px rgba(5,15,36,.4)}
 .page-badge-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
 .info-chip{background:#fff;border:1px solid var(--line);padding:8px 11px;border-radius:999px;font-size:11px;font-weight:850;color:#4c5872}
 
@@ -242,12 +242,21 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 
 .mobile-nav{
   display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:120;
-  grid-template-columns:repeat(5,1fr);padding:8px;background:rgba(8,20,44,.95);backdrop-filter:blur(15px);
+  grid-template-columns:repeat(6,1fr);padding:8px;background:rgba(8,20,44,.95);backdrop-filter:blur(15px);
   border:1px solid rgba(213,166,43,.28);border-radius:21px;box-shadow:0 16px 45px rgba(0,0,0,.4)
 }
 .mobile-nav a{text-align:center;padding:7px 3px;border-radius:13px;font-size:9px;font-weight:900;color:rgba(255,255,255,.65)}
 .mobile-nav a.active{background:rgba(213,166,43,.18);color:#f3cf6a}
 .mobile-nav b{display:block;font-size:18px;margin-bottom:2px}
+.mobile-nav button{appearance:none;background:none;border:0;font:inherit;cursor:pointer}
+.more-sheet{position:fixed;inset:0;z-index:130;display:none}
+.more-sheet.show{display:block}
+.more-sheet-backdrop{position:absolute;inset:0;background:rgba(5,15,36,.55)}
+.more-sheet-panel{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:22px 22px 0 0;padding:14px 16px calc(14px + env(safe-area-inset-bottom));box-shadow:0 -14px 40px rgba(10,25,56,.25)}
+.more-sheet-panel h5{margin:4px 6px 10px;font-size:12px;letter-spacing:.5px;color:var(--muted);text-transform:uppercase}
+.more-sheet-panel a{display:flex;align-items:center;gap:10px;padding:13px 6px;border-bottom:1px solid #eef1f9;color:var(--ink);text-decoration:none;font-weight:800;font-size:14px}
+.more-sheet-panel a:last-child{border-bottom:0}
+
 
 .toast{position:fixed;right:18px;bottom:22px;background:#0e2c56;color:#fff;padding:12px 15px;border-radius:14px;font-size:12px;box-shadow:var(--shadow);opacity:0;transform:translateY(14px);pointer-events:none;transition:.25s;z-index:200}
 .toast.show{opacity:1;transform:translateY(0)}
@@ -351,7 +360,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
       <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a><a href="admin.html">🔐 Admin</a>
     </div>
   </div>
-</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>☰</b>Menu</a></nav><script src="config.js"></script>
+</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>📞</b>Kontak</a><button type="button" onclick="toggleMoreMenu()"><b>☰</b>Menu</button></nav><div class="more-sheet" id="moreSheet"><div class="more-sheet-backdrop" onclick="toggleMoreMenu()"></div><div class="more-sheet-panel"><h5>Menu Lainnya</h5><a href="transparansi.html" onclick="toggleMoreMenu()">💰 Transparansi</a><a href="umkm.html" onclick="toggleMoreMenu()">🛍️ UMKM</a><a href="galeri.html" onclick="toggleMoreMenu()">🖼️ Galeri</a><a href="admin.html" onclick="toggleMoreMenu()">🔐 Admin</a></div></div><script src="config.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
 <script>
@@ -455,4 +464,4 @@ function showToast(msg){
   clearTimeout(window.toastTimer);
   window.toastTimer=setTimeout(()=>t.classList.remove("show"),2600);
 }
-</script></body></html>
+</script><script>function toggleMoreMenu(){document.getElementById('moreSheet').classList.toggle('show')}</script></body></html>
