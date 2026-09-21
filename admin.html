@@ -153,15 +153,25 @@ textarea{min-height:76px;resize:vertical}
   <div class="warn-card" id="warnCard" style="display:none">⚠️ Firebase belum dikonfigurasi di <code>config.js</code>. Data tidak bisa disimpan/ditampilkan sampai diatur admin teknis.</div>
 
   <div class="tabs tabs-scroll">
-    <button class="tab-btn active" data-tab="agenda">📅 Agenda</button>
+    <button class="tab-btn active" data-tab="laporan">🚨 Laporan Warga</button>
+    <button class="tab-btn" data-tab="agenda">📅 Agenda</button>
     <button class="tab-btn" data-tab="info">📢 Informasi</button>
     <button class="tab-btn" data-tab="galeri">🖼️ Galeri</button>
     <button class="tab-btn" data-tab="umkm">🛍️ UMKM</button>
     <button class="tab-btn" data-tab="keuangan">💰 Keuangan</button>
   </div>
 
+  <!-- ===== PANEL LAPORAN WARGA ===== -->
+  <div class="panel active" id="panel-laporan">
+    <div class="list-card">
+      <div class="list-title">Laporan Masuk (Real-time)</div>
+      <p class="sub">Laporan warga dari halaman Layanan langsung muncul di sini, termasuk foto buktinya kalau ada.</p>
+      <div id="listLaporan"><div class="empty-note">Memuat data...</div></div>
+    </div>
+  </div>
+
   <!-- ===== PANEL AGENDA ===== -->
-  <div class="panel active" id="panel-agenda">
+  <div class="panel" id="panel-agenda">
     <div class="form-card">
       <h3>Tambah Agenda</h3>
       <p class="sub">Isi tanggal, waktu, dan jenis kegiatan. Otomatis muncul di halaman Agenda &amp; Beranda, terurut dari yang terdekat.</p>
@@ -414,6 +424,23 @@ function initDashboard_(){
   var today = new Date().toISOString().slice(0, 10);
   document.getElementById("agTanggal").value = today;
   document.getElementById("inTanggal").value = today;
+
+  /* ---- LAPORAN WARGA ---- */
+  db.ref("laporan").on("value", function(snap){
+    var val = snap.val() || {};
+    var items = Object.keys(val).map(function(k){ return Object.assign({ id:k }, val[k]); });
+    items.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+    var box = document.getElementById("listLaporan");
+    if (items.length === 0) { box.innerHTML = '<div class="empty-note">Belum ada laporan masuk dari warga.</div>'; return; }
+    box.innerHTML = items.map(function(it){
+      var fotoHtml = it.foto ? '<img src="' + it.foto + '" alt="Foto laporan" style="width:100%;max-width:260px;border-radius:12px;margin:8px 0;display:block">' : '';
+      var waHtml = it.wa ? ' • <a href="https://wa.me/' + esc_(it.wa).replace(/[^0-9]/g,"") + '" target="_blank" rel="noopener">Hubungi Pelapor</a>' : '';
+      return '<div class="entry-row">' +
+        '<div class="entry-body"><span class="entry-badge">' + esc_(it.kategori || "-") + '</span><h4>' + esc_(it.nama) + ' — Blok ' + esc_(it.blok) + '</h4><p>' + esc_(it.keterangan || "-") + waHtml + '</p>' + fotoHtml + '</div>' +
+        '<button class="entry-del" data-id="' + it.id + '" data-node="laporan" title="Hapus">✕</button>' +
+        '</div>';
+    }).join("");
+  });
 
   /* ---- AGENDA ---- */
   document.getElementById("formAgenda").addEventListener("submit", function(e){

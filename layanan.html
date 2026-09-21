@@ -349,14 +349,17 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
   <div class="service-card"><div class="icon">💡</div><h3>Aspirasi Warga</h3><p>Sampaikan ide dan saran untuk lingkungan.</p><a class="btn btn-brand" href="#" id="svcAspirasi">Kirim</a></div>
   <div class="service-card"><div class="icon">📄</div><h3>Dokumen RT</h3><p>Akses tata tertib, surat edaran, atau dokumen umum.</p><a class="btn btn-brand" href="#" id="svcDokumen">Buka</a></div>
 </div></div></section>
-<section class="section-tight" id="lapor"><div class="container"><div class="section-heading"><div><h2>🚨 Lapor Lingkungan</h2><p>Isi form berikut untuk melaporkan masalah keamanan atau fasilitas ke pengurus RT.</p></div></div>
+<section class="section-tight" id="lapor"><div class="container"><div class="section-heading"><div><h2>🚨 Lapor Lingkungan</h2><p>Isi form berikut, boleh sertakan foto — laporan langsung masuk ke pengurus RT secara real-time.</p></div></div>
 <form class="form-card" id="reportForm"><div class="form-grid">
   <div class="field"><label>Nama</label><input id="lpNama" required placeholder="Nama warga"></div>
   <div class="field"><label>Blok / Nomor Rumah</label><input id="lpBlok" required placeholder="Contoh: E6 / 12"></div>
   <div class="field"><label>Kategori</label><select id="lpKategori"><option>Keamanan</option><option>Lampu Jalan</option><option>Sampah</option><option>Drainase</option><option>Jalan</option><option>Fasilitas Umum</option><option>Lainnya</option></select></div>
   <div class="field"><label>Nomor WhatsApp</label><input id="lpWA" placeholder="08xxxxxxxxxx"></div>
   <div class="field full"><label>Keterangan</label><textarea id="lpKeterangan" required placeholder="Jelaskan laporan secara singkat dan jelas..."></textarea></div>
-  <div class="field full"><button class="btn btn-gold" type="submit" id="btnKirimLapor">Kirim Laporan</button></div>
+  <div class="field full"><label>Foto Bukti (opsional)</label><input type="file" id="lpFoto" accept="image/*" capture="environment"></div>
+</div>
+<div class="preview-wrap" id="lpPreviewWrap" style="display:none"><img id="lpPreview" alt="Pratinjau foto laporan" style="max-width:220px;border-radius:12px;margin:10px 0"></div>
+<div class="form-grid"><div class="field full"><button class="btn btn-gold" type="submit" id="btnKirimLapor">Kirim Laporan</button></div>
   <div class="field full" id="laporFollowup" style="display:none">
     <div class="followup-box">
       <p>✅ Laporan sudah terkirim ke <b>Pak RT</b>. Karena kategorinya <b>Keamanan</b>, teruskan juga ke petugas keamanan:</p>
@@ -378,7 +381,30 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
       <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a><a href="admin.html">🔐 Admin</a>
     </div>
   </div>
-</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="active" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>📞</b>Kontak</a></nav><script src="config.js"></script><script src="surat-pdf.js"></script><script>
+</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="active" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>📞</b>Kontak</a></nav><script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="config.js"></script><script src="surat-pdf.js"></script><script>
+function compressImageLp_(file, maxWidth, quality){
+  return new Promise(function(resolve, reject){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        var scale = Math.min(1, maxWidth / img.width);
+        var w = Math.round(img.width * scale);
+        var h = Math.round(img.height * scale);
+        var canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = function(){ reject(new Error("Gagal membaca gambar")); };
+      img.src = e.target.result;
+    };
+    reader.onerror = function(){ reject(new Error("Gagal membaca file")); };
+    reader.readAsDataURL(file);
+  });
+}
 document.addEventListener("DOMContentLoaded",()=>{
   const g=document.getElementById("navGrupWA");
   if(g){
@@ -409,6 +435,19 @@ document.addEventListener("DOMContentLoaded",()=>{
   }
 
   const form=document.getElementById("reportForm");
+  var lpFotoData = null;
+  const lpFotoInput = document.getElementById("lpFoto");
+  if(lpFotoInput){
+    lpFotoInput.addEventListener("change", function(e){
+      var file = e.target.files[0];
+      if(!file) return;
+      compressImageLp_(file, 1000, 0.7).then(function(dataUrl){
+        lpFotoData = dataUrl;
+        document.getElementById("lpPreview").src = dataUrl;
+        document.getElementById("lpPreviewWrap").style.display = "block";
+      }).catch(function(){ showToast("Gagal membaca foto, coba foto lain."); });
+    });
+  }
   if(form){
     form.addEventListener("submit", e=>{
       e.preventDefault();
@@ -418,7 +457,17 @@ document.addEventListener("DOMContentLoaded",()=>{
       const wa=document.getElementById("lpWA").value.trim();
       const ket=document.getElementById("lpKeterangan").value.trim();
       if(!nama || !blok || !ket){ showToast("Mohon lengkapi Nama, Blok/No Rumah, dan Keterangan."); return; }
-      const pesan = "🚨 LAPORAN WARGA RT 08\nNama: "+nama+"\nBlok/No Rumah: "+blok+"\nKategori: "+kategori+"\nNomor WhatsApp pelapor: "+(wa||"-")+"\nKeterangan: "+ket;
+      const pesan = "🚨 LAPORAN WARGA RT 08\nNama: "+nama+"\nBlok/No Rumah: "+blok+"\nKategori: "+kategori+"\nNomor WhatsApp pelapor: "+(wa||"-")+"\nKeterangan: "+ket+(lpFotoData ? "\n📷 Foto bukti terlampir, cek di Admin > Laporan Warga." : "");
+
+      const cfg = RT_CONFIG.firebaseConfig || {};
+      if(cfg.apiKey && cfg.databaseURL && cfg.appId){
+        if(!firebase.apps.length) firebase.initializeApp(cfg);
+        firebase.database().ref("laporan").push({
+          nama: nama, blok: blok, kategori: kategori, wa: wa, keterangan: ket,
+          foto: lpFotoData || null, status: "Baru",
+          createdAt: firebase.database.ServerValue.TIMESTAMP
+        });
+      }
 
       // Laporan SELALU dikirim ke Pak RT (Ketua) terlebih dulu.
       const nomorKetua = RT_CONFIG.waKetua;
@@ -429,6 +478,8 @@ document.addEventListener("DOMContentLoaded",()=>{
       }
       window.open(linkKetua, "_blank", "noopener");
       form.reset();
+      lpFotoData = null;
+      document.getElementById("lpPreviewWrap").style.display = "none";
 
       if(kategori === "Keamanan"){
         // Khusus kategori Keamanan, tampilkan tombol lanjutan untuk kirim juga ke Keamanan.
