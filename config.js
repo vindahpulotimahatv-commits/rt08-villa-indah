@@ -20,6 +20,11 @@ const RT_CONFIG = {
   // (bukan keamanan tingkat server), jadi tetap jangan bagikan sembarangan.
   adminPassword: "rt08admin2026",
 
+  // ---------- Password Halaman Humas (humas.html) ----------
+  // Dipakai petugas Humas Keliling untuk membuka halaman penarikan iuran bulanan di HP.
+  // GANTI password ini secara berkala, beda dengan adminPassword di atas.
+  humasPassword: "rt08humas2026",
+
   // ---------- Nomor WhatsApp pengurus (WAJIB diisi agar tombol berfungsi) ----------
   // Format: kode negara 62 + nomor tanpa angka 0 di depan.
   // Contoh nomor 0812-3456-7890 ditulis: "6281234567890"
@@ -60,6 +65,13 @@ const RT_CONFIG = {
   teleponPemadam: "113",
   teleponAmbulans: "119",
   teleponPolisi: "110",
+
+  // ---------- Iuran Bulanan (Halaman Humas — humas.html) ----------
+  // iuranBulanan   : tarif iuran bulanan per rumah/KK (Rp).
+  // iuranTambahanKK: tambahan iuran RUKEM kalau di 1 rumah ada saudara/keluarga
+  //                  dengan KK (Kartu Keluarga) terpisah (Rp).
+  iuranBulanan: 60000,
+  iuranTambahanKK: 7500,
 
   // ---------- Ringkasan Kas RT ----------
   // Sudah TIDAK dipakai lagi — Saldo Kas, Pemasukan, dan Pengeluaran sekarang

@@ -169,6 +169,7 @@ textarea{min-height:76px;resize:vertical}
     <button class="tab-btn" data-tab="galeri">🖼️ Galeri</button>
     <button class="tab-btn" data-tab="umkm" id="tabUmkmBtn">🛍️ UMKM</button>
     <button class="tab-btn" data-tab="keuangan">💰 Keuangan</button>
+    <button class="tab-btn" data-tab="iuran" id="tabIuranBtn">🧾 Iuran Bulanan</button>
   </div>
 
   <!-- ===== PANEL CARI WARGA ===== -->
@@ -327,6 +328,20 @@ textarea{min-height:76px;resize:vertical}
     <div class="list-card">
       <div class="list-title">Riwayat Transaksi</div>
       <div id="listKeuangan"><div class="empty-note">Memuat data...</div></div>
+    </div>
+  </div>
+
+  <!-- ===== PANEL IURAN BULANAN (dari halaman Humas — humas.html) ===== -->
+  <div class="panel" id="panel-iuran">
+    <div class="list-card" style="margin-bottom:18px">
+      <div class="list-title">📤 Konfirmasi Transfer Masuk <span id="transferBadge"></span></div>
+      <p class="sub" style="padding:0 14px;margin:0 0 6px;color:var(--muted);font-size:12px">Dikirim petugas Humas lewat <b>humas.html</b> saat warga bayar transfer. Cek dulu mutasi rekening RT, lalu tekan <b>Diterima</b> atau <b>Belum</b>.</p>
+      <div id="listTransfer"><div class="empty-note">Memuat data...</div></div>
+    </div>
+    <div class="list-card">
+      <div class="list-title">💰 Setoran Cash Humas <span id="setoranBadge"></span></div>
+      <p class="sub" style="padding:0 14px;margin:0 0 6px;color:var(--muted);font-size:12px">Uang cash hasil penarikan yang disetor petugas Humas. Setelah uang fisik diterima, tekan <b>Terima Setoran</b> — otomatis tercatat sebagai Pemasukan di Kas RT &amp; Laporan Keuangan.</p>
+      <div id="listSetoranHumas"><div class="empty-note">Memuat data...</div></div>
     </div>
   </div>
 
@@ -756,6 +771,116 @@ function initDashboard_(){
         '<button class="entry-del" data-id="' + it.id + '" data-node="keuangan" title="Hapus">✕</button>' +
         '</div>';
     }).join("");
+  });
+
+  /* ---- IURAN BULANAN: KONFIRMASI TRANSFER + SETORAN CASH HUMAS ---- */
+  function fmtBulanID_(k){
+    var m = /^(\d{4})-(\d{2})$/.exec(k || "");
+    if (!m) return k || "-";
+    return BULAN_ID[parseInt(m[2], 10) - 1] + " " + m[1];
+  }
+  var pendingTransferCount_ = 0, pendingSetoranCount_ = 0;
+  function updateIuranTabBadge_(){
+    var total = pendingTransferCount_ + pendingSetoranCount_;
+    document.getElementById("tabIuranBtn").innerHTML = "🧾 Iuran Bulanan" + (total ? '<span class="pill">' + total + '</span>' : "");
+  }
+
+  var penarikanSemua_ = {};   // { bulanKey: { rumahKey: entry } }
+  db.ref("penarikan").on("value", function(snap){
+    penarikanSemua_ = snap.val() || {};
+    var items = [];
+    Object.keys(penarikanSemua_).forEach(function(bk){
+      var bln = penarikanSemua_[bk] || {};
+      Object.keys(bln).forEach(function(rk){
+        var e = bln[rk];
+        if (e && e.status === "transfer_pending") items.push(Object.assign({ bulanKey: bk, rumahKey: rk }, e));
+      });
+    });
+    items.sort(function(a, b){ return (b.updatedAt || 0) - (a.updatedAt || 0); });
+    pendingTransferCount_ = items.length;
+    document.getElementById("transferBadge").innerHTML = items.length ? '<span class="pill">' + items.length + '</span>' : "";
+    updateIuranTabBadge_();
+    var box = document.getElementById("listTransfer");
+    if (items.length === 0) { box.innerHTML = '<div class="empty-note">Tidak ada transfer yang menunggu konfirmasi.</div>'; return; }
+    box.innerHTML = items.map(function(it){
+      return '<div class="entry-row"><div class="entry-body"><h4>' + esc_(it.rumah) + ' — ' + esc_(it.nama || "-") + '</h4>' +
+        '<p>' + fmtBulanID_(it.bulanKey) + ' • ' + fmtRp_(it.jumlah) + ' • Petugas: ' + esc_(it.petugas || "-") + '</p></div>' +
+        '<div style="display:flex;gap:6px;flex-direction:column">' +
+        '<button class="btn btn-brand btn-sm transfer-btn" data-act="terima" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">✅ Diterima</button>' +
+        '<button class="btn btn-tolak btn-sm transfer-btn" data-act="batal" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">↩️ Belum</button></div>' +
+        '</div>';
+    }).join("");
+  }, function(){ document.getElementById("listTransfer").innerHTML = '<div class="empty-note">Gagal memuat data. Periksa aturan Firebase.</div>'; });
+
+  document.getElementById("listTransfer").addEventListener("click", function(e){
+    var btn = e.target.closest(".transfer-btn");
+    if (!btn) return;
+    var b = btn.getAttribute("data-b"), r = btn.getAttribute("data-r"), act = btn.getAttribute("data-act");
+    var entry = (penarikanSemua_[b] || {})[r];
+    if (!entry) { showToast("Data tidak ditemukan. Muat ulang halaman."); return; }
+    if (act === "terima") {
+      btn.disabled = true;
+      var upd = {};
+      upd["penarikan/" + b + "/" + r + "/status"] = "lunas_transfer";
+      upd["penarikan/" + b + "/" + r + "/confirmedAt"] = firebase.database.ServerValue.TIMESTAMP;
+      var kKey = db.ref("keuangan").push().key;
+      upd["keuangan/" + kKey] = {
+        tanggal: new Date().toISOString().slice(0, 10), jenis: "masuk",
+        keterangan: "Iuran Bulanan (Transfer) - " + entry.rumah + " - " + fmtBulanID_(b),
+        kategori: "Iuran Bulanan", jumlah: entry.jumlah, createdAt: firebase.database.ServerValue.TIMESTAMP
+      };
+      db.ref().update(upd).then(function(){ showToast("Transfer dikonfirmasi & masuk ke Kas RT."); })
+        .catch(function(){ btn.disabled = false; showToast("Gagal, coba lagi."); });
+    } else {
+      if (!confirm("Kembalikan status rumah ini ke \"Belum Ditarik\"?")) return;
+      btn.disabled = true;
+      db.ref("penarikan/" + b + "/" + r + "/status").set("belum")
+        .then(function(){ showToast("Dikembalikan ke status Belum."); })
+        .catch(function(){ btn.disabled = false; showToast("Gagal, coba lagi."); });
+    }
+  });
+
+  db.ref("humasSetoran").on("value", function(snap){
+    var val = snap.val() || {};
+    var items = Object.keys(val).map(function(k){ return Object.assign({ id: k }, val[k]); });
+    items.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
+    var pending = items.filter(function(it){ return it.status === "menunggu"; });
+    pendingSetoranCount_ = pending.length;
+    document.getElementById("setoranBadge").innerHTML = pending.length ? '<span class="pill">' + pending.length + '</span>' : "";
+    updateIuranTabBadge_();
+    var box = document.getElementById("listSetoranHumas");
+    if (items.length === 0) { box.innerHTML = '<div class="empty-note">Belum ada setoran dari Humas.</div>'; return; }
+    box.innerHTML = items.map(function(it){
+      var jmlRumah = it.rumahKeys ? Object.keys(it.rumahKeys).length : 0;
+      var aksi = it.status === "menunggu"
+        ? '<button class="btn btn-brand btn-sm setoran-btn" data-id="' + it.id + '">✅ Terima Setoran</button>'
+        : '<span class="entry-badge kegiatan">Diterima</span>';
+      return '<div class="entry-row"><div class="entry-body"><h4>' + esc_(it.petugas) + ' — ' + fmtRp_(it.jumlah) + '</h4>' +
+        '<p>' + fmtBulanID_(it.bulanKey) + ' • ' + jmlRumah + ' rumah</p></div>' + aksi + '</div>';
+    }).join("");
+  }, function(){ document.getElementById("listSetoranHumas").innerHTML = '<div class="empty-note">Gagal memuat data. Periksa aturan Firebase.</div>'; });
+
+  document.getElementById("listSetoranHumas").addEventListener("click", function(e){
+    var btn = e.target.closest(".setoran-btn");
+    if (!btn) return;
+    var id = btn.getAttribute("data-id");
+    btn.disabled = true; btn.textContent = "Memproses...";
+    db.ref("humasSetoran/" + id).once("value").then(function(snap){
+      var it = snap.val();
+      if (!it) throw new Error("Setoran tidak ditemukan");
+      var upd = {};
+      upd["humasSetoran/" + id + "/status"] = "diterima";
+      upd["humasSetoran/" + id + "/confirmedAt"] = firebase.database.ServerValue.TIMESTAMP;
+      Object.keys(it.rumahKeys || {}).forEach(function(rk){ upd["penarikan/" + it.bulanKey + "/" + rk + "/disetorKonfirmasi"] = true; });
+      var kKey = db.ref("keuangan").push().key;
+      upd["keuangan/" + kKey] = {
+        tanggal: new Date().toISOString().slice(0, 10), jenis: "masuk",
+        keterangan: "Setoran Iuran Bulanan (Cash) - " + it.petugas + " - " + fmtBulanID_(it.bulanKey),
+        kategori: "Iuran Bulanan", jumlah: it.jumlah, createdAt: firebase.database.ServerValue.TIMESTAMP
+      };
+      return db.ref().update(upd);
+    }).then(function(){ showToast("Setoran diterima & masuk ke Kas RT."); })
+    .catch(function(){ btn.disabled = false; btn.textContent = "✅ Terima Setoran"; showToast("Gagal, coba lagi."); });
   });
 
   /* ---- DELETE (delegasi klik untuk semua daftar) ---- */

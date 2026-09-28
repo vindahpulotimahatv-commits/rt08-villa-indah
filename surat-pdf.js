@@ -477,6 +477,38 @@
       }
     },
 
+    /* Kwitansi Iuran Bulanan — dipakai halaman Humas (humas.html) untuk pembayaran CASH.
+       Dibuat via RTSurat.buat("kwitansiIuran", data, RT_CONFIG) — bukan dari form layanan.html,
+       jadi tidak butuh "fields" untuk render form, hanya untuk bersihkan() data masuk. */
+    kwitansiIuran: {
+      kode: "KW", judul: "Kwitansi Iuran Bulanan", ikon: "🧾", nomorWA: "waBendahara", pengurus: "namaBendahara",
+      fields: [
+        { id: "nama", label: "Nama / Kepala Keluarga" },
+        { id: "blok", label: "Blok / No. Rumah" },
+        { id: "bulan", label: "Untuk Bulan" },
+        { id: "rincian", label: "Rincian" },
+        { id: "jumlah", label: "Jumlah Dibayar" },
+        { id: "metode", label: "Cara Pembayaran" },
+        { id: "petugas", label: "Petugas Penarik" }
+      ],
+      render: function (L, d, c) {
+        judul(L, "KWITANSI PEMBAYARAN IURAN BULANAN"); L.space(4);
+        L.p("Telah terima dari warga berikut, sejumlah uang untuk pembayaran iuran bulanan warga RT " + c.rt + " / RW " + c.rw + " " + c.kompleks + ":", { justify: true, after: 8 });
+        L.rows([
+          ["Nama / Kepala Keluarga", d.nama],
+          ["Alamat", alamatRumah(d, c)],
+          ["Untuk Bulan", d.bulan],
+          ["Rincian", d.rincian || "Iuran Bulanan"],
+          ["Jumlah Dibayar", d.jumlah],
+          ["Cara Pembayaran", d.metode],
+          ["Petugas Penarik", d.petugas]
+        ], { labelW: 155 });
+        L.space(10);
+        L.p("Kwitansi ini adalah bukti sah pembayaran iuran bulanan warga dan sebaiknya disimpan sebagai arsip pribadi.", { justify: true, after: 14 });
+        L.sign({ jabatan: "Yang Membayar,", nama: d.nama }, { jabatan: "Petugas Humas,", nama: d.petugas }, c.tempat + ", " + c.tglHariIni);
+      }
+    },
+
     pinjamFasilitas: {
       kode: "PF", judul: "Pinjam Fasilitas", ikon: "🏟️", nomorWA: "waKetua", pengurus: "namaKetua",
       fields: [
