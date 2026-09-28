@@ -371,12 +371,12 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <main>
 <section class="page-hero"><div class="container"><div class="breadcrumb">BERANDA / BERITA</div><h1>Berita Lingkungan</h1><p>Kabar terbaru seputar Villa Indah dan sekitarnya, dikemas ringkas dan mudah dibaca.</p></div></section>
 <section class="section"><div class="container">
-  <div class="nw-note">🧪 <b>Tampilan percobaan (Cara B).</b> Admin RT memilih berita yang relevan, lalu menempel judul, ringkasan singkat, dan link sumber. Berita di bawah hanya contoh, dan tombolnya membawa warga ke situs sumber.</div>
+  <div class="nw-note">🧪 <b>Tampilan percobaan (Cara B).</b> Admin RT memilih berita yang relevan, lalu menempel judul, ringkasan singkat, dan link sumber. Daftar berita diperbarui otomatis (judul, kategori, dan link dari infobekasi.co.id). Klik kartu untuk membaca lengkapnya di situs sumber.</div>
   <div class="nw-toolbar">
     <input class="nw-search" id="nwCari" placeholder="🔍 Cari berita...">
     <div class="nw-chips" id="nwChips"></div>
   </div>
-  <div class="nw-top"><div class="nw-hero" id="nwHero"></div><div class="nw-side"><h3>🔥 Terpopuler</h3><div id="nwPopuler"></div></div></div>
+  <div class="nw-top"><div class="nw-hero" id="nwHero"></div><div class="nw-side"><h3>🕒 Terbaru</h3><div id="nwPopuler"></div></div></div>
   <div class="nw-grid" id="nwGrid"></div>
 </div></section>
 </main>
@@ -396,21 +396,21 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
   </div>
 </footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>📞</b>Kontak</a></nav>
 <script>
+var S="infobekasi.co.id";
 var BERITA=[
- {id:1,kat:"Lingkungan",ico:"🌳",warna:"#1c8a4e",judul:"Contoh: Kerja bakti bersihkan saluran air jelang musim hujan",ringkas:"Warga diajak ikut membersihkan drainase agar air tidak menggenang.",isi:"Ini teks contoh. Nantinya isi berita lengkap tampil di sini, lengkap dengan tanggal, penulis, dan kategorinya.",tgl:"2026-09-27",views:320},
- {id:2,kat:"Keamanan",ico:"🛡️",warna:"#123a6b",judul:"Contoh: Jadwal ronda malam diperbarui untuk bulan Oktober",ringkas:"Pembagian regu ronda terbaru sudah bisa dilihat oleh seluruh warga.",isi:"Ini teks contoh untuk tampilan percobaan berita keamanan lingkungan.",tgl:"2026-09-26",views:280},
- {id:3,kat:"Kesehatan",ico:"💉",warna:"#c74444",judul:"Contoh: Posyandu dan cek kesehatan gratis akhir pekan ini",ringkas:"Timbang balita, cek tensi, dan konsultasi kesehatan bagi warga.",isi:"Ini teks contoh untuk berita kesehatan.",tgl:"2026-09-25",views:210},
- {id:4,kat:"Ekonomi",ico:"🛍️",warna:"#d5a62b",judul:"Contoh: Bazar UMKM warga hadir dengan puluhan lapak",ringkas:"Warga bisa belanja produk tetangga sambil mendukung usaha lokal.",isi:"Ini teks contoh untuk berita ekonomi dan UMKM.",tgl:"2026-09-24",views:190},
- {id:5,kat:"Kegiatan",ico:"🎉",warna:"#315f9e",judul:"Contoh: Lomba dan malam puncak kemeriahan warga RT 08",ringkas:"Keseruan acara warga dari anak-anak hingga orang tua.",isi:"Ini teks contoh untuk berita kegiatan warga.",tgl:"2026-09-22",views:350},
- {id:6,kat:"Lingkungan",ico:"💡",warna:"#59657f",judul:"Contoh: Perbaikan lampu jalan di beberapa titik gang",ringkas:"Pengurus mencatat titik lampu mati dan menjadwalkan perbaikan.",isi:"Ini teks contoh untuk berita fasilitas lingkungan.",tgl:"2026-09-20",views:150}
+ {id:1,kat:"Ekonomi",ico:"🛒",warna:"#d5a62b",judul:"Wali Kota Bekasi Ajak ASN Belanja ke Pasar Tradisional Tiap Tanggal Muda",ringkas:"Wali Kota berencana meminta ASN Pemkot berbelanja ke pasar tradisional setiap Jumat di awal bulan lewat gerakan Gebrak Pasar.",tgl:"2026-09-28",sumber:S,link:"https://infobekasi.co.id/2026/09/28/wali-kota-bekasi-ajak-asn-belanja-ke-pasar-tradisional-tiap-tanggal-muda"},
+ {id:2,kat:"Lingkungan",ico:"🌳",warna:"#1c8a4e",judul:"RTH Baru di Bekasi Utara, Walikota Bekasi Minta Warga Ikut Merawat",ringkas:"Wali Kota meresmikan taman bermain dan ruang terbuka hijau di sebuah perumahan di Kaliabang Tengah, lalu mengajak warga menjaganya.",tgl:"2026-09-28",sumber:S,link:"https://infobekasi.co.id/2026/09/28/rth-baru-di-bekasi-utara-walikota-bekasi-minta-warga-ikut-merawat"},
+ {id:3,kat:"Kesehatan",ico:"🏥",warna:"#c74444",judul:"RSUD Kabupaten Bekasi Penuh Asap, Pasien Brankar Dievakuasi Bersama Tiang Infus",ringkas:"Asap memenuhi gedung RSUD di Cibitung sehingga pasien dipindahkan ke lobi dan area IGD. Penyebabnya belum dijelaskan pihak rumah sakit.",tgl:"2026-09-27",sumber:S,link:"https://infobekasi.co.id/2026/09/27/rsud-kabupaten-bekasi-penuh-asap-pasien-brankar-dievakuasi-bersama-tiang-infus"},
+ {id:4,kat:"Lingkungan",ico:"🏟️",warna:"#315f9e",judul:"Berulang Terjadi, Nama Ikonik Kota Bekasi Kembali Tidak Utuh",ringkas:"Huruf pada tulisan nama Stadion Patriot Candrabhaga kembali lepas, padahal sebelumnya sudah pernah diperbaiki.",tgl:"2026-09-27",sumber:S,link:"https://infobekasi.co.id/2026/09/27/berulang-terjadi-nama-ikonik-kota-bekasi-kembali-tidak-utuh"}
 ];
-BERITA.forEach(function(n){n.sumber="infobekasi.co.id";n.link="https://infobekasi.co.id/"});
-var KATS=["Semua","Lingkungan","Keamanan","Kesehatan","Ekonomi","Kegiatan"], kat="Semua", q="";
+var KATS=["Semua"], kat="Semua", q="";
+var IKON={Ekonomi:"🛒",Lingkungan:"🌳",Kesehatan:"🏥",Peristiwa:"🚨",Olahraga:"⚽",Kuliner:"🍜",Travel:"🧳",Sejarah:"📜",Events:"🎉","Pro Bisnis":"💼"};
+var WARNA={Ekonomi:"#d5a62b",Lingkungan:"#1c8a4e",Kesehatan:"#c74444",Peristiwa:"#8a3a3a",Olahraga:"#315f9e"};
 function E(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function tgl(i){var p=i.split("-"),B=["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];return +p[2]+" "+B[+p[1]-1]+" "+p[0]}
 function bg(n){return "background:linear-gradient(135deg,"+n.warna+",#081c38)"}
 function buka(id){var n=BERITA.filter(function(x){return x.id==id})[0];if(!n)return;
- document.getElementById("nwSheet").innerHTML='<button class="nw-x" onclick="tutup()">✕</button><div class="nw-img" style="'+bg(n)+'">'+n.ico+'</div><div class="nw-body"><span class="nw-tag">'+E(n.kat)+'</span><h3>'+E(n.judul)+'</h3><div class="nw-meta">'+tgl(n.tgl)+' • '+n.views+' dibaca</div><p style="margin-top:14px;font-size:15px;line-height:1.8;color:#12213f">'+E(n.ringkas)+'</p><div class="nw-src">📰 Sumber: '+E(n.sumber)+'</div><br><a class="nw-btn" href="'+E(n.link)+'" target="_blank" rel="noopener">Baca selengkapnya di '+E(n.sumber)+' ↗</a></div>';
+ document.getElementById("nwSheet").innerHTML='<button class="nw-x" onclick="tutup()">✕</button><div class="nw-img" style="'+bg(n)+'">'+n.ico+'</div><div class="nw-body"><span class="nw-tag">'+E(n.kat)+'</span><h3>'+E(n.judul)+'</h3><div class="nw-meta">'+tgl(n.tgl)+'</div>'+(n.ringkas?'<p style="margin-top:14px;font-size:15px;line-height:1.8;color:#12213f">'+E(n.ringkas)+'</p>':'')+'<div class="nw-src">📰 Sumber: '+E(n.sumber)+'</div><br><a class="nw-btn" href="'+E(n.link)+'" target="_blank" rel="noopener">Baca selengkapnya di '+E(n.sumber)+' ↗</a></div>';
  document.getElementById("nwModal").classList.add("show")}
 function tutup(){document.getElementById("nwModal").classList.remove("show")}
 function render(){
@@ -418,12 +418,19 @@ function render(){
  var h=BERITA.slice().sort(function(a,b){return b.tgl.localeCompare(a.tgl)})[0];
  document.getElementById("nwHero").setAttribute("style",bg(h));
  document.getElementById("nwHero").onclick=function(){buka(h.id)};
- document.getElementById("nwHero").innerHTML='<div style="position:absolute;top:22px;right:26px;font-size:90px;opacity:.25">'+h.ico+'</div><div class="nw-cap"><span class="nw-tag">'+E(h.kat)+'</span><h2>'+E(h.judul)+'</h2><p>'+E(h.ringkas)+'</p><p style="margin-top:8px;font-size:12px;font-weight:800;color:#f3cf6a">📰 '+E(h.sumber)+' • Baca selengkapnya ↗</p></div>';
- document.getElementById("nwPopuler").innerHTML=BERITA.slice().sort(function(a,b){return b.views-a.views}).slice(0,4).map(function(n,i){return '<div class="nw-row" onclick="buka('+n.id+')"><b>'+(i+1)+'</b><div><strong>'+E(n.judul)+'</strong><small>'+n.views+' dibaca</small></div></div>'}).join("");
- document.getElementById("nwGrid").innerHTML=list.length?list.map(function(n){return '<div class="nw-card" onclick="buka('+n.id+')"><div class="nw-img" style="'+bg(n)+'">'+n.ico+'</div><div class="nw-body"><span class="nw-tag">'+E(n.kat)+'</span><h4>'+E(n.judul)+'</h4><p>'+E(n.ringkas)+'</p><div class="nw-meta">📰 '+E(n.sumber)+' • '+tgl(n.tgl)+'</div></div></div>'}).join(""):'<div class="nw-empty">Tidak ada berita yang cocok.</div>'}
-document.getElementById("nwChips").innerHTML=KATS.map(function(k){return '<button class="nw-chip'+(k==kat?' on':'')+'" data-k="'+k+'">'+k+'</button>'}).join("");
+ document.getElementById("nwHero").innerHTML='<div style="position:absolute;top:22px;right:26px;font-size:90px;opacity:.25">'+h.ico+'</div><div class="nw-cap"><span class="nw-tag">'+E(h.kat)+'</span><h2>'+E(h.judul)+'</h2>'+(h.ringkas?'<p>'+E(h.ringkas)+'</p>':'')+'<p style="margin-top:8px;font-size:12px;font-weight:800;color:#f3cf6a">📰 '+E(h.sumber)+' • Baca selengkapnya ↗</p></div>';
+ document.getElementById("nwPopuler").innerHTML=BERITA.slice().sort(function(a,b){return b.tgl.localeCompare(a.tgl)}).map(function(n,i){return '<div class="nw-row" onclick="buka('+n.id+')"><b>'+(i+1)+'</b><div><strong>'+E(n.judul)+'</strong><small>'+tgl(n.tgl)+'</small></div></div>'}).join("");
+ document.getElementById("nwGrid").innerHTML=list.length?list.map(function(n){return '<div class="nw-card" onclick="buka('+n.id+')"><div class="nw-img" style="'+bg(n)+'">'+n.ico+'</div><div class="nw-body"><span class="nw-tag">'+E(n.kat)+'</span><h4>'+E(n.judul)+'</h4>'+(n.ringkas?'<p>'+E(n.ringkas)+'</p>':'')+'<div class="nw-meta">📰 '+E(n.sumber)+' • '+tgl(n.tgl)+'</div></div></div>'}).join(""):'<div class="nw-empty">Tidak ada berita yang cocok.</div>'}
+function buildChips(){var u=[];BERITA.forEach(function(n){if(u.indexOf(n.kat)<0)u.push(n.kat)});KATS=["Semua"].concat(u);if(KATS.indexOf(kat)<0)kat="Semua";
+ document.getElementById("nwChips").innerHTML=KATS.map(function(k){return '<button class="nw-chip'+(k==kat?' on':'')+'" data-k="'+E(k)+'">'+E(k)+'</button>'}).join("")}
+buildChips();
 document.getElementById("nwChips").addEventListener("click",function(e){var k=e.target.getAttribute("data-k");if(!k)return;kat=k;[].forEach.call(this.children,function(c){c.classList.toggle("on",c.getAttribute("data-k")==kat)});render()});
 document.getElementById("nwCari").addEventListener("input",function(e){q=e.target.value.toLowerCase();render()});
 document.getElementById("nwModal").addEventListener("click",function(e){if(e.target==this)tutup()});
 render();
+fetch("berita.json?t="+Date.now()).then(function(r){return r.json()}).then(function(d){
+ if(!d||!d.items||!d.items.length)return;
+ BERITA=d.items.map(function(n,i){return {id:i+1,kat:n.kat||"Berita",ico:IKON[n.kat]||"📰",warna:WARNA[n.kat]||"#123a6b",judul:n.judul,ringkas:"",tgl:n.tgl,sumber:d.sumber||S,link:n.link}});
+ buildChips();render();
+}).catch(function(){});
 </script></body></html>
