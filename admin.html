@@ -114,6 +114,36 @@ textarea{min-height:76px;resize:vertical}
 .tabs-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .tabs-scroll::-webkit-scrollbar{display:none}
 .tabs-scroll .tab-btn{flex:0 0 auto;white-space:nowrap}
+/* Di layar lebar (PC/tablet) tab dibungkus ke baris berikutnya supaya semua tab terlihat, termasuk Iuran Bulanan */
+@media(min-width:700px){.tabs-scroll{flex-wrap:wrap;overflow-x:visible}}
+
+/* ============ VERSI DESKTOP (layar >= 1024px): menu samping + area kerja lebar ============ */
+@media(min-width:1024px){
+  .container{width:min(1240px,calc(100% - 64px))}
+  #dashboard{padding:28px 0 70px}
+  #dashboard .container{display:grid;grid-template-columns:240px minmax(0,1fr);column-gap:26px;align-items:start}
+  #dashboard .warn-card{grid-column:1/-1}
+  /* menu tab jadi sidebar kiri yang ikut menempel saat scroll */
+  #dashboard .tabs{grid-column:1;grid-row:2;position:sticky;top:92px;flex-direction:column;flex-wrap:nowrap;overflow:visible;gap:4px;padding:10px;margin-bottom:0;border-radius:20px;background:rgba(8,20,44,.55);backdrop-filter:blur(10px);border:1px solid rgba(213,166,43,.22)}
+  #dashboard .tabs .tab-btn{flex:none;width:100%;text-align:left;padding:13px 14px;font-size:14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  #dashboard .tabs .tab-btn:hover:not(.active){background:rgba(255,255,255,.10);color:#fff}
+  #dashboard .panel{grid-column:2;grid-row:2;min-width:0}
+  /* panel yang isinya form + daftar: dua kolom berdampingan */
+  #panel-agenda.active,#panel-info.active,#panel-galeri.active{display:grid;grid-template-columns:minmax(340px,430px) minmax(0,1fr);gap:20px;align-items:start}
+  #panel-agenda.active .form-card,#panel-info.active .form-card,#panel-galeri.active .form-card{margin-bottom:0;position:sticky;top:92px}
+  /* Iuran: transfer masuk & transfer terkonfirmasi berdampingan, setoran cash memanjang di bawah */
+  #panel-iuran.active{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
+  #panel-iuran.active>*{min-width:0;margin-bottom:0!important}
+  #panel-iuran.active>.list-card:last-child{grid-column:1/-1}
+  /* Keuangan: form di kiri, ringkasan & riwayat di kanan */
+  #panel-keuangan.active{display:grid;grid-template-columns:minmax(340px,430px) minmax(0,1fr);gap:20px;align-items:start}
+  #panel-keuangan.active .form-card{grid-row:1/span 2;margin-bottom:0;position:sticky;top:92px}
+  .form-card{padding:24px}
+  .entry-row{padding:15px 18px}
+}
+@media(min-width:1024px) and (max-width:1279px){
+  #dashboard .container{grid-template-columns:210px minmax(0,1fr)}
+}
 .preview-wrap{margin-bottom:14px}
 .preview-wrap img{max-width:150px;max-height:150px;border-radius:14px;display:block;object-fit:cover;border:1px solid var(--line)}
 .thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;padding:10px}
