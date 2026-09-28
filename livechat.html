@@ -1,6 +1,39 @@
 <!DOCTYPE html><html lang="id"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#123a6b"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="assets/icon-192.png"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="RT08 Villa Indah"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Galeri | RT 08 Villa Indah Pulo Timaha</title><style>
+<title>Live Chat | RT 08 Villa Indah Pulo Timaha</title><style>
+.chat-shell{background:#fff;border:1px solid var(--line);border-radius:26px;box-shadow:0 10px 30px rgba(10,25,56,.06);overflow:hidden;max-width:760px;margin:0 auto}
+.chat-setup{padding:18px 20px;background:linear-gradient(135deg,#f3f6fc,#eef1f9);border-bottom:1px solid var(--line);display:grid;gap:10px}
+.chat-setup .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chat-setup-title{font-size:12px;font-weight:900;color:var(--green);display:flex;align-items:center;gap:6px}
+.chat-head{padding:16px 20px;display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#123a6b,#1c4a86);color:#fff}
+.chat-head .ic{width:44px;height:44px;border-radius:14px;background:rgba(255,255,255,.15);display:grid;place-items:center;font-size:22px;flex:0 0 44px}
+.chat-head h3{margin:0;font-size:15px}
+.chat-head p{margin:2px 0 0;font-size:11px;color:rgba(255,255,255,.75)}
+.chat-head .dot{width:8px;height:8px;border-radius:50%;background:#3fe08a;display:inline-block;margin-right:5px;box-shadow:0 0 0 4px rgba(63,224,138,.18)}
+.chat-quick{display:flex;flex-wrap:wrap;gap:7px;padding:12px 16px;border-bottom:1px solid #eef1f7;background:#fbfcfe}
+.chip{border:1px solid var(--line);background:#fff;color:#445069;font-size:11px;font-weight:800;padding:7px 11px;border-radius:999px;cursor:pointer;transition:.15s}
+.chip:hover{background:var(--mint);border-color:var(--mint2);color:var(--green)}
+.chat-msgs{height:420px;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px;background:#f6f8fc}
+.msg{max-width:78%;padding:10px 13px;border-radius:16px;font-size:13px;line-height:1.55;box-shadow:0 2px 8px rgba(10,25,56,.05)}
+.msg .msg-tag{display:block;font-size:9px;font-weight:900;letter-spacing:.4px;margin-bottom:3px;text-transform:uppercase;opacity:.65}
+.msg.warga{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:5px}
+.msg.warga .msg-tag{color:rgba(255,255,255,.7)}
+.msg.admin{align-self:flex-start;background:#fff;border:1px solid var(--line);color:var(--ink);border-bottom-left-radius:5px}
+.msg.admin .msg-tag{color:var(--green)}
+.msg.ai{align-self:flex-start;background:#fff7e8;border:1px solid #ecd8a0;color:var(--ink);border-bottom-left-radius:5px}
+.msg.ai .msg-tag{color:#a9791c}
+.msg.system{align-self:center;background:transparent;color:var(--muted);font-size:11px;box-shadow:none;text-align:center}
+.chat-empty{margin:auto;text-align:center;color:var(--muted);font-size:12px;line-height:1.6}
+.chat-input-row{display:flex;gap:8px;padding:14px 16px;border-top:1px solid #eef1f7;background:#fff}
+.chat-input-row input{flex:1;border:1px solid var(--line);background:#f8f9fc;border-radius:14px;padding:12px 14px}
+.chat-send{flex:0 0 auto;width:46px;height:46px;border-radius:14px;background:var(--green);color:#fff;border:none;font-size:18px;cursor:pointer}
+.chat-send:hover{background:var(--green2)}
+.chat-foot-note{padding:10px 18px 18px;font-size:11px;color:var(--muted);line-height:1.6}
+.ai-typing{display:inline-flex;gap:3px;align-items:center}
+.ai-typing span{width:5px;height:5px;border-radius:50%;background:#a9791c;opacity:.5;animation:aitp 1s infinite}
+.ai-typing span:nth-child(2){animation-delay:.15s}.ai-typing span:nth-child(3){animation-delay:.3s}
+@keyframes aitp{0%,60%,100%{opacity:.35}30%{opacity:1}}
+@media(max-width:640px){.chat-msgs{height:56vh}.chat-setup .row2{grid-template-columns:1fr}}
 :root{
   --green:#123a6b;
   --green2:#1c4a86;
@@ -218,15 +251,13 @@ linear-gradient(135deg,#dde7f8,#f8e8bc)}
 .gallery-item:nth-child(1){grid-column:span 7;min-height:310px;background:linear-gradient(135deg,#2c7d56,#c49325)}
 .gallery-item:nth-child(2){grid-column:span 5;min-height:310px;background:linear-gradient(135deg,#426f9e,#1e405e)}
 .gallery-item:nth-child(3),.gallery-item:nth-child(4),.gallery-item:nth-child(5){grid-column:span 4}
-.gallery-grid.is-dynamic{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
-.gallery-grid.is-dynamic .gallery-item{grid-column:auto!important;min-height:220px!important;background-size:cover;background-position:center}
-.gallery-item .meta{color:rgba(255,255,255,.82)}
 
 .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .contact-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:18px;display:flex;gap:14px;align-items:center;transition:.2s}
 .contact-card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
 .contact-icon{width:50px;height:50px;border-radius:15px;background:var(--mint);display:grid;place-items:center;font-size:22px}
 .contact-card strong{display:block}.contact-card span{font-size:12px;color:var(--muted)}
+.contact-name{display:block;font-size:11px;color:#c49325;font-weight:800;margin-top:2px}
 
 .callout{
   background:linear-gradient(135deg,#fff8e8,#fff);border:1px solid #ecd8a0;border-radius:24px;padding:22px;
@@ -318,12 +349,45 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <a class="header-banner" href="index.html"><img src="assets/header-banner.jpg" alt="RT 08 / RW 021 Villa Indah Pulo Timaha" loading="lazy"></a>
 <header class="site-header">
   <div class="container nav">
-    <nav class="desktop-nav"><a class="" href="index.html">Beranda</a><a class="" href="informasi.html">Informasi</a><a class="" href="agenda.html">Agenda</a><a class="" href="layanan.html">Layanan</a><a class="" href="transparansi.html">Transparansi</a><a class="" href="umkm.html">UMKM</a><a class="active" href="galeri.html">Galeri</a><a class="" href="kontak.html">Kontak</a><a class="" href="livechat.html">💬 Live Chat</a><a class="nav-cta" href="layanan.html#lapor">🚨 Lapor</a></nav>
+    <nav class="desktop-nav"><a class="" href="index.html">Beranda</a><a class="" href="informasi.html">Informasi</a><a class="" href="agenda.html">Agenda</a><a class="" href="layanan.html">Layanan</a><a class="" href="transparansi.html">Transparansi</a><a class="" href="umkm.html">UMKM</a><a class="" href="galeri.html">Galeri</a><a class="" href="kontak.html">Kontak</a><a class="active" href="livechat.html">💬 Live Chat</a><a class="nav-cta" href="layanan.html#lapor">🚨 Lapor</a></nav>
   </div>
 </header>
 <main>
-<section class="page-hero"><div class="container"><div class="breadcrumb">BERANDA / GALERI</div><h1>Galeri Kebersamaan</h1><p>Dokumentasi momen dan kegiatan warga RT 08, dari acara rutin sampai gotong royong.</p></div></section>
-<section class="section"><div class="container"><div class="gallery-grid" id="galleryGrid"><div class="meta">Memuat foto...</div></div></div></section>
+<section class="page-hero"><div class="container"><div class="breadcrumb">BERANDA / LIVE CHAT</div><h1>Live Chat Warga</h1><p>Ngobrol langsung dengan pengurus RT. Dijawab otomatis dan instan oleh Asisten AI untuk pertanyaan umum, atau diteruskan langsung ke Admin RT untuk yang butuh tindak lanjut — real-time, tanpa perlu WhatsApp.</p></div></section>
+<section class="section" style="padding-top:8px"><div class="container">
+
+<div class="chat-shell">
+  <div class="chat-head">
+    <div class="ic">💬</div>
+    <div style="flex:1">
+      <h3><span class="dot"></span>Live Chat RT 08 / RW 021</h3>
+      <p>Asisten AI standby 24 jam · Admin RT membalas di jam aktif</p>
+    </div>
+  </div>
+
+  <div class="chat-setup" id="chatSetup">
+    <div class="chat-setup-title">👋 Kenalan dulu yuk, supaya Admin tahu ini pesan dari siapa</div>
+    <div class="row2">
+      <div class="field"><label>Nama</label><input id="csNama" placeholder="Nama kamu"></div>
+      <div class="field"><label>Blok / No. Rumah (opsional)</label><input id="csRumah" placeholder="Contoh: E2 No.5"></div>
+    </div>
+    <button class="btn btn-brand" id="csSimpan" style="justify-self:start">✅ Mulai Chat</button>
+  </div>
+
+  <div class="chat-quick" id="chatQuick"></div>
+
+  <div class="chat-msgs" id="chatMsgs">
+    <div class="chat-empty" id="chatEmpty">Live Chat belum dikonfigurasi.</div>
+  </div>
+
+  <div class="chat-input-row">
+    <input id="chatInput" placeholder="Tulis pesan..." autocomplete="off">
+    <button class="chat-send" id="chatSend" title="Kirim">➤</button>
+  </div>
+  <div class="chat-foot-note">🤖 Pertanyaan umum (iuran, kontak pengurus, cara lapor, agenda terdekat, dll) dijawab instan oleh Asisten AI Portal RT08 secara gratis. Pertanyaan lain otomatis diteruskan dan akan dibalas langsung oleh Admin RT.</div>
+</div>
+
+</div></section>
 </main>
 <footer class="footer">
   <div class="container footer-grid">
@@ -338,55 +402,188 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
       <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a>
     </div>
   </div>
-</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="berita.html"><b>📰</b>Berita</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="livechat.html"><b>💬</b>Live Chat</a></nav><script src="config.js"></script>
+</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="berita.html"><b>📰</b>Berita</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="active" href="livechat.html"><b>💬</b>Live Chat</a></nav>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded",()=>{
-  const g=document.getElementById("navGrupWA");
-  if(g){
-    if(RT_CONFIG.linkGrupWA){ g.href=RT_CONFIG.linkGrupWA; g.target="_blank"; g.rel="noopener"; }
-    else { g.href="kontak.html"; g.removeAttribute("target"); }
-  }
-  loadGaleri_();
-});
-function escG_(s){
-  return String(s || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-}
-function loadGaleri_(){
-  const box = document.getElementById("galleryGrid");
-  const cfg = (RT_CONFIG.firebaseConfig || {});
-  if (!(cfg.apiKey && cfg.databaseURL && cfg.appId)) {
-    box.innerHTML = '<p class="meta">Galeri belum dikonfigurasi admin. Hubungi panitia RT.</p>';
+<script src="config.js"></script><script>
+/* ===================== LIVE CHAT + ASISTEN AI (100% gratis, jalan di browser, tanpa API berbayar) ===================== */
+(function(){
+function esc_(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function fmtRp_(n){ n=Number(n||0); return "Rp " + n.toLocaleString("id-ID"); }
+function waLink_(nomor, teks){ return "https://wa.me/"+String(nomor||"").replace(/[^0-9]/g,"")+"?text="+encodeURIComponent(teks||""); }
+
+document.addEventListener("DOMContentLoaded", function(){
+  var g=document.getElementById("navGrupWA");
+  if(g){ if(RT_CONFIG.linkGrupWA){ g.href=RT_CONFIG.linkGrupWA; g.target="_blank"; g.rel="noopener"; } else { g.href="kontak.html"; g.removeAttribute("target"); } }
+
+  var cfg = RT_CONFIG.firebaseConfig || {};
+  var msgsBox = document.getElementById("chatMsgs");
+  var emptyNote = document.getElementById("chatEmpty");
+  if(!(cfg.apiKey && cfg.databaseURL && cfg.appId)){
+    emptyNote.textContent = "Live Chat belum dikonfigurasi admin (Firebase belum diisi di config.js).";
+    document.getElementById("chatInput").disabled = true;
+    document.getElementById("chatSend").disabled = true;
     return;
   }
-  if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(cfg);
-  const db = firebase.database();
-  db.ref("galeri").on("value", snap => {
-    const val = snap.val() || {};
-    const items = Object.keys(val).map(k => Object.assign({ id:k }, val[k]));
-    items.sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
-    if (items.length === 0) {
-      box.className = "gallery-grid";
-      box.innerHTML = '<p class="meta">Belum ada foto kegiatan yang diunggah. Nantikan dokumentasi acara berikutnya!</p>';
+  if(!firebase.apps.length) firebase.initializeApp(cfg);
+  var db = firebase.database();
+
+  /* ---- identitas pengunjung (tersimpan di HP, tanpa login) ---- */
+  function getVisitorId(){
+    var id = localStorage.getItem("rt08_chat_vid");
+    if(!id){ id = "w" + Date.now().toString(36) + Math.random().toString(36).slice(2,8); localStorage.setItem("rt08_chat_vid", id); }
+    return id;
+  }
+  var vid = getVisitorId();
+  var chatRef = db.ref("obrolan/" + vid);
+
+  var setupBox = document.getElementById("chatSetup");
+  var inpNama = document.getElementById("csNama");
+  var inpRumah = document.getElementById("csRumah");
+  var savedNama = localStorage.getItem("rt08_chat_nama") || "";
+  var savedRumah = localStorage.getItem("rt08_chat_rumah") || "";
+  inpNama.value = savedNama; inpRumah.value = savedRumah;
+  if(savedNama) setupBox.style.display = "none";
+
+  function simpanIdentitas(){
+    var nama = inpNama.value.trim() || "Warga";
+    var rumah = inpRumah.value.trim();
+    localStorage.setItem("rt08_chat_nama", nama);
+    localStorage.setItem("rt08_chat_rumah", rumah);
+    chatRef.child("info").update({ nama: nama, rumah: rumah, updatedAt: firebase.database.ServerValue.TIMESTAMP });
+    setupBox.style.display = "none";
+    return { nama: nama, rumah: rumah };
+  }
+  document.getElementById("csSimpan").addEventListener("click", simpanIdentitas);
+
+  /* ---- render pesan real-time ---- */
+  function renderPesan_(items){
+    if(items.length === 0){
+      msgsBox.innerHTML = '<div class="chat-empty" id="chatEmpty">Belum ada obrolan. Tulis pesan atau pilih pertanyaan cepat di bawah untuk mulai 👇</div>';
       return;
     }
-    box.className = "gallery-grid is-dynamic";
-    box.innerHTML = items.map(it =>
-      '<div class="gallery-item" style="background-image:url(\'' + it.foto + '\')">' +
-        '<div><h3>' + escG_(it.judul) + '</h3>' +
-        (it.keterangan ? '<p class="meta">' + escG_(it.keterangan) + '</p>' : '') +
-        '</div></div>'
-    ).join("");
-  }, () => {
-    box.innerHTML = '<p class="meta">Gagal memuat galeri. Periksa koneksi internet.</p>';
+    msgsBox.innerHTML = items.map(function(it){
+      var tag = it.sender === "warga" ? "Kamu" : (it.sender === "admin" ? "👤 Admin RT" : "🤖 Asisten AI RT08");
+      return '<div class="msg ' + it.sender + '"><span class="msg-tag">' + tag + '</span>' + esc_(it.teks) + '</div>';
+    }).join("");
+    msgsBox.scrollTop = msgsBox.scrollHeight;
+  }
+  chatRef.child("pesan").on("value", function(snap){
+    var val = snap.val() || {};
+    var items = Object.keys(val).map(function(k){ return val[k]; });
+    items.sort(function(a,b){ return (a.waktu||0) - (b.waktu||0); });
+    renderPesan_(items);
+    // warga sedang buka halaman ini = otomatis "terbaca"
+    chatRef.child("info/unreadWarga").set(0);
   });
-}
-function showToast(msg){
-  let t=document.querySelector(".toast");
-  if(!t){t=document.createElement("div");t.className="toast";document.body.appendChild(t)}
-  t.textContent=msg;t.classList.add("show");
-  clearTimeout(window.toastTimer);
-  window.toastTimer=setTimeout(()=>t.classList.remove("show"),2600);
-}
-</script><script></script></body></html>
+
+  /* ---- kirim pesan warga ---- */
+  function kirimPesan(teks){
+    teks = String(teks || "").trim();
+    if(!teks) return;
+    var idn = (inpNama.value.trim() || savedNama) ? simpanIdentitasSilent_() : simpanIdentitas();
+    chatRef.child("pesan").push({ sender:"warga", teks: teks, waktu: firebase.database.ServerValue.TIMESTAMP });
+    chatRef.child("info").update({
+      nama: idn.nama, rumah: idn.rumah, lastMsg: teks, lastSender: "warga",
+      lastAt: firebase.database.ServerValue.TIMESTAMP
+    });
+    chatRef.child("info/unreadAdmin").transaction(function(cur){ return (cur||0) + 1; });
+    document.getElementById("chatInput").value = "";
+    jalankanAI_(teks);
+  }
+  function simpanIdentitasSilent_(){
+    var nama = localStorage.getItem("rt08_chat_nama") || inpNama.value.trim() || "Warga";
+    var rumah = localStorage.getItem("rt08_chat_rumah") || inpRumah.value.trim() || "";
+    return { nama: nama, rumah: rumah };
+  }
+
+  document.getElementById("chatSend").addEventListener("click", function(){ kirimPesan(document.getElementById("chatInput").value); });
+  document.getElementById("chatInput").addEventListener("keydown", function(e){ if(e.key === "Enter") kirimPesan(this.value); });
+
+  /* ---- pertanyaan cepat (1 klik) ---- */
+  var QUICK = [
+    "Berapa iuran bulanan?",
+    "Nomor WA Ketua RT?",
+    "Cara lapor/pengaduan warga",
+    "Agenda/kegiatan terdekat?",
+    "Cara buat surat pengantar"
+  ];
+  document.getElementById("chatQuick").innerHTML = QUICK.map(function(q){
+    return '<button class="chip" data-q="' + esc_(q) + '">' + esc_(q) + '</button>';
+  }).join("");
+  document.getElementById("chatQuick").addEventListener("click", function(e){
+    var b = e.target.closest(".chip"); if(!b) return;
+    kirimPesan(b.getAttribute("data-q"));
+  });
+
+  /* ================= ASISTEN AI — jawab otomatis pakai data portal, 100% gratis (tanpa API/langganan) ================= */
+  function kirimAI_(teks){
+    chatRef.child("pesan").push({ sender:"ai", teks: teks, waktu: firebase.database.ServerValue.TIMESTAMP });
+    chatRef.child("info").update({ lastMsg: teks, lastSender: "ai", lastAt: firebase.database.ServerValue.TIMESTAMP });
+  }
+  function cocok_(t, kws){ return kws.some(function(k){ return t.indexOf(k) !== -1; }); }
+
+  function jawabAgendaTerdekat_(done){
+    db.ref("agenda").once("value").then(function(snap){
+      var val = snap.val() || {};
+      var items = Object.keys(val).map(function(k){ return val[k]; });
+      var today = new Date().toISOString().slice(0,10);
+      items = items.filter(function(a){ return a.tanggal >= today; });
+      items.sort(function(a,b){ return (a.tanggal||"").localeCompare(b.tanggal||""); });
+      if(items.length === 0){ done("Belum ada agenda mendatang yang tercatat di sistem saat ini. Cek halaman Agenda untuk info terbaru, ya."); return; }
+      var a = items[0];
+      done("Agenda terdekat: \"" + a.judul + "\" (" + a.jenis + ") pada " + a.tanggal + (a.waktu ? " pukul " + a.waktu : "") + (a.lokasi ? " di " + a.lokasi : "") + ". Lihat selengkapnya di halaman Agenda.");
+    }).catch(function(){ done("Maaf, data agenda belum bisa diambil saat ini. Coba cek halaman Agenda langsung, ya."); });
+  }
+
+  function jalankanAI_(pesanAsli){
+    var t = pesanAsli.toLowerCase();
+    var typing = document.createElement("div");
+    typing.className = "msg ai"; typing.innerHTML = '<span class="msg-tag">🤖 Asisten AI RT08</span><span class="ai-typing"><span></span><span></span><span></span></span>';
+    msgsBox.appendChild(typing); msgsBox.scrollTop = msgsBox.scrollHeight;
+
+    function balas(teks){
+      setTimeout(function(){ typing.remove(); kirimAI_(teks); }, 500);
+    }
+
+    if(cocok_(t, ["halo","hai","assalam","pagi","siang","sore","malam admin"])){
+      balas("Halo! 👋 Saya Asisten AI Portal RT08. Ada yang bisa saya bantu? Kamu juga bisa langsung tanya soal iuran, kontak pengurus, cara lapor, atau agenda terdekat.");
+    } else if(cocok_(t, ["terima kasih","makasih","thanks","thx"])){
+      balas("Sama-sama! 🙏 Kalau masih ada yang perlu dibantu, tulis saja di sini ya.");
+    } else if(cocok_(t, ["iuran","bayar bulanan","kas bulanan"])){
+      var rek = RT_CONFIG.rekeningBendahara || {};
+      balas("Iuran bulanan warga: " + fmtRp_(RT_CONFIG.iuranBulanan) + " per rumah/KK" + (RT_CONFIG.iuranTambahanKK ? ", tambahan " + fmtRp_(RT_CONFIG.iuranTambahanKK) + " untuk KK terpisah di rumah yang sama" : "") + ". Transfer ke " + (rek.bank||"-") + " " + (rek.nomor||"-") + " a.n. " + (rek.nama||"-") + ", atau lihat detail di halaman Transparansi.");
+    } else if(cocok_(t, ["lapor","pengaduan","komplain","keluhan"])){
+      balas("Untuk melapor atau mengadukan sesuatu, buka halaman Layanan → menu \"Lapor & Pengaduan\". Kamu juga bisa langsung ketik keluhannya di sini, nanti diteruskan ke Admin RT.");
+    } else if(cocok_(t, ["surat pengantar","warga baru","warga pindah","pinjam fasilitas","buat surat","surat"])){
+      balas("Pembuatan surat (Pengantar, Warga Baru, Warga Pindah, Pinjam Fasilitas) bisa dilakukan di halaman Layanan — isi form, lalu sistem otomatis membuat PDF surat resmi untuk ditandatangani & distempel Ketua RT.");
+    } else if(cocok_(t, ["umkm","usaha","jualan","dagang"])){
+      balas("Untuk mendaftarkan usaha/UMKM warga, buka halaman UMKM lalu isi form pendaftaran. Nanti otomatis tampil di galeri UMKM warga.");
+    } else if(cocok_(t, ["kas rt","transparansi","saldo","keuangan rt"])){
+      balas("Rincian kas RT (pemasukan, pengeluaran, saldo berjalan) bisa dilihat real-time di halaman Transparansi.");
+    } else if(cocok_(t, ["grup wa","group wa","gabung grup","link grup"])){
+      if(RT_CONFIG.linkGrupWA){ balas("Yuk gabung Grup WhatsApp Warga di sini: " + RT_CONFIG.linkGrupWA); }
+      else { balas("Link Grup WhatsApp Warga belum diatur admin. Hubungi Admin RT untuk info bergabung."); }
+    } else if(cocok_(t, ["pemadam","kebakaran"])){
+      balas("Nomor Pemadam Kebakaran: " + (RT_CONFIG.teleponPemadam || "113") + ". Untuk kondisi darurat, segera hubungi nomor ini langsung.");
+    } else if(cocok_(t, ["ambulans","sakit","medis","faskes"])){
+      balas("Nomor Ambulans/Faskes darurat: " + (RT_CONFIG.teleponAmbulans || "119") + ".");
+    } else if(cocok_(t, ["polisi","kepolisian"])){
+      balas("Nomor Polisi: " + (RT_CONFIG.teleponPolisi || "110") + ".");
+    } else if(cocok_(t, ["ketua rt","nomor ketua","wa ketua","kontak ketua"])){
+      balas((RT_CONFIG.namaKetua ? "Ketua RT: " + RT_CONFIG.namaKetua + ". " : "") + "WhatsApp: wa.me/" + String(RT_CONFIG.waKetua||"").replace(/[^0-9]/g,"") + " · Telepon: " + (RT_CONFIG.teleponKetua||"-"));
+    } else if(cocok_(t, ["sekretaris"])){
+      balas((RT_CONFIG.namaSekretaris ? "Sekretaris: " + RT_CONFIG.namaSekretaris + ". " : "") + "WhatsApp: wa.me/" + String(RT_CONFIG.waSekretaris||"").replace(/[^0-9]/g,"") + " · Telepon: " + (RT_CONFIG.teleponSekretaris||"-"));
+    } else if(cocok_(t, ["bendahara"])){
+      balas((RT_CONFIG.namaBendahara ? "Bendahara: " + RT_CONFIG.namaBendahara + ". " : "") + "WhatsApp: wa.me/" + String(RT_CONFIG.waBendahara||"").replace(/[^0-9]/g,"") + " · Telepon: " + (RT_CONFIG.teleponBendahara||"-"));
+    } else if(cocok_(t, ["keamanan","satpam","hansip","ronda"])){
+      balas((RT_CONFIG.namaKeamanan ? "Keamanan: " + RT_CONFIG.namaKeamanan + ". " : "") + "WhatsApp: wa.me/" + String(RT_CONFIG.waKeamanan||"").replace(/[^0-9]/g,"") + " · Telepon: " + (RT_CONFIG.teleponKeamanan||"-"));
+    } else if(cocok_(t, ["agenda","jadwal","kegiatan","acara terdekat","kerja bakti"])){
+      jawabAgendaTerdekat_(balas);
+    } else {
+      balas("Pesan kamu sudah saya teruskan ke Admin RT dan akan segera dibalas langsung di sini 🙏. Sambil menunggu, kamu bisa coba tanya soal iuran, kontak pengurus, cara lapor, atau agenda terdekat — saya bisa jawab instan untuk itu.");
+    }
+  }
+});
+})();
+</script></body></html>

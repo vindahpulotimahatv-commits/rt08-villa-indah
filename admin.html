@@ -114,6 +114,32 @@ textarea{min-height:76px;resize:vertical}
 .tabs-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .tabs-scroll::-webkit-scrollbar{display:none}
 .tabs-scroll .tab-btn{flex:0 0 auto;white-space:nowrap}
+.tab-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-left:6px;box-shadow:0 0 0 3px rgba(199,68,68,.18);vertical-align:middle}
+.lc-wrap{display:grid;gap:14px}
+.lc-list-card{padding-bottom:8px}
+.lc-item{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-top:1px solid var(--line);cursor:pointer}
+.lc-item:first-of-type{border-top:0}
+.lc-item:hover{background:#f8f9fc}
+.lc-item.unread .lc-item-nama{color:var(--green)}
+.lc-item-av{flex:0 0 40px;width:40px;height:40px;border-radius:12px;background:var(--mint);display:grid;place-items:center;font-size:17px}
+.lc-item-body{flex:1;min-width:0}
+.lc-item-nama{font-size:13.5px;font-weight:900;display:flex;align-items:center;gap:6px}
+.lc-item-msg{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.lc-item-time{font-size:10px;color:var(--muted);flex:0 0 auto}
+.lc-badge-un{background:var(--red);color:#fff;font-size:10px;font-weight:900;border-radius:999px;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
+.lc-thread-card{background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:0 10px 30px rgba(10,25,56,.08);overflow:hidden;display:flex;flex-direction:column}
+.lc-thread-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;background:linear-gradient(135deg,var(--green2),var(--green3));color:#fff}
+.lc-thread-sub{display:block;font-size:11px;color:rgba(255,255,255,.7)}
+.lc-msgs{height:360px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:9px;background:#f6f8fc}
+.lc-msg{max-width:80%;padding:9px 12px;border-radius:15px;font-size:13px;line-height:1.5}
+.lc-msg .lc-msg-tag{display:block;font-size:9px;font-weight:900;opacity:.65;margin-bottom:3px;text-transform:uppercase}
+.lc-msg.warga{align-self:flex-start;background:#fff;border:1px solid var(--line)}
+.lc-msg.admin{align-self:flex-end;background:var(--green);color:#fff}
+.lc-msg.admin .lc-msg-tag{color:rgba(255,255,255,.7)}
+.lc-msg.ai{align-self:flex-start;background:#fff7e8;border:1px solid #ecd8a0}
+.lc-reply-row{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line)}
+.lc-reply-row input{flex:1}
+@media(min-width:900px){.lc-wrap{grid-template-columns:320px minmax(0,1fr)}}
 /* Di layar lebar (PC/tablet) tab dibungkus ke baris berikutnya supaya semua tab terlihat, termasuk Iuran Bulanan */
 @media(min-width:700px){.tabs-scroll{flex-wrap:wrap;overflow-x:visible}}
 
@@ -205,6 +231,7 @@ textarea{min-height:76px;resize:vertical}
 
   <div class="tabs tabs-scroll">
     <button class="tab-btn active" data-tab="laporan">🚨 Laporan Warga</button>
+    <button class="tab-btn" data-tab="livechat" id="tabLivechatBtn">💬 Live Chat<span id="lcUnreadDot" class="tab-dot" style="display:none"></span></button>
     <button class="tab-btn" data-tab="agenda">📅 Agenda</button>
     <button class="tab-btn" data-tab="info">📢 Informasi</button>
     <button class="tab-btn" data-tab="galeri">🖼️ Galeri</button>
@@ -219,6 +246,28 @@ textarea{min-height:76px;resize:vertical}
       <div class="list-title">Laporan Masuk (Real-time)</div>
       <p class="sub">Laporan warga dari halaman Layanan langsung muncul di sini, termasuk foto buktinya kalau ada.</p>
       <div id="listLaporan"><div class="empty-note">Memuat data...</div></div>
+    </div>
+  </div>
+
+  <!-- ===== PANEL LIVE CHAT ===== -->
+  <div class="panel" id="panel-livechat">
+    <div class="lc-wrap">
+      <div class="list-card lc-list-card">
+        <div class="list-title">Obrolan Warga (Real-time)</div>
+        <p class="sub" style="padding:0 14px 10px;margin:0">Setiap pesan warga otomatis dijawab instan oleh 🤖 Asisten AI untuk pertanyaan umum (gratis, tanpa API berbayar). Balas manual di sini untuk pertanyaan yang perlu ditangani langsung.</p>
+        <div id="lcList"><div class="empty-note">Memuat obrolan...</div></div>
+      </div>
+      <div class="lc-thread-card" id="lcThreadCard" style="display:none">
+        <div class="lc-thread-head">
+          <div><strong id="lcThreadNama">-</strong><span id="lcThreadRumah" class="lc-thread-sub"></span></div>
+          <button class="btn-sm btn-ghost" id="lcCloseThread" type="button">✕ Tutup</button>
+        </div>
+        <div class="lc-msgs" id="lcMsgs"></div>
+        <div class="lc-reply-row">
+          <input id="lcReplyInput" placeholder="Balas sebagai Admin RT...">
+          <button class="btn btn-brand btn-sm" id="lcReplySend" type="button">Kirim</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -542,6 +591,98 @@ function initDashboard_(){
         '</div>';
     }).join("");
   });
+
+  /* ---- LIVE CHAT ---- */
+  (function(){
+    var lcList = document.getElementById("lcList");
+    var lcThreadCard = document.getElementById("lcThreadCard");
+    var lcMsgs = document.getElementById("lcMsgs");
+    var lcThreadNama = document.getElementById("lcThreadNama");
+    var lcThreadRumah = document.getElementById("lcThreadRumah");
+    var lcReplyInput = document.getElementById("lcReplyInput");
+    var lcUnreadDot = document.getElementById("lcUnreadDot");
+    var activeVid = null;
+    var msgListener = null;
+    var obrolanRef = db.ref("obrolan");
+
+    function fmtJam_(ts){
+      if(!ts) return "";
+      var d = new Date(ts);
+      return d.toLocaleDateString("id-ID",{day:"2-digit",month:"short"}) + " " + d.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});
+    }
+
+    obrolanRef.on("value", function(snap){
+      var val = snap.val() || {};
+      var items = Object.keys(val).map(function(k){
+        var info = val[k].info || {};
+        return {
+          vid: k, nama: info.nama || "Warga", rumah: info.rumah || "",
+          lastMsg: info.lastMsg || "", lastAt: info.lastAt || 0,
+          unread: info.unreadAdmin || 0
+        };
+      });
+      items.sort(function(a,b){ return (b.lastAt||0) - (a.lastAt||0); });
+
+      var totalUnread = items.reduce(function(s,it){ return s + (it.unread||0); }, 0);
+      lcUnreadDot.style.display = totalUnread > 0 ? "inline-block" : "none";
+
+      if(items.length === 0){ lcList.innerHTML = '<div class="empty-note">Belum ada obrolan warga masuk.</div>'; return; }
+      lcList.innerHTML = items.map(function(it){
+        return '<div class="lc-item' + (it.unread > 0 ? " unread" : "") + '" data-vid="' + it.vid + '">' +
+          '<div class="lc-item-av">' + (it.unread > 0 ? "🔵" : "💬") + '</div>' +
+          '<div class="lc-item-body"><div class="lc-item-nama">' + esc_(it.nama) + (it.rumah ? ' <span style="color:var(--muted);font-weight:700">· ' + esc_(it.rumah) + '</span>' : "") + '</div>' +
+          '<div class="lc-item-msg">' + esc_(it.lastMsg) + '</div></div>' +
+          '<div style="text-align:right"><div class="lc-item-time">' + fmtJam_(it.lastAt) + '</div>' +
+          (it.unread > 0 ? '<div class="lc-badge-un">' + it.unread + '</div>' : '') + '</div>' +
+          '</div>';
+      }).join("");
+    });
+
+    function bukaThread_(vid, nama, rumah){
+      activeVid = vid;
+      lcThreadCard.style.display = "flex";
+      lcThreadNama.textContent = nama || "Warga";
+      lcThreadRumah.textContent = rumah ? "Blok/Rumah: " + rumah : "";
+      if(msgListener) msgListener();
+      var pesanRef = db.ref("obrolan/" + vid + "/pesan");
+      var handler = pesanRef.on("value", function(snap){
+        var val = snap.val() || {};
+        var items = Object.keys(val).map(function(k){ return val[k]; });
+        items.sort(function(a,b){ return (a.waktu||0) - (b.waktu||0); });
+        lcMsgs.innerHTML = items.map(function(it){
+          var tag = it.sender === "admin" ? "👤 Admin RT" : (it.sender === "ai" ? "🤖 Asisten AI" : esc_(nama || "Warga"));
+          return '<div class="lc-msg ' + it.sender + '"><span class="lc-msg-tag">' + tag + '</span>' + esc_(it.teks) + '</div>';
+        }).join("");
+        lcMsgs.scrollTop = lcMsgs.scrollHeight;
+      });
+      msgListener = function(){ pesanRef.off("value", handler); };
+      db.ref("obrolan/" + vid + "/info/unreadAdmin").set(0);
+    }
+
+    lcList.addEventListener("click", function(e){
+      var item = e.target.closest(".lc-item"); if(!item) return;
+      var vid = item.getAttribute("data-vid");
+      var nama = item.querySelector(".lc-item-nama").textContent.trim();
+      bukaThread_(vid, nama, "");
+    });
+    document.getElementById("lcCloseThread").addEventListener("click", function(){
+      lcThreadCard.style.display = "none";
+      if(msgListener){ msgListener(); msgListener = null; }
+      activeVid = null;
+    });
+    function kirimBalasan_(){
+      var teks = lcReplyInput.value.trim();
+      if(!teks || !activeVid) return;
+      db.ref("obrolan/" + activeVid + "/pesan").push({ sender:"admin", teks: teks, waktu: firebase.database.ServerValue.TIMESTAMP });
+      db.ref("obrolan/" + activeVid + "/info").update({
+        lastMsg: teks, lastSender: "admin", lastAt: firebase.database.ServerValue.TIMESTAMP
+      });
+      db.ref("obrolan/" + activeVid + "/info/unreadWarga").transaction(function(cur){ return (cur||0) + 1; });
+      lcReplyInput.value = "";
+    }
+    document.getElementById("lcReplySend").addEventListener("click", kirimBalasan_);
+    lcReplyInput.addEventListener("keydown", function(e){ if(e.key === "Enter") kirimBalasan_(); });
+  })();
 
   /* ---- AGENDA ---- */
   document.getElementById("formAgenda").addEventListener("submit", function(e){

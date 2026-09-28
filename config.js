@@ -235,10 +235,11 @@ function rtRumahReset(id) { rtRumahPasang(id, ""); }
 const RT_PESAN_RUMAH = "Pilih Blok & Nomor Rumah dulu. Tanpa nomor rumah yang terdaftar, pengajuan tidak bisa dikirim.";
 
 /* ============================================================
-   MENU BAWAH (HP) — navigasi bawah: tombol "Kontak Penting" tersendiri +
-   tombol "Menu" yang bisa dibuka/ditutup berisi Galeri, UMKM Warga, Kas RT.
+   MENU BAWAH (HP) — navigasi bawah: tombol "💬 Live Chat" tersendiri +
+   tombol "Menu" yang bisa dibuka/ditutup berisi Galeri, UMKM Warga, Kas RT,
+   dan Kontak Penting.
    Kode ini ada di config.js karena semua halaman sudah memuat file ini,
-   jadi tidak perlu mengubah 8 halaman satu per satu.
+   jadi tidak perlu mengubah 9 halaman satu per satu.
    Mau ubah isi menu? Edit daftar MENU_BAWAH_ITEM di bawah.
    ============================================================ */
 (function () {
@@ -247,7 +248,8 @@ const RT_PESAN_RUMAH = "Pilih Blok & Nomor Rumah dulu. Tanpa nomor rumah yang te
   var MENU_BAWAH_ITEM = [
     { ikon: "🖼️", teks: "Galeri",                href: "galeri.html" },
     { ikon: "🛍️", teks: "UMKM Warga",            href: "umkm.html" },
-    { ikon: "💰", teks: "Kas RT",                href: "transparansi.html" }
+    { ikon: "💰", teks: "Kas RT",                href: "transparansi.html" },
+    { ikon: "📞", teks: "Kontak Penting",         href: "kontak.html" }
   ];
 
   function pasang() {
@@ -256,7 +258,7 @@ const RT_PESAN_RUMAH = "Pilih Blok & Nomor Rumah dulu. Tanpa nomor rumah yang te
 
     var nav = document.querySelector("nav.mobile-nav");
     if (!nav || nav.getAttribute("data-menu-siap")) return;
-    var lama = nav.querySelector('a[href="kontak.html"]');   // tombol "Menu" lama (link biasa ke kontak.html)
+    var lama = nav.querySelector('a[href="livechat.html"]');   // tombol "Menu" lama (link biasa ke livechat.html)
     if (!lama) return;
     nav.setAttribute("data-menu-siap", "1");
 
@@ -282,19 +284,19 @@ const RT_PESAN_RUMAH = "Pilih Blok & Nomor Rumah dulu. Tanpa nomor rumah yang te
       "@media(min-width:981px){.mn-panel,.mn-scrim{display:none!important}}";
     document.head.appendChild(st);
 
-    /* tombol Menu (menggantikan link ke kontak.html; tetap link biasa bila JS gagal) */
+    /* tombol Menu (menggantikan link ke livechat.html; tetap link biasa bila JS gagal) */
     var btn = document.createElement("button");
     btn.type = "button"; btn.className = "mn-btn" + (diMenu ? " active" : "");
     btn.setAttribute("aria-expanded", "false"); btn.setAttribute("aria-controls", "mnPanel");
     btn.innerHTML = "<b>☰</b>Menu";
     lama.parentNode.replaceChild(btn, lama);
 
-    /* tombol Kontak Penting tersendiri, tepat sebelum Menu */
-    var kontak = document.createElement("a");
-    kontak.href = "kontak.html"; kontak.title = "Kontak Penting";
-    kontak.className = halaman === "kontak.html" ? "active" : "";
-    kontak.innerHTML = "<b>📞</b>Kontak";
-    nav.insertBefore(kontak, btn);
+    /* tombol Live Chat tersendiri, tepat sebelum Menu */
+    var livechat = document.createElement("a");
+    livechat.href = "livechat.html"; livechat.title = "Live Chat";
+    livechat.className = halaman === "livechat.html" ? "active" : "";
+    livechat.innerHTML = "<b>💬</b>Live Chat";
+    nav.insertBefore(livechat, btn);
     nav.style.gridTemplateColumns = "repeat(6,1fr)";   // sekarang 6 tombol
 
     /* panel isi menu */
