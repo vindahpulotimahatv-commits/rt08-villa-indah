@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Ambil daftar berita dari RSS infobekasi.co.id -> berita.json.
-Hanya judul, link, tanggal, kategori (tanpa isi berita). Kalau gagal, berita.json lama dibiarkan."""
+Hanya judul, link, tanggal, kategori, dan ALAMAT foto utama (foto tidak diunduh/disalin,
+tanpa isi berita). Kalau RSS tidak memuat foto, alamat foto diambil dari tag og:image
+di halaman artikelnya. Kalau gagal, berita.json lama dibiarkan."""
 import json, re, sys, urllib.request, xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
 from datetime import timezone, timedelta
@@ -25,6 +27,25 @@ def cari_gambar(it):
     m = re.search(r'<img[^>]+src=["\']([^"\']+)', html)
     if m and m.group(1).startswith("https://"):
         return m.group(1)
+    return None
+
+def og_image(link):
+    """Ambil alamat foto utama (og:image) dari halaman artikel. Gagal -> None."""
+    try:
+        req = urllib.request.Request(link, headers={"User-Agent": UA})
+        html = urllib.request.urlopen(req, timeout=15).read(300000).decode("utf-8", "ignore")
+    except Exception:
+        return None
+    for pat in (
+        r'<meta[^>]+property=["\']og:image["\'][^>]*content=["\']([^"\']+)',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]*property=["\']og:image["\']',
+        r'<meta[^>]+name=["\']twitter:image["\'][^>]*content=["\']([^"\']+)',
+    ):
+        m = re.search(pat, html, re.I)
+        if m:
+            u = m.group(1).strip().replace("&amp;", "&")
+            if u.startswith("https://"):
+                return u
     return None
 
 def main(src=None):
@@ -59,6 +80,13 @@ def main(src=None):
         lama = json.load(open(OUT, encoding="utf-8")).get("items")
     except Exception:
         lama = None
+    # pakai lagi foto yang sudah pernah didapat; sisanya cari dari halaman artikel
+    foto_lama = {n.get("link"): n.get("img") for n in (lama or []) if n.get("img")}
+    for item in items:
+        if not item.get("img"):
+            img = foto_lama.get(item["link"]) or (og_image(item["link"]) if not src else None)
+            if img:
+                item["img"] = img
     if lama == items:
         print("Tidak ada berita baru."); return
     json.dump({"sumber": "infobekasi.co.id", "items": items}, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
