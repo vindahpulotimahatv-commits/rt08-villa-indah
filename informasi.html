@@ -313,6 +313,20 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 .info-slider .is-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.5);transition:background .3s}
 .info-slider .is-dot.active{background:#fff}
 @media(max-width:640px){.info-slider{height:230px}}
+
+.bh-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-radius:18px;background:linear-gradient(135deg,#123a6b,#081c3a);color:#fff;margin-bottom:16px}
+.bh-bar h2{margin:0;font-size:20px;letter-spacing:-.4px;color:#fff}
+.bh-bar span{font-size:12px;opacity:.75}
+.bh-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.bh-card{display:block;background:#fff;border-radius:20px;overflow:hidden;box-shadow:var(--shadow);transition:.2s}
+.bh-card:hover{transform:translateY(-4px)}
+.bh-img{position:relative;height:130px;display:flex;align-items:center;justify-content:center;font-size:46px;background:linear-gradient(135deg,#123a6b,#081c3a)}
+.bh-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.bh-body{padding:13px 15px 16px}
+.bh-body span{display:inline-block;font-size:11px;font-weight:900;padding:4px 10px;border-radius:999px;background:#e7edf9;color:#123a6b}
+.bh-body h4{margin:9px 0 5px;font-size:15px;line-height:1.4;color:#12213f}
+.bh-body small{color:#59657f;font-size:11.5px}
+@media(max-width:900px){.bh-grid{grid-template-columns:1fr}}
 </style>
 </head><body>
 <div class="ticker"><div class="container"><div class="ticker-track">
@@ -341,6 +355,10 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
     <div class="info-slider" id="infoSlider"><div class="meta" style="padding:14px">Memuat galeri...</div></div>
   </div>
 </div></section>
+<section class="section-tight" id="infoBekasi"><div class="container">
+  <div class="bh-bar"><h2>📰 Info Terkini Bekasi</h2><span>Diperbarui otomatis</span></div>
+  <div class="bh-grid" id="beritaHome"><div class="meta">Memuat berita...</div></div>
+</div></section>
 </main>
 <footer class="footer">
   <div class="container footer-grid">
@@ -355,7 +373,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
       <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a>
     </div>
   </div>
-</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="active" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="berita.html"><b>📰</b>Berita</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>📞</b>Kontak</a></nav>
+</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="active" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>📞</b>Kontak</a></nav>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
 <script src="config.js"></script><script>
@@ -440,4 +458,18 @@ function showToast(msg){
   clearTimeout(window.toastTimer);
   window.toastTimer=setTimeout(()=>t.classList.remove("show"),2600);
 }
-</script></body></html>
+</script><script>
+(function(){
+  var el=document.getElementById("beritaHome"); if(!el) return;
+  var IK={Ekonomi:"🛒",Lingkungan:"🌳",Kesehatan:"🏥",Peristiwa:"🚨",Olahraga:"⚽",Kuliner:"🍜",Travel:"🧳",Sejarah:"📜",Events:"🎉"};
+  var B=["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+  function e(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  fetch("berita.json?t="+Date.now()).then(function(r){return r.json()}).then(function(d){
+    var it=(d.items||[]).slice().sort(function(a,b){return b.tgl.localeCompare(a.tgl)}).slice(0,6);
+    if(!it.length){el.innerHTML='<div class="meta">Belum ada berita.</div>';return}
+    el.innerHTML=it.map(function(n){var p=n.tgl.split("-");
+      return '<a class="bh-card" href="'+e(n.link)+'" target="_blank" rel="noopener"><div class="bh-img">'+(IK[n.kat]||"📰")+(n.img?'<img src="'+e(n.img)+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">':'')+'</div><div class="bh-body"><span>'+e(n.kat)+'</span><h4>'+e(n.judul)+'</h4><small>📰 '+e(d.sumber||"infobekasi.co.id")+' • '+(+p[2])+" "+B[+p[1]-1]+" "+p[0]+'</small></div></a>'}).join("");
+  }).catch(function(){el.innerHTML='<div class="meta">Berita belum bisa dimuat.</div>'});
+})();
+</script>
+</body></html>

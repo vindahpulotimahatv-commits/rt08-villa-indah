@@ -406,12 +406,6 @@ body.bumper-lock{overflow:hidden}
 </div>
 </section>
 
-<section class="section-tight">
-<div class="container card">
-  <div class="section-heading"><div><h2 style="font-size:24px">Berita Seputar Bekasi</h2><p>Kabar Bekasi terkini, diperbarui otomatis.</p></div><a class="link-more" href="berita.html">Semua berita →</a></div>
-  <div class="bh-grid" id="beritaHome"><div class="meta">Memuat berita...</div></div>
-</div>
-</section>
 
 <section class="section">
 <div class="container callout">
@@ -433,7 +427,7 @@ body.bumper-lock{overflow:hidden}
       <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a>
     </div>
   </div>
-</footer><nav class="mobile-nav"><a class="active" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="berita.html"><b>📰</b>Berita</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>📞</b>Kontak</a></nav>
+</footer><nav class="mobile-nav"><a class="active" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>📞</b>Kontak</a></nav>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
 <script src="config.js"></script><script>
@@ -535,18 +529,5 @@ function showToast(msg){
   clearTimeout(window.toastTimer);
   window.toastTimer=setTimeout(()=>t.classList.remove("show"),2600);
 }
-</script><script>
-(function(){
-  var el=document.getElementById("beritaHome"); if(!el) return;
-  var IK={Ekonomi:"🛒",Lingkungan:"🌳",Kesehatan:"🏥",Peristiwa:"🚨",Olahraga:"⚽",Kuliner:"🍜",Travel:"🧳",Sejarah:"📜",Events:"🎉"};
-  var B=["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
-  function e(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
-  fetch("berita.json?t="+Date.now()).then(function(r){return r.json()}).then(function(d){
-    var it=(d.items||[]).slice().sort(function(a,b){return b.tgl.localeCompare(a.tgl)}).slice(0,3);
-    if(!it.length){el.innerHTML='<div class="meta">Belum ada berita.</div>';return}
-    el.innerHTML=it.map(function(n){var p=n.tgl.split("-");
-      return '<a class="bh-card" href="'+e(n.link)+'" target="_blank" rel="noopener"><div class="bh-img">'+(IK[n.kat]||"📰")+(n.img?'<img src="'+e(n.img)+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">':'')+'</div><div class="bh-body"><span>'+e(n.kat)+'</span><h4>'+e(n.judul)+'</h4><small>📰 '+e(d.sumber||"infobekasi.co.id")+' • '+(+p[2])+" "+B[+p[1]-1]+" "+p[0]+'</small></div></a>'}).join("");
-  }).catch(function(){el.innerHTML='<div class="meta">Berita belum bisa dimuat.</div>'});
-})();
 </script>
 </body></html>
