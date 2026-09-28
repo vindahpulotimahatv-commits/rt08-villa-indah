@@ -244,7 +244,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 
 .mobile-nav{
   display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:120;
-  grid-template-columns:repeat(5,1fr);padding:8px;background:rgba(8,20,44,.95);backdrop-filter:blur(15px);
+  grid-template-columns:repeat(6,1fr);padding:8px;background:rgba(8,20,44,.95);backdrop-filter:blur(15px);
   border:1px solid rgba(213,166,43,.28);border-radius:21px;box-shadow:0 16px 45px rgba(0,0,0,.4)
 }
 .mobile-nav a{text-align:center;padding:7px 3px;border-radius:13px;font-size:9px;font-weight:900;color:rgba(255,255,255,.65)}
@@ -256,7 +256,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 .toast.show{opacity:1;transform:translateY(0)}
 
 @media(min-width:981px){
-  .header-banner img{max-height:340px}
+  .header-banner img{max-height:none;width:100%;max-width:1000px;margin:0 auto}
   .nav{min-height:66px}
   .desktop-nav a{font-size:13.5px;padding:11px 14px}
 }
@@ -323,6 +323,17 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 @keyframes bumperPulse{0%,100%{opacity:.55}50%{opacity:1}}
 .bumper.fade-out{opacity:0;pointer-events:none}
 body.bumper-lock{overflow:hidden}
+
+.bh-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.bh-card{display:block;background:#fff;border-radius:20px;overflow:hidden;box-shadow:var(--shadow);transition:.2s}
+.bh-card:hover{transform:translateY(-4px)}
+.bh-img{position:relative;height:130px;display:flex;align-items:center;justify-content:center;font-size:46px;background:linear-gradient(135deg,#123a6b,#081c38);overflow:hidden}
+.bh-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.bh-body{padding:13px 15px 16px}
+.bh-body span{display:inline-block;font-size:11px;font-weight:900;padding:4px 10px;border-radius:999px;background:#e7edf9;color:#123a6b}
+.bh-body h4{margin:9px 0 5px;font-size:15px;line-height:1.4;color:#12213f}
+.bh-body small{color:#59657f;font-size:11.5px}
+@media(max-width:900px){.bh-grid{grid-template-columns:1fr}}
 </style>
 </head><body>
 <div class="bumper" id="bumper">
@@ -340,7 +351,7 @@ body.bumper-lock{overflow:hidden}
 <a class="header-banner" href="index.html"><img src="assets/header-banner.jpg" alt="RT 08 / RW 021 Villa Indah Pulo Timaha" loading="lazy"></a>
 <header class="site-header">
   <div class="container nav">
-    <nav class="desktop-nav"><a class="active" href="index.html">Beranda</a><a class="" href="informasi.html">Informasi</a><a class="" href="agenda.html">Agenda</a><a class="" href="layanan.html">Layanan</a><a class="" href="transparansi.html">Transparansi</a><a class="" href="umkm.html">UMKM</a><a class="" href="galeri.html">Galeri</a><a class="" href="kontak.html">Kontak</a><a class="nav-cta" href="layanan.html#lapor">🚨 Lapor</a></nav>
+    <nav class="desktop-nav"><a class="active" href="index.html">Beranda</a><a class="" href="informasi.html">Informasi</a><a class="" href="agenda.html">Agenda</a><a class="" href="berita.html">Berita</a><a class="" href="layanan.html">Layanan</a><a class="" href="transparansi.html">Transparansi</a><a class="" href="umkm.html">UMKM</a><a class="" href="galeri.html">Galeri</a><a class="" href="kontak.html">Kontak</a><a class="nav-cta" href="layanan.html#lapor">🚨 Lapor</a></nav>
   </div>
 </header>
 <main>
@@ -395,6 +406,13 @@ body.bumper-lock{overflow:hidden}
 </div>
 </section>
 
+<section class="section-tight">
+<div class="container card">
+  <div class="section-heading"><div><h2 style="font-size:24px">Berita Terbaru</h2><p>Kabar Bekasi terkini, diperbarui otomatis.</p></div><a class="link-more" href="berita.html">Semua berita →</a></div>
+  <div class="bh-grid" id="beritaHome"><div class="meta">Memuat berita...</div></div>
+</div>
+</section>
+
 <section class="section">
 <div class="container callout">
   <div><h3>🚨 Ada masalah di lingkungan?</h3><p>Lampu jalan mati, sampah, drainase, keamanan, atau fasilitas umum bisa dilaporkan dari portal.</p></div>
@@ -415,7 +433,7 @@ body.bumper-lock{overflow:hidden}
       <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a>
     </div>
   </div>
-</footer><nav class="mobile-nav"><a class="active" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>📞</b>Kontak</a></nav>
+</footer><nav class="mobile-nav"><a class="active" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="berita.html"><b>📰</b>Berita</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>📞</b>Kontak</a></nav>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
 <script src="config.js"></script><script>
@@ -517,4 +535,18 @@ function showToast(msg){
   clearTimeout(window.toastTimer);
   window.toastTimer=setTimeout(()=>t.classList.remove("show"),2600);
 }
-</script></body></html>
+</script><script>
+(function(){
+  var el=document.getElementById("beritaHome"); if(!el) return;
+  var IK={Ekonomi:"🛒",Lingkungan:"🌳",Kesehatan:"🏥",Peristiwa:"🚨",Olahraga:"⚽",Kuliner:"🍜",Travel:"🧳",Sejarah:"📜",Events:"🎉"};
+  var B=["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+  function e(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  fetch("berita.json?t="+Date.now()).then(function(r){return r.json()}).then(function(d){
+    var it=(d.items||[]).slice().sort(function(a,b){return b.tgl.localeCompare(a.tgl)}).slice(0,3);
+    if(!it.length){el.innerHTML='<div class="meta">Belum ada berita.</div>';return}
+    el.innerHTML=it.map(function(n){var p=n.tgl.split("-");
+      return '<a class="bh-card" href="'+e(n.link)+'" target="_blank" rel="noopener"><div class="bh-img">'+(IK[n.kat]||"📰")+(n.img?'<img src="'+e(n.img)+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">':'')+'</div><div class="bh-body"><span>'+e(n.kat)+'</span><h4>'+e(n.judul)+'</h4><small>📰 '+e(d.sumber||"infobekasi.co.id")+' • '+(+p[2])+" "+B[+p[1]-1]+" "+p[0]+'</small></div></a>'}).join("");
+  }).catch(function(){el.innerHTML='<div class="meta">Berita belum bisa dimuat.</div>'});
+})();
+</script>
+</body></html>

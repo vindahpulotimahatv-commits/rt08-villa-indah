@@ -242,7 +242,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 
 .mobile-nav{
   display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:120;
-  grid-template-columns:repeat(5,1fr);padding:8px;background:rgba(8,20,44,.95);backdrop-filter:blur(15px);
+  grid-template-columns:repeat(6,1fr);padding:8px;background:rgba(8,20,44,.95);backdrop-filter:blur(15px);
   border:1px solid rgba(213,166,43,.28);border-radius:21px;box-shadow:0 16px 45px rgba(0,0,0,.4)
 }
 .mobile-nav a{text-align:center;padding:7px 3px;border-radius:13px;font-size:9px;font-weight:900;color:rgba(255,255,255,.65)}
@@ -349,6 +349,9 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 .nw-sheet .nw-x{float:right;border:0;background:var(--mint);border-radius:50%;width:34px;height:34px;font-size:16px;cursor:pointer;margin:12px}
 .nw-src{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--green)}
 .nw-btn{display:inline-flex;align-items:center;gap:8px;margin-top:18px;background:var(--gold);color:#231e11;font-weight:900;font-size:14px;padding:13px 20px;border-radius:14px;text-decoration:none}
+.nw-img{position:relative;overflow:hidden}
+.nw-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.nw-hero .nw-cap{position:relative}
 .nw-empty{grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)}
 @media(max-width:900px){.nw-top{grid-template-columns:1fr}.nw-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.nw-grid{grid-template-columns:1fr}.nw-hero h2{font-size:22px}}
@@ -371,7 +374,6 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <main>
 <section class="page-hero"><div class="container"><div class="breadcrumb">BERANDA / BERITA</div><h1>Berita Lingkungan</h1><p>Kabar terbaru seputar Villa Indah dan sekitarnya, dikemas ringkas dan mudah dibaca.</p></div></section>
 <section class="section"><div class="container">
-  <div class="nw-note">🧪 <b>Tampilan percobaan (Cara B).</b> Admin RT memilih berita yang relevan, lalu menempel judul, ringkasan singkat, dan link sumber. Daftar berita diperbarui otomatis (judul, kategori, dan link dari infobekasi.co.id). Klik kartu untuk membaca lengkapnya di situs sumber.</div>
   <div class="nw-toolbar">
     <input class="nw-search" id="nwCari" placeholder="🔍 Cari berita...">
     <div class="nw-chips" id="nwChips"></div>
@@ -408,9 +410,10 @@ var IKON={Ekonomi:"🛒",Lingkungan:"🌳",Kesehatan:"🏥",Peristiwa:"🚨",Ola
 var WARNA={Ekonomi:"#d5a62b",Lingkungan:"#1c8a4e",Kesehatan:"#c74444",Peristiwa:"#8a3a3a",Olahraga:"#315f9e"};
 function E(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function tgl(i){var p=i.split("-"),B=["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];return +p[2]+" "+B[+p[1]-1]+" "+p[0]}
+function IMG(n){return n.img?'<img class="nw-photo" src="'+E(n.img)+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">':""}
 function bg(n){return "background:linear-gradient(135deg,"+n.warna+",#081c38)"}
 function buka(id){var n=BERITA.filter(function(x){return x.id==id})[0];if(!n)return;
- document.getElementById("nwSheet").innerHTML='<button class="nw-x" onclick="tutup()">✕</button><div class="nw-img" style="'+bg(n)+'">'+n.ico+'</div><div class="nw-body"><span class="nw-tag">'+E(n.kat)+'</span><h3>'+E(n.judul)+'</h3><div class="nw-meta">'+tgl(n.tgl)+'</div>'+(n.ringkas?'<p style="margin-top:14px;font-size:15px;line-height:1.8;color:#12213f">'+E(n.ringkas)+'</p>':'')+'<div class="nw-src">📰 Sumber: '+E(n.sumber)+'</div><br><a class="nw-btn" href="'+E(n.link)+'" target="_blank" rel="noopener">Baca selengkapnya di '+E(n.sumber)+' ↗</a></div>';
+ document.getElementById("nwSheet").innerHTML='<button class="nw-x" onclick="tutup()">✕</button><div class="nw-img" style="'+bg(n)+'">'+n.ico+IMG(n)+'</div><div class="nw-body"><span class="nw-tag">'+E(n.kat)+'</span><h3>'+E(n.judul)+'</h3><div class="nw-meta">'+tgl(n.tgl)+'</div>'+(n.ringkas?'<p style="margin-top:14px;font-size:15px;line-height:1.8;color:#12213f">'+E(n.ringkas)+'</p>':'')+'<div class="nw-src">📰 Sumber: '+E(n.sumber)+'</div><br><a class="nw-btn" href="'+E(n.link)+'" target="_blank" rel="noopener">Baca selengkapnya di '+E(n.sumber)+' ↗</a></div>';
  document.getElementById("nwModal").classList.add("show")}
 function tutup(){document.getElementById("nwModal").classList.remove("show")}
 function render(){
@@ -418,9 +421,9 @@ function render(){
  var h=BERITA.slice().sort(function(a,b){return b.tgl.localeCompare(a.tgl)})[0];
  document.getElementById("nwHero").setAttribute("style",bg(h));
  document.getElementById("nwHero").onclick=function(){buka(h.id)};
- document.getElementById("nwHero").innerHTML='<div style="position:absolute;top:22px;right:26px;font-size:90px;opacity:.25">'+h.ico+'</div><div class="nw-cap"><span class="nw-tag">'+E(h.kat)+'</span><h2>'+E(h.judul)+'</h2>'+(h.ringkas?'<p>'+E(h.ringkas)+'</p>':'')+'<p style="margin-top:8px;font-size:12px;font-weight:800;color:#f3cf6a">📰 '+E(h.sumber)+' • Baca selengkapnya ↗</p></div>';
+ document.getElementById("nwHero").innerHTML='<div style="position:absolute;top:22px;right:26px;font-size:90px;opacity:.25">'+h.ico+'</div>'+IMG(h)+'<div class="nw-cap"><span class="nw-tag">'+E(h.kat)+'</span><h2>'+E(h.judul)+'</h2>'+(h.ringkas?'<p>'+E(h.ringkas)+'</p>':'')+'<p style="margin-top:8px;font-size:12px;font-weight:800;color:#f3cf6a">📰 '+E(h.sumber)+' • Baca selengkapnya ↗</p></div>';
  document.getElementById("nwPopuler").innerHTML=BERITA.slice().sort(function(a,b){return b.tgl.localeCompare(a.tgl)}).map(function(n,i){return '<div class="nw-row" onclick="buka('+n.id+')"><b>'+(i+1)+'</b><div><strong>'+E(n.judul)+'</strong><small>'+tgl(n.tgl)+'</small></div></div>'}).join("");
- document.getElementById("nwGrid").innerHTML=list.length?list.map(function(n){return '<div class="nw-card" onclick="buka('+n.id+')"><div class="nw-img" style="'+bg(n)+'">'+n.ico+'</div><div class="nw-body"><span class="nw-tag">'+E(n.kat)+'</span><h4>'+E(n.judul)+'</h4>'+(n.ringkas?'<p>'+E(n.ringkas)+'</p>':'')+'<div class="nw-meta">📰 '+E(n.sumber)+' • '+tgl(n.tgl)+'</div></div></div>'}).join(""):'<div class="nw-empty">Tidak ada berita yang cocok.</div>'}
+ document.getElementById("nwGrid").innerHTML=list.length?list.map(function(n){return '<div class="nw-card" onclick="buka('+n.id+')"><div class="nw-img" style="'+bg(n)+'">'+n.ico+IMG(n)+'</div><div class="nw-body"><span class="nw-tag">'+E(n.kat)+'</span><h4>'+E(n.judul)+'</h4>'+(n.ringkas?'<p>'+E(n.ringkas)+'</p>':'')+'<div class="nw-meta">📰 '+E(n.sumber)+' • '+tgl(n.tgl)+'</div></div></div>'}).join(""):'<div class="nw-empty">Tidak ada berita yang cocok.</div>'}
 function buildChips(){var u=[];BERITA.forEach(function(n){if(u.indexOf(n.kat)<0)u.push(n.kat)});KATS=["Semua"].concat(u);if(KATS.indexOf(kat)<0)kat="Semua";
  document.getElementById("nwChips").innerHTML=KATS.map(function(k){return '<button class="nw-chip'+(k==kat?' on':'')+'" data-k="'+E(k)+'">'+E(k)+'</button>'}).join("")}
 buildChips();
@@ -430,7 +433,7 @@ document.getElementById("nwModal").addEventListener("click",function(e){if(e.tar
 render();
 fetch("berita.json?t="+Date.now()).then(function(r){return r.json()}).then(function(d){
  if(!d||!d.items||!d.items.length)return;
- BERITA=d.items.map(function(n,i){return {id:i+1,kat:n.kat||"Berita",ico:IKON[n.kat]||"📰",warna:WARNA[n.kat]||"#123a6b",judul:n.judul,ringkas:"",tgl:n.tgl,sumber:d.sumber||S,link:n.link}});
+ BERITA=d.items.map(function(n,i){return {id:i+1,kat:n.kat||"Berita",ico:IKON[n.kat]||"📰",warna:WARNA[n.kat]||"#123a6b",judul:n.judul,ringkas:"",tgl:n.tgl,img:n.img||"",sumber:d.sumber||S,link:n.link}});
  buildChips();render();
 }).catch(function(){});
 </script></body></html>
