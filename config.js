@@ -236,7 +236,7 @@ const RT_PESAN_RUMAH = "Pilih Blok & Nomor Rumah dulu. Tanpa nomor rumah yang te
 
 /* ============================================================
    MENU BAWAH (HP) — navigasi bawah: tombol "Kontak Penting" tersendiri +
-   tombol "Menu" yang bisa dibuka/ditutup berisi Galeri, UMKM Warga, Kas RT.
+   tombol "Menu" yang bisa dibuka/ditutup berisi Berita, Galeri, UMKM Warga, Kas RT.
    Kode ini ada di config.js karena semua halaman sudah memuat file ini,
    jadi tidak perlu mengubah 8 halaman satu per satu.
    Mau ubah isi menu? Edit daftar MENU_BAWAH_ITEM di bawah.
@@ -245,9 +245,10 @@ const RT_PESAN_RUMAH = "Pilih Blok & Nomor Rumah dulu. Tanpa nomor rumah yang te
   if (typeof document === "undefined") return;
 
   var MENU_BAWAH_ITEM = [
-    { ikon: "🖼️", teks: "Galeri",       href: "galeri.html" },
-    { ikon: "🛍️", teks: "UMKM Warga",   href: "umkm.html" },
-    { ikon: "💰", teks: "Kas RT",       href: "transparansi.html" }
+    { ikon: "📰", teks: "Berita Seputar Bekasi", href: "berita.html" },
+    { ikon: "🖼️", teks: "Galeri",                href: "galeri.html" },
+    { ikon: "🛍️", teks: "UMKM Warga",            href: "umkm.html" },
+    { ikon: "💰", teks: "Kas RT",                href: "transparansi.html" }
   ];
 
   function pasang() {
@@ -256,6 +257,10 @@ const RT_PESAN_RUMAH = "Pilih Blok & Nomor Rumah dulu. Tanpa nomor rumah yang te
     var lama = nav.querySelector('a[href="kontak.html"]');   // tombol "Menu" lama (link biasa ke kontak.html)
     if (!lama) return;
     nav.setAttribute("data-menu-siap", "1");
+
+    /* Berita dipindah ke dalam tombol Menu: hapus dari deretan tombol bawah */
+    var brt = nav.querySelector('a[href="berita.html"]');
+    if (brt) brt.parentNode.removeChild(brt);
 
     var halaman = (location.pathname.split("/").pop() || "index.html").toLowerCase();
     var diMenu = MENU_BAWAH_ITEM.some(function (m) { return m.href === halaman; });
