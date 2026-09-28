@@ -117,17 +117,23 @@ textarea{min-height:76px;resize:vertical}
 /* Di layar lebar (PC/tablet) tab dibungkus ke baris berikutnya supaya semua tab terlihat, termasuk Iuran Bulanan */
 @media(min-width:700px){.tabs-scroll{flex-wrap:wrap;overflow-x:visible}}
 
+/* Kolom cari warga di atas dashboard */
+.cw-bar{margin-bottom:18px}
+.cw-input{width:100%;border:1px solid rgba(255,255,255,.3);background:#fff;padding:14px 16px;border-radius:16px;font-size:15px;box-shadow:0 10px 30px rgba(3,10,26,.25)}
+.cw-results{background:#fff;border:1px solid var(--line);border-radius:18px;margin-top:8px;max-height:340px;overflow:auto;box-shadow:0 10px 30px rgba(3,10,26,.25);padding:4px 0}
+
 /* ============ VERSI DESKTOP (layar >= 1024px): menu samping + area kerja lebar ============ */
 @media(min-width:1024px){
   .container{width:min(1240px,calc(100% - 64px))}
   #dashboard{padding:28px 0 70px}
   #dashboard .container{display:grid;grid-template-columns:240px minmax(0,1fr);column-gap:26px;align-items:start}
-  #dashboard .warn-card{grid-column:1/-1}
+  #dashboard .warn-card{grid-column:1/-1;grid-row:1}
+  #dashboard .cw-bar{grid-column:1/-1;grid-row:2;max-width:640px;width:100%}
   /* menu tab jadi sidebar kiri yang ikut menempel saat scroll */
-  #dashboard .tabs{grid-column:1;grid-row:2;position:sticky;top:92px;flex-direction:column;flex-wrap:nowrap;overflow:visible;gap:4px;padding:10px;margin-bottom:0;border-radius:20px;background:rgba(8,20,44,.55);backdrop-filter:blur(10px);border:1px solid rgba(213,166,43,.22)}
+  #dashboard .tabs{grid-column:1;grid-row:3;position:sticky;top:92px;flex-direction:column;flex-wrap:nowrap;overflow:visible;gap:4px;padding:10px;margin-bottom:0;border-radius:20px;background:rgba(8,20,44,.55);backdrop-filter:blur(10px);border:1px solid rgba(213,166,43,.22)}
   #dashboard .tabs .tab-btn{flex:none;width:100%;text-align:left;padding:13px 14px;font-size:14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
   #dashboard .tabs .tab-btn:hover:not(.active){background:rgba(255,255,255,.10);color:#fff}
-  #dashboard .panel{grid-column:2;grid-row:2;min-width:0}
+  #dashboard .panel{grid-column:2;grid-row:3;min-width:0}
   /* panel yang isinya form + daftar: dua kolom berdampingan */
   #panel-agenda.active,#panel-info.active,#panel-galeri.active{display:grid;grid-template-columns:minmax(340px,430px) minmax(0,1fr);gap:20px;align-items:start}
   #panel-agenda.active .form-card,#panel-info.active .form-card,#panel-galeri.active .form-card{margin-bottom:0;position:sticky;top:92px}
@@ -191,9 +197,14 @@ textarea{min-height:76px;resize:vertical}
 <div id="dashboard"><div class="container">
   <div class="warn-card" id="warnCard" style="display:none">⚠️ Firebase belum dikonfigurasi di <code>config.js</code>. Data tidak bisa disimpan/ditampilkan sampai diatur admin teknis.</div>
 
+  <!-- Kolom cari warga (di atas, bukan di sidebar) -->
+  <div class="cw-bar">
+    <input type="search" id="cwSearch" class="cw-input" placeholder="🔍 Cari warga: ketik Blok/No rumah atau nama..." autocomplete="off">
+    <div class="cw-results" id="cwResults" style="display:none"></div>
+  </div>
+
   <div class="tabs tabs-scroll">
-    <button class="tab-btn" data-tab="laporan">🚨 Laporan Warga</button>
-    <button class="tab-btn active" data-tab="cariwarga">🔍 Cari Warga</button>
+    <button class="tab-btn active" data-tab="laporan">🚨 Laporan Warga</button>
     <button class="tab-btn" data-tab="agenda">📅 Agenda</button>
     <button class="tab-btn" data-tab="info">📢 Informasi</button>
     <button class="tab-btn" data-tab="galeri">🖼️ Galeri</button>
@@ -202,18 +213,8 @@ textarea{min-height:76px;resize:vertical}
     <button class="tab-btn" data-tab="iuran" id="tabIuranBtn">🧾 Iuran Bulanan</button>
   </div>
 
-  <!-- ===== PANEL CARI WARGA ===== -->
-  <div class="panel active" id="panel-cariwarga">
-    <div class="list-card">
-      <div class="list-title">Cari Data Warga</div>
-      <p class="sub">Cari berdasarkan Blok/Nomor rumah (contoh: E2 47) atau nama kepala keluarga. Data ini internal — hanya untuk pengurus.</p>
-      <input type="text" id="cwSearch" placeholder="🔍 Ketik Blok/Nomor atau nama..." style="width:100%;border:1px solid var(--line);background:#f8f9fc;padding:13px 15px;border-radius:12px;outline:none;color:var(--ink);font-size:15px;margin-bottom:14px">
-      <div id="cwResults"><div class="empty-note">Mulai ketik untuk mencari.</div></div>
-    </div>
-  </div>
-
   <!-- ===== PANEL LAPORAN WARGA ===== -->
-  <div class="panel" id="panel-laporan">
+  <div class="panel active" id="panel-laporan">
     <div class="list-card">
       <div class="list-title">Laporan Masuk (Real-time)</div>
       <p class="sub">Laporan warga dari halaman Layanan langsung muncul di sini, termasuk foto buktinya kalau ada.</p>
@@ -510,7 +511,8 @@ function initDashboard_(){
   function renderCariWarga_(query){
     var box = document.getElementById("cwResults");
     var data = (typeof WARGA_DATA !== "undefined") ? WARGA_DATA : [];
-    if (!query) { box.innerHTML = '<div class="empty-note">Mulai ketik untuk mencari.</div>'; return; }
+    if (!query) { box.style.display = "none"; box.innerHTML = ""; return; }
+    box.style.display = "block";
     var hasil = data.filter(function(w){
       var key = normalizeKeyCw_(w.blok + w.no);
       var nama = String(w.nama || "").toLowerCase();
