@@ -206,6 +206,18 @@ function showToast(msg){
   clearTimeout(showToast._tm);
   showToast._tm = setTimeout(function(){ t.classList.remove("show"); }, 2800);
 }
+/* Ucapan salam otomatis sesuai jam di HP petugas: pagi 04-10, siang 11-14, sore 15-17, malam 18-03. */
+function salam_(){
+  var j = new Date().getHours();
+  if (j >= 4 && j < 11) return "Selamat pagi";
+  if (j >= 11 && j < 15) return "Selamat siang";
+  if (j >= 15 && j < 18) return "Selamat sore";
+  return "Selamat malam";
+}
+function rekeningTeks_(){
+  var r = RT_CONFIG.rekeningBendahara || {};
+  return r.nomor ? (r.bank + " " + r.nomor + " a.n. " + r.nama + " (Bendahara RT)") : "";
+}
 function bulanLabel_(k){
   var m = /^(\d{4})-(\d{2})$/.exec(k||"");
   if(!m) return k||"-";
@@ -419,8 +431,10 @@ function openModal_(r){
       '<option value="transfer"' + (metodeAwal === "transfer" ? " selected" : "") + '>🏦 Transfer</option>' +
       '<option value="lainnya"' + (metodeAwal === "lainnya" ? " selected" : "") + '>✍️ Lainnya (Tidak ada di rumah, dll)</option>' +
     '</select></div>' +
+    '<div class="status-now" id="mdRekWrap" style="display:none">🏦 Rekening tujuan transfer:<br><b>' + esc_(rekeningTeks_()) + '</b></div>' +
     '<div class="mfield" id="mdCatatanWrap" style="display:none"><label>Keterangan</label><textarea id="mdCatatan" placeholder="Contoh: Tidak ada di rumah, Menolak bayar, Rumah kosong, dll">' + esc_(existing.catatan || "") + '</textarea></div>' +
-    '<div class="msheet-actions"><button class="btn btn-gold" id="btnSimpanTransaksi" type="button">✅ Tandai Lunas &amp; Buat Kwitansi PDF</button></div>';
+    '<div class="msheet-actions"><button class="btn btn-gold" id="btnSimpanTransaksi" type="button">✅ Tandai Lunas &amp; Buat Kwitansi PDF</button>' +
+    (existing.status ? '<button class="btn btn-ghost" id="btnHapusCatatan" type="button">🗑️ Hapus Catatan Rumah Ini</button>' : '') + '</div>';
 
   var tambahanEl = document.getElementById("mdTambahan");
   var totalEl = document.getElementById("mdTotal");
@@ -433,12 +447,15 @@ function openModal_(r){
   function syncMetode(){
     var m = metodeEl.value;
     catatanWrap.style.display = m === "lainnya" ? "block" : "none";
+    document.getElementById("mdRekWrap").style.display = (m === "transfer" && rekeningTeks_()) ? "block" : "none";
     btnSimpan.textContent = m === "cash" ? "✅ Tandai Lunas & Buat Kwitansi PDF" : m === "transfer" ? "📤 Kirim ke Admin untuk Konfirmasi" : "💬 Simpan & Kirim Reminder WhatsApp";
   }
   metodeEl.addEventListener("change", syncMetode);
   syncMetode();
 
   btnSimpan.addEventListener("click", simpanTransaksi_);
+  var btnHapus = document.getElementById("btnHapusCatatan");
+  if (btnHapus) btnHapus.addEventListener("click", hapusCatatan_);
   showModal_();
 }
 function showModal_(){
@@ -493,17 +510,46 @@ function simpanTransaksi_(){
   });
 }
 
+/* Hapus catatan penarikan 1 rumah (bulan terpilih) — dikunci password supaya tidak terhapus tak sengaja. */
+function hapusCatatan_(){
+  if (!currentRumah) return;
+  var key = currentRumah.key, e = penarikanData[key];
+  if (!e) return;
+  var pw = prompt("Masukkan password untuk menghapus catatan " + currentRumah.label + ":");
+  if (pw === null) return;
+  if (pw !== String(RT_CONFIG.hapusPassword || "123")) { showToast("Password salah. Catatan tidak dihapus."); return; }
+  var batch = e.setoranId ? setoranData[e.setoranId] : null;
+  var pesan = "Hapus catatan " + currentRumah.label + " (" + fmtRp_(e.jumlah) + ")?";
+  if (batch && batch.status === "diterima") pesan += "\n\nSetoran ini SUDAH diterima Admin. Catatan pemasukannya di tab Keuangan (admin) perlu dihapus manual.";
+  if (e.status === "lunas_transfer") pesan += "\n\nTransfer ini SUDAH dikonfirmasi Admin. Catatan pemasukannya di tab Keuangan (admin) perlu dihapus manual.";
+  if (!confirm(pesan)) return;
+  var updates = {};
+  updates["penarikan/" + bulanKey + "/" + key] = null;
+  if (batch && batch.status === "menunggu") {
+    var sisa = Object.keys(batch.rumahKeys || {}).filter(function(k){ return k !== key; });
+    if (sisa.length === 0) updates["humasSetoran/" + e.setoranId] = null;
+    else {
+      updates["humasSetoran/" + e.setoranId + "/rumahKeys/" + key] = null;
+      updates["humasSetoran/" + e.setoranId + "/jumlah"] = Math.max(0, (parseFloat(batch.jumlah) || 0) - (parseFloat(e.jumlah) || 0));
+    }
+  }
+  db.ref().update(updates).then(function(){ showToast("Catatan dihapus."); closeModal_(); })
+    .catch(function(){ showToast("Gagal menghapus. Coba lagi."); });
+}
+
 function kirimReminder_(payload){
   var nomor = String(payload.teleponWarga || "").replace(/[^0-9]/g, "");
+  var rek = rekeningTeks_();
   if (nomor) {
-    var pesan = "Halo Bpk/Ibu " + (payload.nama || "") + " (" + payload.rumah + "), pengingat pembayaran *iuran bulanan RT 08* bulan " +
-      bulanLabel_(bulanKey) + " sebesar " + fmtRp_(payload.jumlah) + (payload.catatan ? " (" + payload.catatan + ")" : "") +
-      ". Mohon konfirmasi ke petugas Humas. Terima kasih.";
+    var pesan = salam_() + " Bpk/Ibu " + (payload.nama || "") + " (" + payload.rumah + "). Kami dari Humas RT 08 tadi berkunjung untuk penarikan *iuran bulanan* " +
+      bulanLabel_(bulanKey) + " sebesar " + fmtRp_(payload.jumlah) + ", namun belum bertemu Bapak/Ibu." +
+      "\n\nMohon informasi kapan bisa kami kunjungi kembali" + (rek ? ", atau bisa dibayar via transfer ke:\n*" + rek + "*\n(mohon kirim bukti transfernya di chat ini)" : ".") +
+      "\n\nTerima kasih 🙏";
     rtOpenWa(nomor, pesan, "Nomor WA warga belum diisi.");
     return;
   }
   // Sementara nomor WA warga belum ada di data: teruskan info ke WhatsApp Pak RT (Ketua RT).
-  var pesanRT = "Halo Pak RT, info dari petugas Humas (" + petugasNama + "): rumah " + payload.rumah + " (" + (payload.nama || "-") +
+  var pesanRT = salam_() + " Pak RT, info dari petugas Humas (" + petugasNama + "): rumah " + payload.rumah + " (" + (payload.nama || "-") +
     ") belum bayar iuran bulan " + bulanLabel_(bulanKey) + ". Keterangan: " + (payload.catatan || "-") +
     ". Nomor WA warga ini belum ada di data, mohon info kalau Bapak punya kontaknya.";
   rtOpenWa(RT_CONFIG.waKetua, pesanRT, "Nomor WhatsApp Ketua RT belum diatur admin di config.js.");
@@ -559,9 +605,9 @@ async function kirimKwitansi_(){
   var hasil = hasilKwitansi.hasil, payload = hasilKwitansi.payload;
   var tujuan = tujuanKwitansi_(payload);
   var pesan = tujuan.label === "Warga"
-    ? ("Halo " + (payload.nama || "") + ", berikut kwitansi pembayaran *iuran bulanan RT 08* (" + bulanLabel_(bulanKey) +
-       ") sebesar " + fmtRp_(payload.jumlah) + ". Terima kasih. (Kode: " + hasil.kode + ")")
-    : ("Halo Bendahara, berikut kwitansi iuran bulanan a.n. " + (payload.nama || "-") + " (" + payload.rumah + "), bulan " +
+    ? (salam_() + " Bpk/Ibu " + (payload.nama || "") + ", berikut kwitansi pembayaran *iuran bulanan RT 08* (" + bulanLabel_(bulanKey) +
+       ") sebesar " + fmtRp_(payload.jumlah) + ". Terima kasih atas partisipasinya 🙏 (Kode: " + hasil.kode + ")")
+    : (salam_() + " Pak/Bu Bendahara, berikut kwitansi iuran bulanan a.n. " + (payload.nama || "-") + " (" + payload.rumah + "), bulan " +
        bulanLabel_(bulanKey) + " sebesar " + fmtRp_(payload.jumlah) + ". Nomor WA warga ini belum ada di data, jadi untuk sementara " +
        "dikirim ke Bendahara. (Kode: " + hasil.kode + ")");
   if (!tujuan.nomor) { showToast("Nomor WhatsApp " + tujuan.label + " belum diatur di config.js. PDF diunduh saja."); unduhBlob_(hasil.bytes, hasil.namaFile); return; }

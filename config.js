@@ -25,6 +25,12 @@ const RT_CONFIG = {
   // GANTI password ini secara berkala, beda dengan adminPassword di atas.
   humasPassword: "rt08humas2026",
 
+  // Password untuk tombol HAPUS catatan penarikan di halaman Humas (jaga-jaga salah input).
+  hapusPassword: "123",
+
+  // Rekening Bendahara untuk pembayaran TRANSFER (tampil di halaman Humas & pesan reminder WhatsApp).
+  rekeningBendahara: { bank: "BCA", nomor: "7660432943", nama: "Hendyanto" },
+
   // ---------- Nomor WhatsApp pengurus (WAJIB diisi agar tombol berfungsi) ----------
   // Format: kode negara 62 + nomor tanpa angka 0 di depan.
   // Contoh nomor 0812-3456-7890 ditulis: "6281234567890"

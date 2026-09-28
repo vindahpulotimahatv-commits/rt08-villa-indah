@@ -72,16 +72,25 @@
     this.page = { ops: [], imgs: {} };
     this.pages.push(this.page);
   };
+  Doc.prototype.rect = function (x, y, w, h, o) {
+    o = o || {};
+    var op = "q ";
+    if (o.fill) op += o.fill.map(n2).join(" ") + " rg ";
+    if (o.stroke) op += o.stroke.map(n2).join(" ") + " RG " + n2(o.lw || 1) + " w ";
+    op += n2(x) + " " + n2(PAGE_H - y - h) + " " + n2(w) + " " + n2(h) + " re " + (o.fill && o.stroke ? "B" : o.fill ? "f" : "S") + " Q";
+    this.page.ops.push(op);
+  };
   Doc.prototype.text = function (x, y, s, font, size, o) {
     o = o || {};
     var op = "BT ";
+    if (o.rgb) op += o.rgb.map(n2).join(" ") + " rg ";
     if (o.gray != null) op += n2(o.gray) + " g ";
     op += "/" + FONT_ID[font] + " " + n2(size) + " Tf ";
     if (o.ws) op += n2(o.ws) + " Tw ";
     op += n2(x) + " " + n2(PAGE_H - y) + " Td (" + esc(s) + ") Tj ";
     if (o.ws) op += "0 Tw ";
     op += "ET";
-    if (o.gray != null) op += " 0 g";
+    if (o.gray != null || o.rgb) op += " 0 g";
     this.page.ops.push(op);
   };
   Doc.prototype.line = function (x1, y1, x2, y2, w, gray) {
@@ -210,6 +219,7 @@
     for (var i = 0; i < lines.length; i++) {
       this.ensure(lead);
       var ln = lines[i], opt = {};
+      if (o.gray != null) opt.gray = o.gray;
       if (o.justify && !ln.last && ln.t) {
         var sp = (ln.t.match(/ /g) || []).length, gap = w - textWidth(ln.t, font, size);
         if (sp > 0 && gap < w * 0.3) opt.ws = gap / sp;
@@ -481,7 +491,7 @@
        Dibuat via RTSurat.buat("kwitansiIuran", data, RT_CONFIG) — bukan dari form layanan.html,
        jadi tidak butuh "fields" untuk render form, hanya untuk bersihkan() data masuk. */
     kwitansiIuran: {
-      kode: "KW", judul: "Kwitansi Iuran Bulanan", ikon: "🧾", nomorWA: "waBendahara", pengurus: "namaBendahara",
+      kode: "KW", judul: "Kwitansi Iuran Bulanan", ikon: "🧾", nomorWA: "waBendahara", pengurus: "namaBendahara", ringkas: true,
       fields: [
         { id: "nama", label: "Nama / Kepala Keluarga" },
         { id: "blok", label: "Blok / No. Rumah" },
@@ -491,21 +501,41 @@
         { id: "metode", label: "Cara Pembayaran" },
         { id: "petugas", label: "Petugas Penarik" }
       ],
-      render: function (L, d, c) {
-        judul(L, "KWITANSI PEMBAYARAN IURAN BULANAN"); L.space(4);
-        L.p("Telah terima dari warga berikut, sejumlah uang untuk pembayaran iuran bulanan warga RT " + c.rt + " / RW " + c.rw + " " + c.kompleks + ":", { justify: true, after: 8 });
+      /* Kwitansi elektronik ringkas: tanpa kop resmi & tanpa tanda tangan RT. */
+      render: function (L, d, c, kode) {
+        var doc = L.doc, x0 = L.ml, W = L.w, navy = [0.07, 0.23, 0.42], hijau = [0.11, 0.54, 0.31];
+        L.y = 52;
+        var lg = logoTanam("rt");
+        if (lg) doc.drawImage(doc.addImage(lg.bytes, lg.w, lg.h), x0, L.y, 46, 46);
+        doc.text(x0 + 58, L.y + 20, "KWITANSI IURAN BULANAN", "B", 17, { rgb: navy });
+        doc.text(x0 + 58, L.y + 38, "RT " + c.rt + " / RW " + c.rw + " - " + c.kompleks, "R", 10.5, { gray: 0.35 });
+        var bw = 76, bx = PAGE_W - L.mr - bw, by = L.y + 8;
+        doc.rect(bx, by, bw, 28, { stroke: hijau, lw: 1.6 });
+        doc.text(bx + (bw - textWidth("LUNAS", "B", 15)) / 2, by + 20, "LUNAS", "B", 15, { rgb: hijau });
+        L.y += 62;
+        doc.line(x0, L.y, x0 + W, L.y, 0.8, 0.75);
+        L.y += 12;
+        doc.text(x0, L.y + 9, "No. " + kode, "R", 9.5, { gray: 0.4 });
+        var tg = norm(c.tglHariIni);
+        doc.text(x0 + W - textWidth(tg, "R", 9.5), L.y + 9, tg, "R", 9.5, { gray: 0.4 });
+        L.y += 26;
+        var y0 = L.y;
+        doc.rect(x0, y0, W, 66, { fill: [0.93, 0.96, 1], stroke: [0.78, 0.85, 0.95], lw: 0.8 });
+        doc.text(x0 + 18, y0 + 22, "Jumlah Dibayar", "R", 10.5, { gray: 0.35 });
+        doc.text(x0 + 18, y0 + 52, norm(d.jumlah), "B", 26, { rgb: navy });
+        L.y = y0 + 66 + 18;
         L.rows([
-          ["Nama / Kepala Keluarga", d.nama],
+          ["Diterima dari", d.nama],
           ["Alamat", alamatRumah(d, c)],
-          ["Untuk Bulan", d.bulan],
+          ["Untuk bulan", d.bulan],
           ["Rincian", d.rincian || "Iuran Bulanan"],
-          ["Jumlah Dibayar", d.jumlah],
-          ["Cara Pembayaran", d.metode],
-          ["Petugas Penarik", d.petugas]
-        ], { labelW: 155 });
-        L.space(10);
-        L.p("Kwitansi ini adalah bukti sah pembayaran iuran bulanan warga dan sebaiknya disimpan sebagai arsip pribadi.", { justify: true, after: 14 });
-        L.sign({ jabatan: "Yang Membayar,", nama: d.nama }, { jabatan: "Petugas Humas,", nama: d.petugas }, c.tempat + ", " + c.tglHariIni);
+          ["Cara bayar", d.metode],
+          ["Petugas penarik", d.petugas]
+        ], { labelW: 105, size: 11, indent: 4 });
+        L.space(14);
+        doc.line(x0, L.y, x0 + W, L.y, 0.5, 0.8);
+        L.y += 12;
+        L.p("Terima kasih, iuran Anda sudah kami terima. Kwitansi elektronik ini sah tanpa tanda tangan dan stempel - simpan sebagai bukti pembayaran.", { size: 9.5, gray: 0.4 });
       }
     },
 
@@ -580,9 +610,9 @@
     var p2 = function (v) { return (v < 10 ? "0" : "") + v; };
     var kode = J.kode + "-" + String(now.getFullYear()).slice(2) + p2(now.getMonth() + 1) + p2(now.getDate()) + "-" + (1000 + Math.floor(Math.random() * 9000));
     var doc = new Doc(), L = new Layout(doc);
-    kop(L, c, logo);
-    J.render(L, d, c);
-    footer(doc, kode);
+    if (!J.ringkas) kop(L, c, logo);   // ringkas = dokumen non-formal (mis. kwitansi elektronik): tanpa kop resmi
+    J.render(L, d, c, kode);
+    if (!J.ringkas) footer(doc, kode);
     var bytes = doc.build(J.judul + " - " + d.nama);
     var namaFile = J.judul.replace(/\s+/g, "-") + "_" + (slug(d.nama) || "warga") + "_" + kode + ".pdf";
     var pesan = "Halo Pengurus RT " + c.rt + ", saya " + d.nama + " (Blok/No. " + d.blok + ") mengajukan *" + J.judul +

@@ -855,12 +855,33 @@ function initDashboard_(){
       var aksi = it.status === "menunggu"
         ? '<button class="btn btn-brand btn-sm setoran-btn" data-id="' + it.id + '">✅ Terima Setoran</button>'
         : '<span class="entry-badge kegiatan">Diterima</span>';
+      aksi += ' <button class="btn btn-tolak btn-sm setoran-hapus" data-id="' + it.id + '" title="Hapus (perlu password)">🗑️</button>';
       return '<div class="entry-row"><div class="entry-body"><h4>' + esc_(it.petugas) + ' — ' + fmtRp_(it.jumlah) + '</h4>' +
-        '<p>' + fmtBulanID_(it.bulanKey) + ' • ' + jmlRumah + ' rumah</p></div>' + aksi + '</div>';
+        '<p>' + fmtBulanID_(it.bulanKey) + ' • ' + jmlRumah + ' rumah</p></div><div style="display:flex;gap:6px;align-items:center">' + aksi + '</div></div>';
     }).join("");
   }, function(){ document.getElementById("listSetoranHumas").innerHTML = '<div class="empty-note">Gagal memuat data. Periksa aturan Firebase.</div>'; });
 
   document.getElementById("listSetoranHumas").addEventListener("click", function(e){
+    var del = e.target.closest(".setoran-hapus");
+    if (del) {
+      var pw = prompt("Masukkan password untuk menghapus riwayat setoran ini:");
+      if (pw === null) return;
+      if (pw !== String(RT_CONFIG.hapusPassword || "123")) { showToast("Password salah."); return; }
+      if (!confirm("Hapus riwayat setoran ini?\n\nCatatan pemasukannya di tab Keuangan (kalau sudah diterima) perlu dihapus manual.")) return;
+      var sid = del.getAttribute("data-id");
+      db.ref("humasSetoran/" + sid).once("value").then(function(snap){
+        var it = snap.val() || {};
+        var upd = {};
+        upd["humasSetoran/" + sid] = null;
+        Object.keys(it.rumahKeys || {}).forEach(function(rk){
+          var ent = (penarikanSemua_[it.bulanKey] || {})[rk];
+          if (ent) { upd["penarikan/" + it.bulanKey + "/" + rk + "/setoranId"] = null; upd["penarikan/" + it.bulanKey + "/" + rk + "/disetorKonfirmasi"] = null; }
+        });
+        return db.ref().update(upd);
+      }).then(function(){ showToast("Riwayat setoran dihapus."); })
+        .catch(function(){ showToast("Gagal menghapus. Coba lagi."); });
+      return;
+    }
     var btn = e.target.closest(".setoran-btn");
     if (!btn) return;
     var id = btn.getAttribute("data-id");
