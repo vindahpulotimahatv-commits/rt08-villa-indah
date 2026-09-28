@@ -51,3 +51,18 @@ menampilkan versi terbaru.
   langsung lewat file `.apk` ke warga/pengurus.
 - Notifikasi pengumuman & agenda baru sudah aktif otomatis di app Warga
   (cek berkala tiap ±15 menit), tanpa setup tambahan apa pun.
+
+## Update: 3 aplikasi + notifikasi
+
+Sekarang ada 3 aplikasi, semuanya dibuild otomatis oleh workflow yang sama:
+
+| Aplikasi | Artifact | Dapat notifikasi untuk |
+|---|---|---|
+| Warga | `RT08-Warga-APK` | Pengumuman & agenda baru (termasuk info yang dikirim Humas) |
+| Admin | `RT08-Admin-APK` | Laporan warga baru & setoran Humas baru |
+| Humas (baru) | `RT08-Humas-APK` | Laporan warga baru, pengumuman & agenda baru |
+
+- Semua notifikasi dicek berkala tiap ±15 menit (batas minimum Android WorkManager), bukan instan.
+- Saat pertama kali dibuka, aplikasi hanya mencatat data yang sudah ada (tidak membunyikan notifikasi data lama).
+- Petugas Humas bisa kirim info ke warga langsung dari `humas.html` (kartu **Kirim Info ke Warga**). Info itu masuk ke halaman Informasi dan memicu notifikasi di aplikasi Warga.
+- Firebase Rules harus mengizinkan **baca** untuk `laporan`, `humasSetoran`, `informasi`, `agenda` (lihat `PANDUAN-FIREBASE.md`).

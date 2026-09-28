@@ -111,7 +111,7 @@ button{font:inherit}
 </style>
 </head><body>
 <header class="topbar"><div class="container topbar-inner">
-  <div class="brand"><img class="brand-mark" src="assets/logo-badge.png" alt="Logo RT 08"><span>Humas RT 08<span class="badge-panitia">🔒 PANITIA</span></span></div>
+  <div class="brand"><img class="brand-mark" src="icon-192.png" alt="Logo RT 08"><span>Humas RT 08<span class="badge-panitia">🔒 PANITIA</span></span></div>
   <a class="back-link" href="index.html">← Beranda</a>
 </div></header>
 
@@ -152,6 +152,23 @@ button{font:inherit}
   <div class="list-card">
     <div class="list-title">Daftar Rumah — Ketuk untuk Catat Penarikan</div>
     <div id="listRumah"><div class="empty-note">Memuat data...</div></div>
+  </div>
+
+
+  <div class="list-card">
+    <div class="list-title">📢 Kirim Info ke Warga</div>
+    <form id="formInfoHumas" style="padding:6px 14px 14px;display:grid;gap:10px" onsubmit="return false">
+      <select id="ihKategori" style="border:1px solid var(--line);background:#f8f9fc;padding:12px;border-radius:12px;font-family:inherit;font-size:14px">
+        <option value="Penting">🔴 Penting</option>
+        <option value="Kegiatan">🟢 Kegiatan</option>
+        <option value="Fasilitas">🔵 Fasilitas</option>
+        <option value="Keamanan">🛡️ Keamanan</option>
+      </select>
+      <input id="ihJudul" placeholder="Judul info (contoh: Penarikan iuran mulai besok)" style="border:1px solid var(--line);background:#f8f9fc;padding:12px;border-radius:12px;font-family:inherit;font-size:14px">
+      <textarea id="ihIsi" rows="3" placeholder="Isi info untuk warga (opsional)" style="border:1px solid var(--line);background:#f8f9fc;padding:12px;border-radius:12px;font-family:inherit;font-size:14px;resize:vertical"></textarea>
+      <button type="button" class="btn btn-gold" id="btnKirimInfo">📢 Kirim &amp; Beritahu Warga</button>
+      <div style="font-size:11.5px;color:var(--muted);line-height:1.5">Info tampil di halaman Informasi dan otomatis muncul sebagai notifikasi di aplikasi Warga.</div>
+    </form>
   </div>
 
   <div class="list-card">
@@ -330,6 +347,27 @@ function initDashboard_(){
   }, function(){ document.getElementById("listSetoran").innerHTML = '<div class="empty-note">Gagal memuat data setoran.</div>'; });
 
   subscribeBulan_(bulanKey);
+
+
+  document.getElementById("btnKirimInfo").addEventListener("click", function(){
+    var judul = document.getElementById("ihJudul").value.trim();
+    var isi = document.getElementById("ihIsi").value.trim();
+    var kategori = document.getElementById("ihKategori").value;
+    if (!judul) { showToast("Judul info wajib diisi."); return; }
+    var btn = this; btn.disabled = true;
+    db.ref("informasi").push({
+      kategori: kategori,
+      tanggal: new Date().toISOString().slice(0, 10),
+      judul: judul, isi: isi,
+      dari: "Humas — " + petugasNama,
+      createdAt: firebase.database.ServerValue.TIMESTAMP
+    }).then(function(){
+      showToast("Info terkirim. Warga akan menerima notifikasi.");
+      document.getElementById("ihJudul").value = "";
+      document.getElementById("ihIsi").value = "";
+    }).catch(function(){ showToast("Gagal mengirim. Periksa koneksi internet."); })
+      .then(function(){ btn.disabled = false; });
+  });
 
   document.getElementById("cariRumah").addEventListener("input", renderList_);
   document.getElementById("btnSetor").addEventListener("click", ajukanSetoran_);

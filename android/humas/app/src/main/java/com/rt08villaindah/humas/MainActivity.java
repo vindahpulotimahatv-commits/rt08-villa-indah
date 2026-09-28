@@ -1,4 +1,4 @@
-package com.rt08villaindah.admin;
+package com.rt08villaindah.humas;
 
 import android.Manifest;
 import android.content.Intent;
@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private ProgressBar progressBar;
     private static final int REQ_NOTIF_PERMISSION = 101;
-    private static final String WORK_NAME = "check_rt08_admin_updates";
+    private static final String WORK_NAME = "check_rt08_humas_updates";
 
     // Domain resmi situs RT 08. Link ke domain lain (WA, telepon, dll) dibuka di aplikasi luar.
     private static final String ALLOWED_HOST = "vindahpulotimahatv-commits.github.io";
