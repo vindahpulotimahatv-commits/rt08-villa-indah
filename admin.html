@@ -338,6 +338,11 @@ textarea{min-height:76px;resize:vertical}
       <p class="sub" style="padding:0 14px;margin:0 0 6px;color:var(--muted);font-size:12px">Dikirim petugas Humas lewat <b>humas.html</b> saat warga bayar transfer. Cek dulu mutasi rekening RT, lalu tekan <b>Diterima</b> atau <b>Belum</b>.</p>
       <div id="listTransfer"><div class="empty-note">Memuat data...</div></div>
     </div>
+    <div class="list-card" style="margin-bottom:18px">
+      <div class="list-title">🧾 Transfer Terkonfirmasi — Kirim Kwitansi ke Warga</div>
+      <p class="sub" style="padding:0 14px;margin:0 0 6px;color:var(--muted);font-size:12px">Setelah transfer dikonfirmasi, tekan <b>Kirim Kwitansi</b> untuk mengirim PDF ke WhatsApp pemilik rumah (atau pilih kontak kalau nomornya belum ada).</p>
+      <div id="listTransferOk"><div class="empty-note">Belum ada transfer terkonfirmasi.</div></div>
+    </div>
     <div class="list-card">
       <div class="list-title">💰 Setoran Cash Humas <span id="setoranBadge"></span></div>
       <p class="sub" style="padding:0 14px;margin:0 0 6px;color:var(--muted);font-size:12px">Uang cash hasil penarikan yang disetor petugas Humas. Setelah uang fisik diterima, tekan <b>Terima Setoran</b> — otomatis tercatat sebagai Pemasukan di Kas RT &amp; Laporan Keuangan.</p>
@@ -353,6 +358,8 @@ textarea{min-height:76px;resize:vertical}
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
 <script src="config.js"></script>
 <script src="warga-data.js"></script>
+<script src="warga-kontak.js"></script>
+<script src="surat-pdf.js"></script>
 <script>
 var db = null;
 var BULAN_ID = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
@@ -786,8 +793,66 @@ function initDashboard_(){
   }
 
   var penarikanSemua_ = {};   // { bulanKey: { rumahKey: entry } }
+  var BULAN_LONG_ = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  function bulanLong_(k){ var m = /^(\d{4})-(\d{2})$/.exec(k || ""); return m ? BULAN_LONG_[parseInt(m[2], 10) - 1] + " " + m[1] : (k || "-"); }
+  function salam_(){ var j = new Date().getHours(); return j >= 4 && j < 11 ? "Selamat pagi" : j < 15 && j >= 11 ? "Selamat siang" : j >= 15 && j < 18 ? "Selamat sore" : "Selamat malam"; }
+  function renderTransferOk_(){
+    var ok = [];
+    Object.keys(penarikanSemua_).forEach(function(bk){
+      var bln = penarikanSemua_[bk] || {};
+      Object.keys(bln).forEach(function(rk){ var e = bln[rk]; if (e && e.status === "lunas_transfer") ok.push(Object.assign({ bulanKey: bk, rumahKey: rk }, e)); });
+    });
+    ok.sort(function(a, b){ return (b.confirmedAt || b.updatedAt || 0) - (a.confirmedAt || a.updatedAt || 0); });
+    ok = ok.slice(0, 20);
+    var box = document.getElementById("listTransferOk");
+    if (ok.length === 0) { box.innerHTML = '<div class="empty-note">Belum ada transfer terkonfirmasi.</div>'; return; }
+    box.innerHTML = ok.map(function(it){
+      var tag = it.kodeKwitansi ? '<span class="entry-badge kegiatan">Kwitansi ' + esc_(it.kodeKwitansi) + '</span>' : '';
+      return '<div class="entry-row"><div class="entry-body"><h4>' + esc_(it.rumah) + ' — ' + esc_(it.nama || "-") + '</h4>' +
+        '<p>' + bulanLong_(it.bulanKey) + ' • ' + fmtRp_(it.jumlah) + ' ' + tag + '</p></div>' +
+        '<button class="btn btn-gold btn-sm kwt-btn" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">🧾 ' + (it.kodeKwitansi ? 'Kirim Ulang' : 'Kirim Kwitansi') + '</button></div>';
+    }).join("");
+  }
+  function unduhPdf_(bytes, nama){
+    var url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+    var a = document.createElement("a"); a.href = url; a.download = nama; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 30000);
+  }
+  async function kirimKwitansiTransfer_(b, r){
+    var it = (penarikanSemua_[b] || {})[r];
+    if (!it) { showToast("Data tidak ditemukan."); return; }
+    if (typeof RTSurat === "undefined") { showToast("surat-pdf.js belum termuat."); return; }
+    var bank = (RT_CONFIG.rekeningBendahara && RT_CONFIG.rekeningBendahara.bank) || "Bank";
+    var hasil;
+    try {
+      hasil = RTSurat.buat("kwitansiIuran", {
+        nama: it.nama || "-", blok: it.rumah, bulan: bulanLong_(b),
+        rincian: "Iuran Bulanan" + (it.tambahanKK ? " + Iuran RUKEM (tambahan KK)" : ""),
+        jumlah: fmtRp_(it.jumlah), metode: "Transfer Bank (" + bank + ")", petugas: it.petugas || "-"
+      }, RT_CONFIG, null, new Date());
+    } catch (e) { console.error(e); showToast("Gagal membuat PDF kwitansi."); return; }
+    db.ref("penarikan/" + b + "/" + r).update({ kodeKwitansi: hasil.kode, kwitansiAt: firebase.database.ServerValue.TIMESTAMP });
+    var nomor = String(it.teleponWarga || (typeof WARGA_KONTAK !== "undefined" ? WARGA_KONTAK[r] : "") || "").replace(/[^0-9]/g, "");
+    if (!nomor) {
+      try { var snap = await db.ref("wargaKontak/" + r + "/telepon").once("value"); nomor = String(snap.val() || "").replace(/[^0-9]/g, ""); } catch (e) {}
+    }
+    var pesan = salam_() + " Bpk/Ibu " + (it.nama || "") + ", pembayaran *iuran bulanan RT 08* (" + bulanLong_(b) + ") sebesar " + fmtRp_(it.jumlah) +
+      " via transfer sudah kami terima dan dikonfirmasi Bendahara. Berikut kwitansinya. Terima kasih atas partisipasinya 🙏 (Kode: " + hasil.kode + ")";
+    try {
+      var file = new File([hasil.bytes], hasil.namaFile, { type: "application/pdf" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], text: pesan });
+        showToast(nomor ? "Pilih WhatsApp lalu kirim ke nomor warga." : "Pilih WhatsApp lalu kontak pemilik rumah (nomor belum ada di data).");
+        return;
+      }
+    } catch (e) { if (e && e.name === "AbortError") return; console.warn(e); }
+    unduhPdf_(hasil.bytes, hasil.namaFile);
+    if (nomor) rtOpenWa(nomor, pesan + "\n\n(PDF sudah diunduh — mohon dilampirkan di chat ini.)");
+    else showToast("PDF diunduh. Nomor WA warga belum ada — kirim manual lewat WhatsApp.");
+  }
   db.ref("penarikan").on("value", function(snap){
     penarikanSemua_ = snap.val() || {};
+    renderTransferOk_();
     var items = [];
     Object.keys(penarikanSemua_).forEach(function(bk){
       var bln = penarikanSemua_[bk] || {};
@@ -806,13 +871,35 @@ function initDashboard_(){
       return '<div class="entry-row"><div class="entry-body"><h4>' + esc_(it.rumah) + ' — ' + esc_(it.nama || "-") + '</h4>' +
         '<p>' + fmtBulanID_(it.bulanKey) + ' • ' + fmtRp_(it.jumlah) + ' • Petugas: ' + esc_(it.petugas || "-") + '</p></div>' +
         '<div style="display:flex;gap:6px;flex-direction:column">' +
+        (it.adaBukti ? '<button class="btn btn-gold btn-sm transfer-bukti" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">🧾 Lihat Bukti</button>' : '<span style="font-size:10.5px;color:var(--red);font-weight:800;text-align:center">Tanpa bukti</span>') +
         '<button class="btn btn-brand btn-sm transfer-btn" data-act="terima" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">✅ Diterima</button>' +
         '<button class="btn btn-tolak btn-sm transfer-btn" data-act="batal" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">↩️ Belum</button></div>' +
         '</div>';
     }).join("");
   }, function(){ document.getElementById("listTransfer").innerHTML = '<div class="empty-note">Gagal memuat data. Periksa aturan Firebase.</div>'; });
 
+  function lihatBukti_(b, r){
+    var ent = (penarikanSemua_[b] || {})[r] || {};
+    var ov = document.createElement("div");
+    ov.style.cssText = "position:fixed;inset:0;background:rgba(6,14,32,.85);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:12px";
+    ov.innerHTML = '<div style="color:#fff;font-size:13px;text-align:center;font-weight:800">' + esc_(ent.rumah || "") + ' — ' + esc_(ent.nama || "-") + '<br>' + fmtRp_(ent.jumlah) + ' • ' + fmtBulanID_(b) + '</div>' +
+      '<div id="buktiIsi" style="color:#fff;font-size:13px">Memuat bukti...</div>' +
+      '<button class="btn btn-gold btn-sm" id="buktiTutup" style="width:auto">✕ Tutup</button>';
+    document.body.appendChild(ov);
+    ov.addEventListener("click", function(ev){ if (ev.target === ov || ev.target.id === "buktiTutup") ov.remove(); });
+    db.ref("buktiTransfer/" + b + "/" + r + "/foto").once("value").then(function(snap){
+      var url = snap.val(), box = ov.querySelector("#buktiIsi");
+      if (!url) { box.textContent = "Bukti tidak ditemukan."; return; }
+      box.innerHTML = '<img src="' + url + '" alt="Bukti transfer" style="max-width:100%;max-height:68vh;border-radius:12px;background:#fff">';
+    }).catch(function(){ ov.querySelector("#buktiIsi").textContent = "Gagal memuat bukti. Periksa aturan Firebase (node buktiTransfer)."; });
+  }
+  document.getElementById("listTransferOk").addEventListener("click", function(e){
+    var kb = e.target.closest(".kwt-btn");
+    if (kb) kirimKwitansiTransfer_(kb.getAttribute("data-b"), kb.getAttribute("data-r"));
+  });
   document.getElementById("listTransfer").addEventListener("click", function(e){
+    var bk = e.target.closest(".transfer-bukti");
+    if (bk) { lihatBukti_(bk.getAttribute("data-b"), bk.getAttribute("data-r")); return; }
     var btn = e.target.closest(".transfer-btn");
     if (!btn) return;
     var b = btn.getAttribute("data-b"), r = btn.getAttribute("data-r"), act = btn.getAttribute("data-act");
@@ -829,7 +916,7 @@ function initDashboard_(){
         keterangan: "Iuran Bulanan (Transfer) - " + entry.rumah + " - " + fmtBulanID_(b),
         kategori: "Iuran Bulanan", jumlah: entry.jumlah, createdAt: firebase.database.ServerValue.TIMESTAMP
       };
-      db.ref().update(upd).then(function(){ showToast("Transfer dikonfirmasi & masuk ke Kas RT."); })
+      db.ref().update(upd).then(function(){ showToast("Transfer dikonfirmasi & masuk Kas RT. Kirim kwitansi dari daftar 🧾 di bawah."); })
         .catch(function(){ btn.disabled = false; showToast("Gagal, coba lagi."); });
     } else {
       if (!confirm("Kembalikan status rumah ini ke \"Belum Ditarik\"?")) return;
