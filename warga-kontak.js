@@ -22,7 +22,7 @@ const WARGA_KONTAK = {
   "e210": "6282122748193",  // Blok E2 No.10 - SOFIAN KZ
   "e211": "6287880994748",  // Blok E2 No.11 - ARNOLD ARIFIN
   "e212": "6281291821461",  // Blok E2 No.12 - BUDI PURNOMO
-  "e212a": "",  // Blok E2 No.12A - KARTO
+  "e212a": "6281994791812",  // Blok E2 No.12A - KARTO
   "e214": "6281585001816",  // Blok E2 No.14 - RIO ISKANDAR
   "e215": "6281316383078",  // Blok E2 No.15 - AHMAD NGUDI
   "e216": "",  // Blok E2 No.16 - NURHAYATI
