@@ -244,7 +244,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 
 .mobile-nav{
   display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:120;
-  grid-template-columns:repeat(6,1fr);padding:8px;background:rgba(8,20,44,.95);backdrop-filter:blur(15px);
+  grid-template-columns:repeat(6,minmax(0,1fr));padding:8px;background:rgba(8,20,44,.95);backdrop-filter:blur(15px);
   border:1px solid rgba(213,166,43,.28);border-radius:21px;box-shadow:0 16px 45px rgba(0,0,0,.4)
 }
 .mobile-nav a{text-align:center;padding:7px 3px;border-radius:13px;font-size:9px;font-weight:900;color:rgba(255,255,255,.65)}
@@ -399,8 +399,13 @@ body.bumper-lock{overflow:hidden}
 <section class="section-tight menu-grid-sec">
 <div class="container">
   <div class="mg-card"><div class="mg-grid"><a class="mg-tile" href="informasi.html"><span class="mg-ic" style="background:linear-gradient(145deg,#2f7df6,#1a56c4)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span><span class="mg-lb">Informasi<br>&amp; Pengumuman</span></a><a class="mg-tile" href="agenda.html"><span class="mg-ic" style="background:linear-gradient(145deg,#2fb866,#178a47)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg></span><span class="mg-lb">Agenda<br>Kegiatan</span></a><a class="mg-tile" href="layanan.html"><span class="mg-ic" style="background:linear-gradient(145deg,#ffb020,#f07c00)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="mg-lb">Layanan<br>Warga</span></a><a class="mg-tile" href="transparansi.html"><span class="mg-ic" style="background:linear-gradient(145deg,#9b5cf6,#6d28d9)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg></span><span class="mg-lb">Transparansi<br>Kas RT</span></a><a class="mg-tile" href="umkm.html"><span class="mg-ic" style="background:linear-gradient(145deg,#ff5c8d,#e0245e)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 1.5-5h15L21 9"/><path d="M3 9v0a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M4 12v8h16v-8"/><path d="M10 20v-5h4v5"/></svg></span><span class="mg-lb">UMKM<br>Warga</span></a><a class="mg-tile" href="galeri.html"><span class="mg-ic" style="background:linear-gradient(145deg,#1fb8b8,#0e8a94)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></svg></span><span class="mg-lb">Galeri<br>Kegiatan</span></a><a class="mg-tile" href="layanan.html#lapor"><span class="mg-ic" style="background:linear-gradient(145deg,#f2545b,#d62839)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/></svg></span><span class="mg-lb">Lapor &amp;<br>Pengaduan</span></a><a class="mg-tile" href="kontak.html"><span class="mg-ic" style="background:linear-gradient(145deg,#4b5563,#2b323d)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span><span class="mg-lb">Kontak<br>Penting</span></a></div></div>
-  <div class="bt-bar"><h2>Berita Terkini (InfoBekasi.co.id)</h2><a href="berita.html">Lihat Semua &rsaquo;</a></div>
-  <div class="bt-list" id="beritaHome"><div class="meta" style="padding:16px">Memuat berita...</div></div>
+</div>
+</section>
+
+<section class="section-tight">
+<div class="container callout">
+  <div><h3>🚨 Ada masalah di lingkungan?</h3><p>Lampu jalan mati, sampah, drainase, keamanan, atau fasilitas umum bisa dilaporkan dari portal.</p></div>
+  <a class="btn btn-gold" href="layanan.html#lapor">Buat Laporan</a>
 </div>
 </section>
 
@@ -417,13 +422,15 @@ body.bumper-lock{overflow:hidden}
 </div>
 </section>
 
-
-<section class="section">
-<div class="container callout">
-  <div><h3>🚨 Ada masalah di lingkungan?</h3><p>Lampu jalan mati, sampah, drainase, keamanan, atau fasilitas umum bisa dilaporkan dari portal.</p></div>
-  <a class="btn btn-gold" href="layanan.html#lapor">Buat Laporan</a>
+<section class="section-tight">
+<div class="container">
+  <div class="bt-bar"><h2>Berita Terkini (InfoBekasi.co.id)</h2><a href="berita.html">Lihat Semua &rsaquo;</a></div>
+  <div class="bt-list" id="beritaHome"><div class="meta" style="padding:16px">Memuat berita...</div></div>
 </div>
 </section>
+
+
+
 </main>
 <footer class="footer">
   <div class="container footer-grid">
@@ -438,7 +445,7 @@ body.bumper-lock{overflow:hidden}
       <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a>
     </div>
   </div>
-</footer><nav class="mobile-nav"><a class="active" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="livechat.html"><b>💬</b>Live Chat</a></nav>
+</footer><nav class="mobile-nav"><a class="active" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>📞</b>Kontak</a><a class="" href="livechat.html"><b>💬</b>Live Chat</a></nav>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
 <script src="config.js"></script><script>

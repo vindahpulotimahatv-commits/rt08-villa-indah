@@ -235,94 +235,44 @@ function rtRumahReset(id) { rtRumahPasang(id, ""); }
 const RT_PESAN_RUMAH = "Pilih Blok & Nomor Rumah dulu. Tanpa nomor rumah yang terdaftar, pengajuan tidak bisa dikirim.";
 
 /* ============================================================
-   MENU BAWAH (HP) — navigasi bawah: tombol "💬 Live Chat" tersendiri +
-   tombol "Menu" yang bisa dibuka/ditutup berisi Galeri, UMKM Warga, Kas RT,
-   dan Kontak Penting.
-   Kode ini ada di config.js karena semua halaman sudah memuat file ini,
-   jadi tidak perlu mengubah 9 halaman satu per satu.
-   Mau ubah isi menu? Edit daftar MENU_BAWAH_ITEM di bawah.
+   NAVIGASI BAWAH (HP) — 6 tombol tetap, urutan:
+   Beranda - Info - Agenda - Layanan - Kontak - Live Chat
+   Kode ini ada di config.js karena semua halaman memuat file ini,
+   jadi urutan & tombol aktif selalu seragam di semua halaman.
    ============================================================ */
 (function () {
   if (typeof document === "undefined") return;
 
-  var MENU_BAWAH_ITEM = [
-    { ikon: "🖼️", teks: "Galeri",                href: "galeri.html" },
-    { ikon: "🛍️", teks: "UMKM Warga",            href: "umkm.html" },
-    { ikon: "💰", teks: "Kas RT",                href: "transparansi.html" },
-    { ikon: "📞", teks: "Kontak Penting",         href: "kontak.html" }
+  var NAV_BAWAH = [
+    { ikon: "🏠", teks: "Beranda",   href: "index.html" },
+    { ikon: "📢", teks: "Info",      href: "informasi.html" },
+    { ikon: "📅", teks: "Agenda",    href: "agenda.html" },
+    { ikon: "📝", teks: "Layanan",   href: "layanan.html" },
+    { ikon: "📞", teks: "Kontak",    href: "kontak.html" },
+    { ikon: "💬", teks: "Live Chat", href: "livechat.html" }
   ];
 
   function pasang() {
-    /* Berita tidak ditampilkan di menu atas maupun bawah (berita ada di halaman Informasi) */
-    Array.prototype.forEach.call(document.querySelectorAll('nav.desktop-nav a[href="berita.html"], nav.mobile-nav a[href="berita.html"]'), function (a) { a.parentNode.removeChild(a); });
+    /* Berita tidak ada di menu atas maupun bawah */
+    Array.prototype.forEach.call(document.querySelectorAll('nav.desktop-nav a[href="berita.html"]'), function (a) { a.parentNode.removeChild(a); });
 
     var nav = document.querySelector("nav.mobile-nav");
-    if (!nav || nav.getAttribute("data-menu-siap")) return;
-    var lama = nav.querySelector('a[href="livechat.html"]');   // tombol "Menu" lama (link biasa ke livechat.html)
-    if (!lama) return;
-    nav.setAttribute("data-menu-siap", "1");
+    if (!nav) return;
 
     var halaman = (location.pathname.split("/").pop() || "index.html").toLowerCase();
-    var diMenu = MENU_BAWAH_ITEM.some(function (m) { return m.href === halaman; });
-
-    /* gaya */
-    var st = document.createElement("style");
-    st.textContent =
-      ".mobile-nav .mn-btn{text-align:center;padding:7px 3px;border-radius:13px;font-size:9px;font-weight:900;color:rgba(255,255,255,.65);background:none;border:0;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}" +
-      ".mobile-nav .mn-btn.active,.mobile-nav .mn-btn[aria-expanded=true]{background:rgba(213,166,43,.18);color:#f3cf6a}" +
-      ".mn-scrim{position:fixed;inset:0;z-index:118;display:none;background:transparent}" +
-      ".mn-scrim.open{display:block}" +
-      ".mn-panel{position:fixed;right:10px;width:min(300px,calc(100vw - 20px));z-index:119;padding:8px;border-radius:21px;" +
-        "background:rgba(8,20,44,.98);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);border:1px solid rgba(213,166,43,.28);box-shadow:0 16px 45px rgba(0,0,0,.45);" +
-        "visibility:hidden;opacity:0;transform:translateY(12px) scale(.98);transform-origin:bottom right;transition:opacity .18s,transform .18s,visibility .18s}" +
-      ".mn-panel.open{visibility:visible;opacity:1;transform:none}" +
-      ".mn-panel a{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:14px;color:#fff;font-size:14px;font-weight:800}" +
-      ".mn-panel a:active,.mn-panel a.cur{background:rgba(213,166,43,.18);color:#f3cf6a}" +
-      ".mn-panel a span{font-size:19px;width:26px;text-align:center}" +
-      ".mn-panel a i{margin-left:auto;font-style:normal;opacity:.45}" +
-      ".mn-panel hr{border:0;border-top:1px solid rgba(255,255,255,.14);margin:6px 8px}" +
-      "@media(min-width:981px){.mn-panel,.mn-scrim{display:none!important}}";
-    document.head.appendChild(st);
-
-    /* tombol Menu (menggantikan link ke livechat.html; tetap link biasa bila JS gagal) */
-    var btn = document.createElement("button");
-    btn.type = "button"; btn.className = "mn-btn" + (diMenu ? " active" : "");
-    btn.setAttribute("aria-expanded", "false"); btn.setAttribute("aria-controls", "mnPanel");
-    btn.innerHTML = "<b>☰</b>Menu";
-    lama.parentNode.replaceChild(btn, lama);
-
-    /* tombol Live Chat tersendiri, tepat sebelum Menu */
-    var livechat = document.createElement("a");
-    livechat.href = "livechat.html"; livechat.title = "Live Chat";
-    livechat.className = halaman === "livechat.html" ? "active" : "";
-    livechat.innerHTML = "<b>💬</b>Live Chat";
-    nav.insertBefore(livechat, btn);
-    nav.style.gridTemplateColumns = "repeat(6,1fr)";   // sekarang 6 tombol
-
-    /* panel isi menu */
-    var panel = document.createElement("div");
-    panel.id = "mnPanel"; panel.className = "mn-panel"; panel.setAttribute("role", "menu");
-    panel.innerHTML = MENU_BAWAH_ITEM.map(function (m) {
-      if (m.garis) return "<hr>";
-      return '<a role="menuitem" href="' + m.href + '"' + (m.href === halaman ? ' class="cur"' : "") + "><span>" + m.ikon + "</span>" + m.teks + "<i>›</i></a>";
+    nav.innerHTML = NAV_BAWAH.map(function (m) {
+      return '<a class="' + (m.href === halaman ? "active" : "") + '" href="' + m.href + '"><b>' + m.ikon + "</b>" + m.teks + "</a>";
     }).join("");
-    var scrim = document.createElement("div"); scrim.className = "mn-scrim";
-    document.body.appendChild(scrim); document.body.appendChild(panel);
+    nav.style.gridTemplateColumns = "repeat(6,minmax(0,1fr))";
 
-    function tampil(buka) {
-      if (buka) {  // letakkan tepat di atas navigasi bawah
-        var top = nav.getBoundingClientRect().top;
-        panel.style.bottom = Math.max(8, window.innerHeight - top + 8) + "px";
-      }
-      panel.classList.toggle("open", buka); scrim.classList.toggle("open", buka);
-      btn.setAttribute("aria-expanded", buka ? "true" : "false");
-      btn.firstChild.textContent = buka ? "✕" : "☰";
+    if (!document.getElementById("navBawahGaya")) {
+      var st = document.createElement("style");
+      st.id = "navBawahGaya";
+      st.textContent = ".mobile-nav a{min-width:0;white-space:nowrap}";
+      document.head.appendChild(st);
     }
-    btn.addEventListener("click", function () { tampil(!panel.classList.contains("open")); });
-    scrim.addEventListener("click", function () { tampil(false); });
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape") tampil(false); });
-    window.addEventListener("resize", function () { tampil(false); });
-    window.addEventListener("pageshow", function () { tampil(false); });   // tombol "kembali" di browser
+    /* bersihkan sisa panel "Menu" versi lama bila ada */
+    Array.prototype.forEach.call(document.querySelectorAll(".mn-panel,.mn-scrim"), function (e) { e.parentNode.removeChild(e); });
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", pasang);
