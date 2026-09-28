@@ -334,6 +334,25 @@ body.bumper-lock{overflow:hidden}
 .bh-body h4{margin:9px 0 5px;font-size:15px;line-height:1.4;color:#12213f}
 .bh-body small{color:#59657f;font-size:11.5px}
 @media(max-width:900px){.bh-grid{grid-template-columns:1fr}}
+
+.mg-card{background:#fff;border-radius:26px;padding:22px 12px 10px;box-shadow:var(--shadow)}
+.mg-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px 6px}
+.mg-tile{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;color:var(--ink);-webkit-tap-highlight-color:transparent}
+.mg-ic{width:66px;height:66px;border-radius:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px rgba(10,25,56,.18);transition:.2s}
+.mg-ic svg{width:34px;height:34px}
+.mg-tile:active .mg-ic,.mg-tile:hover .mg-ic{transform:translateY(-3px)}
+.mg-lb{font-size:11.5px;font-weight:800;line-height:1.3;padding-bottom:12px;letter-spacing:-.1px}
+.bt-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:16px;padding:14px 18px;border-radius:16px;background:linear-gradient(135deg,#123a6b,#081c3a);border:1px solid rgba(213,166,43,.3)}
+.bt-bar h2{margin:0;font-size:14px;color:#fff;letter-spacing:-.2px}
+.bt-bar a{font-size:12px;font-weight:800;color:#f3cf6a;white-space:nowrap}
+.bt-list{background:#fff;border-radius:20px;margin-top:10px;padding:4px 14px;box-shadow:var(--shadow)}
+.bt-item{display:flex;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line);color:var(--ink)}
+.bt-item:last-child{border-bottom:0}
+.bt-th{position:relative;flex:0 0 104px;height:74px;border-radius:14px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:30px;background:linear-gradient(135deg,#123a6b,#081c3a)}
+.bt-th img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.bt-tx h4{margin:0 0 7px;font-size:14.5px;line-height:1.35;color:#12213f}
+.bt-tx small{color:#59657f;font-size:11.5px}
+@media(min-width:900px){.mg-grid{grid-template-columns:repeat(8,1fr)}.bt-list{padding:4px 22px}}
 </style>
 </head><body>
 <div class="bumper" id="bumper">
@@ -377,19 +396,11 @@ body.bumper-lock{overflow:hidden}
 </div>
 </section>
 
-<section class="section">
+<section class="section-tight menu-grid-sec">
 <div class="container">
-  <div class="section-heading"><div><h2 style="color:#fff !important;font-weight:900">Semua urusan RT, dalam satu genggaman</h2><p style="color:rgba(255,255,255,.85)">Real-time, tanpa ribet: info, layanan, dan kas RT langsung dari HP Anda.</p></div></div>
-  <div class="bento">
-    <a class="bento-card big" href="layanan.html">
-      <div class="bento-icon">📝</div><h3>Layanan Warga</h3><p>Surat pengantar, warga baru, pindah domisili, pinjam fasilitas, aspirasi, dan laporan lingkungan.</p>
-      <div class="orb one"></div><div class="orb two"></div>
-    </a>
-    <a class="bento-card gold" href="agenda.html"><div class="bento-icon">📅</div><h3>Agenda</h3><p>Jadwal kegiatan warga dalam tampilan ringkas.</p></a>
-    <a class="bento-card blue" href="informasi.html"><div class="bento-icon">📢</div><h3>Informasi</h3><p>Pengumuman penting dan kabar lingkungan.</p></a>
-    <a class="bento-card mint" href="transparansi.html"><div class="bento-icon">💰</div><h3>Transparansi</h3><p>Ringkasan pemasukan dan pengeluaran kas RT.</p></a>
-    <a class="bento-card" href="umkm.html"><div class="bento-icon">🛍️</div><h3>UMKM Warga</h3><p>Etalase usaha dan jasa milik warga sendiri.</p></a>
-  </div>
+  <div class="mg-card"><div class="mg-grid"><a class="mg-tile" href="informasi.html"><span class="mg-ic" style="background:linear-gradient(145deg,#2f7df6,#1a56c4)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span><span class="mg-lb">Informasi<br>&amp; Pengumuman</span></a><a class="mg-tile" href="agenda.html"><span class="mg-ic" style="background:linear-gradient(145deg,#2fb866,#178a47)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg></span><span class="mg-lb">Agenda<br>Kegiatan</span></a><a class="mg-tile" href="layanan.html"><span class="mg-ic" style="background:linear-gradient(145deg,#ffb020,#f07c00)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="mg-lb">Layanan<br>Warga</span></a><a class="mg-tile" href="transparansi.html"><span class="mg-ic" style="background:linear-gradient(145deg,#9b5cf6,#6d28d9)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg></span><span class="mg-lb">Transparansi<br>Kas RT</span></a><a class="mg-tile" href="umkm.html"><span class="mg-ic" style="background:linear-gradient(145deg,#ff5c8d,#e0245e)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 1.5-5h15L21 9"/><path d="M3 9v0a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M4 12v8h16v-8"/><path d="M10 20v-5h4v5"/></svg></span><span class="mg-lb">UMKM<br>Warga</span></a><a class="mg-tile" href="galeri.html"><span class="mg-ic" style="background:linear-gradient(145deg,#1fb8b8,#0e8a94)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></svg></span><span class="mg-lb">Galeri<br>Kegiatan</span></a><a class="mg-tile" href="layanan.html#lapor"><span class="mg-ic" style="background:linear-gradient(145deg,#f2545b,#d62839)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/></svg></span><span class="mg-lb">Lapor &amp;<br>Pengaduan</span></a><a class="mg-tile" href="kontak.html"><span class="mg-ic" style="background:linear-gradient(145deg,#4b5563,#2b323d)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span><span class="mg-lb">Kontak<br>Penting</span></a></div></div>
+  <div class="bt-bar"><h2>Berita Terkini (InfoBekasi.co.id)</h2><a href="berita.html">Lihat Semua &rsaquo;</a></div>
+  <div class="bt-list" id="beritaHome"><div class="meta" style="padding:16px">Memuat berita...</div></div>
 </div>
 </section>
 
@@ -529,5 +540,19 @@ function showToast(msg){
   clearTimeout(window.toastTimer);
   window.toastTimer=setTimeout(()=>t.classList.remove("show"),2600);
 }
+</script>
+<script>
+(function(){
+  var el=document.getElementById("beritaHome"); if(!el) return;
+  var IK={Ekonomi:"🛒",Lingkungan:"🌳",Kesehatan:"🏥",Peristiwa:"🚨",Olahraga:"⚽",Kuliner:"🍜",Travel:"🧳",Sejarah:"📜",Events:"🎉"};
+  var B=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  function e(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  fetch("berita.json?t="+Date.now()).then(function(r){return r.json()}).then(function(d){
+    var it=(d.items||[]).slice().sort(function(a,b){return b.tgl.localeCompare(a.tgl)}).slice(0,3);
+    if(!it.length){el.innerHTML='<div class="meta" style="padding:16px">Belum ada berita.</div>';return}
+    el.innerHTML=it.map(function(n){var p=n.tgl.split("-");
+      return '<a class="bt-item" href="'+e(n.link)+'" target="_blank" rel="noopener"><div class="bt-th">'+(IK[n.kat]||"📰")+(n.img?'<img src="'+e(n.img)+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">':'')+'</div><div class="bt-tx"><h4>'+e(n.judul)+'</h4><small>'+(+p[2])+" "+B[+p[1]-1]+" "+p[0]+' &nbsp;|&nbsp; '+e(d.sumber||"infobekasi.co.id")+'</small></div></a>'}).join("");
+  }).catch(function(){el.innerHTML='<div class="meta" style="padding:16px">Berita belum bisa dimuat.</div>'});
+})();
 </script>
 </body></html>
