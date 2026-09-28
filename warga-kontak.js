@@ -55,7 +55,7 @@ const WARGA_KONTAK = {
   "e244": "",  // Blok E2 No.44 - ADIH KURNIAWAN
   "e245": "",  // Blok E2 No.45 - SUPRIYATNO
   "e246": "",  // Blok E2 No.46 - ABDURRACHMAN ABDULLAH
-  "e247": "",  // Blok E2 No.47 - RAYNAL IHSANUL AZHAR
+  "e247": "6282111447554",  // Blok E2 No.47 - RAYNAL IHSANUL AZHAR
   "e248": "",  // Blok E2 No.48 - ARIO WIJAYA
   "e51": "",  // Blok E5 No.1 - IKSAN
   "e52": "",  // Blok E5 No.2 - BAYU RAMADHANI
