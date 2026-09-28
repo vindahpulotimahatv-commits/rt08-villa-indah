@@ -12,7 +12,7 @@ const RT_CONFIG = {
   namaRT: "RT 08",
   namaRW: "RW 021",
   namaKompleks: "Villa Indah Pulo Timaha",
-  jumlahKK: "—", // contoh: "142"
+  jumlahKK: "102", // KK aktif
 
   // ---------- Password Halaman Admin (admin.html) ----------
   // Dipakai untuk mengunci halaman kelola Agenda & Informasi.
