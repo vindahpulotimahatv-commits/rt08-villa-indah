@@ -698,19 +698,25 @@ function simpanTransaksi_(){
   };
 
   var btn = document.getElementById("btnSimpanTransaksi");
+  var teksTombol_ = btn.innerHTML;
   btn.disabled = true; btn.textContent = "Menyimpan...";
   var updates = {};
   updates["penarikan/" + bulanKey + "/" + currentRumah.key] = payload;
   if (metode === "transfer") {
     if (buktiFoto_) updates["buktiTransfer/" + bulanKey + "/" + currentRumah.key] = { foto: buktiFoto_, petugas: petugasNama, updatedAt: firebase.database.ServerValue.TIMESTAMP };
   } else if (existing.adaBukti) updates["buktiTransfer/" + bulanKey + "/" + currentRumah.key] = null;
-  if (telp) updates["wargaKontak/" + currentRumah.key] = { telepon: telp, updatedAt: firebase.database.ServerValue.TIMESTAMP };
+  /* Nomor WA disimpan ke Firebase terpisah & hanya bila BEDA dari data resmi warga-kontak.js,
+     supaya kegagalan simpan nomor tidak ikut menggagalkan pencatatan iuran. */
+  var nomorResmi_ = (typeof WARGA_KONTAK !== "undefined" ? WARGA_KONTAK[currentRumah.key] : "") || "";
+  var kontakBaru_ = (telp && nomorWA_(telp) !== nomorWA_(nomorResmi_)) ? { telepon: telp, updatedAt: firebase.database.ServerValue.TIMESTAMP } : null;
+  var kontakKey_ = currentRumah.key;
 
   var waPre = null;
   if (metode === "lainnya") {
     try { waPre = window.open("", "_blank"); if (waPre) waPre.document.write("<p style='font-family:sans-serif'>Membuka WhatsApp...</p>"); } catch (e) { waPre = null; }
   }
   db.ref().update(updates).then(function(){
+    if (kontakBaru_) { try { db.ref("wargaKontak/" + kontakKey_).set(kontakBaru_).catch(function(e){ console.warn("wargaKontak tidak tersimpan", e); }); } catch (e) {} }
     if (metode === "cash") {
       buatKwitansi_(payload);
     } else if (metode === "transfer") {
@@ -719,10 +725,12 @@ function simpanTransaksi_(){
       showToast("Tersimpan sebagai Belum Bayar.");
       if (kirimReminder_(payload, waPre)) closeModal_();
     }
-  }).catch(function(){
+  }).catch(function(err){
+    console.error("Gagal simpan iuran:", err);
     if (waPre && !waPre.closed) waPre.close();
-    showToast("Gagal menyimpan. Periksa koneksi internet.");
-    btn.disabled = false;
+    var kode = (err && err.code) ? String(err.code) : "";
+    showToast(/PERMISSION/i.test(kode) ? "Ditolak Firebase (PERMISSION_DENIED) - aturan database perlu diperbarui." : "Gagal menyimpan" + (kode ? " (" + kode + ")" : "") + ". Periksa koneksi internet.");
+    btn.disabled = false; btn.innerHTML = teksTombol_;
   });
 }
 
