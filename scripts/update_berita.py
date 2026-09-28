@@ -3,7 +3,7 @@
 Hanya judul, link, tanggal, kategori, dan ALAMAT foto utama (foto tidak diunduh/disalin,
 tanpa isi berita). Kalau RSS tidak memuat foto, alamat foto diambil dari tag og:image
 di halaman artikelnya. Kalau gagal, berita.json lama dibiarkan."""
-import json, re, sys, urllib.request, xml.etree.ElementTree as ET
+import json, re, sys, urllib.request, urllib.robotparser, xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
 from datetime import timezone, timedelta
 
@@ -29,8 +29,29 @@ def cari_gambar(it):
         return m.group(1)
     return None
 
+_robots = {}
+
+def boleh_ambil(link):
+    """Hormati robots.txt situs sumber. Tidak bisa dibaca / dilarang -> jangan ambil."""
+    host = re.match(r"https://[^/]+", link)
+    if not host:
+        return False
+    host = host.group(0)
+    if host not in _robots:
+        rp = urllib.robotparser.RobotFileParser()
+        try:
+            req = urllib.request.Request(host + "/robots.txt", headers={"User-Agent": UA})
+            rp.parse(urllib.request.urlopen(req, timeout=15).read().decode("utf-8", "ignore").splitlines())
+            _robots[host] = rp
+        except Exception:
+            _robots[host] = None
+    rp = _robots[host]
+    return bool(rp and rp.can_fetch(UA, link))
+
 def og_image(link):
-    """Ambil alamat foto utama (og:image) dari halaman artikel. Gagal -> None."""
+    """Ambil alamat foto utama (og:image) dari halaman artikel. Gagal/dilarang -> None."""
+    if not boleh_ambil(link):
+        return None
     try:
         req = urllib.request.Request(link, headers={"User-Agent": UA})
         html = urllib.request.urlopen(req, timeout=15).read(300000).decode("utf-8", "ignore")
