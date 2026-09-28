@@ -202,6 +202,38 @@ function nomorWargaTersimpan_(key){
   if (dariData.trim()) return dariData.trim();
   return (kontakData[key] && kontakData[key].telepon) || "";
 }
+/* Ubah nomor apa pun (0812-xxx, +62 812 xxx, 812xxx) menjadi format WhatsApp 62xxxxxxxxxx.
+   Tanpa ini link wa.me tidak membuka chat kalau nomor diketik dengan awalan 0. */
+function nomorWA_(n){
+  var d = String(n || "").replace(/[^0-9]/g, "");
+  if (!d) return "";
+  if (d.indexOf("62") === 0) return d;
+  if (d.charAt(0) === "0") return "62" + d.slice(1);
+  return "62" + d;
+}
+/* Buka WhatsApp. Browser (terutama di PC) memblokir jendela baru yang dibuka setelah proses
+   simpan selesai. Solusinya: jendela dibuka lebih dulu saat tombol ditekan (waPre), lalu diarahkan
+   ke link WhatsApp setelah data tersimpan. Kalau tetap diblokir, tampil tombol manual. */
+function bukaLinkWA_(link, waPre){
+  try {
+    if (waPre && !waPre.closed) { waPre.location.href = link; return true; }
+    var w = window.open(link, "_blank");
+    return !!w;
+  } catch (e) { return false; }
+}
+function tampilTombolWA_(link, judul, sub, sudahTerbuka){
+  document.getElementById("modalBody").innerHTML =
+    '<h3>' + judul + '</h3><p class="msub">' + sub + '</p>' +
+    '<div class="status-now">' + (sudahTerbuka
+      ? '✅ Status tersimpan dan WhatsApp sedang dibuka. Kalau WhatsApp belum muncul, tekan tombol di bawah.'
+      : '✅ Status tersimpan. Tekan tombol di bawah untuk mengirim pesan WhatsApp.') + '</div>' +
+    '<div class="msheet-actions"><button class="btn btn-gold" id="btnBukaWA" type="button">💬 Kirim Pesan WhatsApp</button>' +
+    '<button class="btn btn-brand" id="btnTutupWA" type="button">Selesai</button></div>';
+  /* Sama seperti tombol kirim kwitansi: dibuka langsung dari tap petugas, jadi tidak diblokir browser. */
+  document.getElementById("btnBukaWA").addEventListener("click", function(){ window.open(link, "_blank", "noopener"); });
+  document.getElementById("btnTutupWA").addEventListener("click", closeModal_);
+  showModal_();
+}
 function showToast(msg){
   var t = document.getElementById("toast");
   t.textContent = msg; t.classList.add("show");
@@ -636,6 +668,10 @@ function simpanTransaksi_(){
   } else if (existing.adaBukti) updates["buktiTransfer/" + bulanKey + "/" + currentRumah.key] = null;
   if (telp) updates["wargaKontak/" + currentRumah.key] = { telepon: telp, updatedAt: firebase.database.ServerValue.TIMESTAMP };
 
+  var waPre = null;
+  if (metode === "lainnya") {
+    try { waPre = window.open("", "_blank"); if (waPre) waPre.document.write("<p style='font-family:sans-serif'>Membuka WhatsApp...</p>"); } catch (e) { waPre = null; }
+  }
   db.ref().update(updates).then(function(){
     if (metode === "cash") {
       buatKwitansi_(payload);
@@ -643,10 +679,10 @@ function simpanTransaksi_(){
       tampilKirimTransfer_(payload, buktiFoto_);
     } else {
       showToast("Tersimpan sebagai Belum Bayar.");
-      kirimReminder_(payload);
-      closeModal_();
+      if (kirimReminder_(payload, waPre)) closeModal_();
     }
   }).catch(function(){
+    if (waPre && !waPre.closed) waPre.close();
     showToast("Gagal menyimpan. Periksa koneksi internet.");
     btn.disabled = false;
   });
@@ -720,23 +756,34 @@ function tampilKirimTransfer_(payload, foto){
   document.getElementById("btnSelesaiTf").addEventListener("click", closeModal_);
 }
 
-function kirimReminder_(payload){
-  var nomor = String(payload.teleponWarga || "").replace(/[^0-9]/g, "");
+function kirimReminder_(payload, waPre){
+  var nomor = nomorWA_(payload.teleponWarga);
   var rek = rekeningTeks_();
+  var link, judul, sub;
   if (nomor) {
     var pesan = salam_() + " Bpk/Ibu " + (payload.nama || "") + " (" + payload.rumah + "). Kami dari Humas RT 08 tadi berkunjung untuk penarikan *iuran bulanan* " +
       bulanLabel_(bulanKey) + " sebesar " + fmtRp_(payload.jumlah) + ", namun belum bertemu Bapak/Ibu." +
       "\n\nMohon informasi kapan bisa kami kunjungi kembali" + (rek ? ", atau bisa dibayar via transfer ke:\n*" + rek + "*\n(mohon kirim bukti transfernya di chat ini)" : ".") +
       "\n\nTerima kasih 🙏";
-    rtOpenWa(nomor, pesan, "Nomor WA warga belum diisi.");
-    return;
+    link = rtWaLink(nomor, pesan);
+    judul = "💬 Reminder WhatsApp"; sub = esc_(payload.rumah) + " · " + esc_(payload.nama || "-");
+  } else {
+    // Nomor WA warga belum ada di data: teruskan info ke WhatsApp Pak RT (Ketua RT).
+    var pesanRT = salam_() + " Pak RT, info dari petugas Humas (" + petugasNama + "): rumah " + payload.rumah + " (" + (payload.nama || "-") +
+      ") belum bayar iuran bulan " + bulanLabel_(bulanKey) + ". Keterangan: " + (payload.catatan || "-") +
+      ". Nomor WA warga ini belum ada di data, mohon info kalau Bapak punya kontaknya.";
+    link = rtWaLink(nomorWA_(RT_CONFIG.waKetua), pesanRT);
+    judul = "💬 Info ke Pak RT"; sub = "Nomor WA warga belum ada, info dikirim ke Ketua RT";
+    if (link) showToast("Nomor WA warga belum ada di data — reminder untuk sementara dikirim ke WhatsApp Pak RT.");
   }
-  // Sementara nomor WA warga belum ada di data: teruskan info ke WhatsApp Pak RT (Ketua RT).
-  var pesanRT = salam_() + " Pak RT, info dari petugas Humas (" + petugasNama + "): rumah " + payload.rumah + " (" + (payload.nama || "-") +
-    ") belum bayar iuran bulan " + bulanLabel_(bulanKey) + ". Keterangan: " + (payload.catatan || "-") +
-    ". Nomor WA warga ini belum ada di data, mohon info kalau Bapak punya kontaknya.";
-  rtOpenWa(RT_CONFIG.waKetua, pesanRT, "Nomor WhatsApp Ketua RT belum diatur admin di config.js.");
-  showToast("Nomor WA warga belum ada di data — reminder untuk sementara dikirim ke WhatsApp Pak RT.");
+  if (!link) {
+    if (waPre && !waPre.closed) waPre.close();
+    showToast("Nomor WhatsApp belum diatur di config.js.");
+    return true;
+  }
+  var terbuka = bukaLinkWA_(link, waPre);
+  tampilTombolWA_(link, judul, sub, terbuka);
+  return false;
 }
 
 function buatKwitansi_(payload){
@@ -758,11 +805,11 @@ function buatKwitansi_(payload){
    kirim langsung ke warga. Kalau belum, sementara dikirim ke Bendahara (yang
    memegang rekapan iuran) sambil menunggu data nomor WA warga diupload admin. */
 function tujuanKwitansi_(payload){
-  var nomorWarga = String(payload.teleponWarga || "").replace(/[^0-9]/g, "");
+  var nomorWarga = nomorWA_(payload.teleponWarga);
   if (nomorWarga) {
     return { nomor: nomorWarga, label: "Warga", ke: payload.nama || "warga" };
   }
-  return { nomor: String(RT_CONFIG.waBendahara || "").replace(/[^0-9]/g, ""), label: "Bendahara", ke: RT_CONFIG.namaBendahara || "Bendahara" };
+  return { nomor: nomorWA_(RT_CONFIG.waBendahara), label: "Bendahara", ke: RT_CONFIG.namaBendahara || "Bendahara" };
 }
 function tampilHasilKwitansi_(){
   if (!hasilKwitansi) return;
@@ -788,8 +835,8 @@ async function kirimKwitansi_(){
   var hasil = hasilKwitansi.hasil, payload = hasilKwitansi.payload;
   var tujuan = tujuanKwitansi_(payload);
   var pesan = tujuan.label === "Warga"
-    ? (salam_() + " Bpk/Ibu " + (payload.nama || "") + ", berikut kwitansi pembayaran *iuran bulanan RT 08* (" + bulanLabel_(bulanKey) +
-       ") sebesar " + fmtRp_(payload.jumlah) + ". Terima kasih atas partisipasinya 🙏 (Kode: " + hasil.kode + ")")
+    ? (salam_() + " Bpk/Ibu " + (payload.nama || "") + ", pembayaran *iuran bulanan RT 08* (" + payload.rumah + ") bulan " + bulanLabel_(bulanKey) +
+       " sebesar *" + fmtRp_(payload.jumlah) + "* (Tunai) sudah kami terima. Kwitansi PDF kami lampirkan. Terima kasih atas partisipasinya 🙏 (Kode: " + hasil.kode + ")")
     : (salam_() + " Pak/Bu Bendahara, berikut kwitansi iuran bulanan a.n. " + (payload.nama || "-") + " (" + payload.rumah + "), bulan " +
        bulanLabel_(bulanKey) + " sebesar " + fmtRp_(payload.jumlah) + ". Nomor WA warga ini belum ada di data, jadi untuk sementara " +
        "dikirim ke Bendahara. (Kode: " + hasil.kode + ")");
@@ -797,16 +844,20 @@ async function kirimKwitansi_(){
   if (window.RTAndroid && typeof window.RTAndroid.sharePdf === "function") {
     try { if (window.RTAndroid.sharePdf(b64_(hasil.bytes), hasil.namaFile, tujuan.nomor, pesan)) return; } catch (e) { console.warn(e); }
   }
-  try {
-    var file = new File([hasil.bytes], hasil.namaFile, { type: "application/pdf" });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], text: pesan });
-      showToast("Pilih WhatsApp lalu kirim ke " + tujuan.label + ".");
-      return;
-    }
-  } catch (e) { if (e && e.name === "AbortError") return; console.warn(e); }
+  /* Nomor warga sudah diketahui: langsung buka chat ke nomor itu (tanpa cari kontak). PDF ikut terunduh untuk dilampirkan. */
+  if (tujuan.label !== "Warga") {
+    try {
+      var file = new File([hasil.bytes], hasil.namaFile, { type: "application/pdf" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], text: pesan });
+        showToast("Pilih WhatsApp lalu kirim ke " + tujuan.label + ".");
+        return;
+      }
+    } catch (e) { if (e && e.name === "AbortError") return; console.warn(e); }
+  }
   unduhBlob_(hasil.bytes, hasil.namaFile);
-  rtOpenWa(tujuan.nomor, pesan + "\n\n(PDF sudah diunduh — mohon dilampirkan di chat ini.)");
+  rtOpenWa(tujuan.nomor, pesan + "\n\n(PDF kwitansi sudah diunduh — tekan 📎 lalu lampirkan file tersebut di chat ini.)");
+  showToast("Chat WhatsApp ke " + tujuan.label + " dibuka. Tinggal lampirkan PDF lalu kirim.");
 }
 })();
 </script>

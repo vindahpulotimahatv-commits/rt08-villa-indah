@@ -864,23 +864,30 @@ function initDashboard_(){
       }, RT_CONFIG, null, new Date());
     } catch (e) { console.error(e); showToast("Gagal membuat PDF kwitansi."); return; }
     db.ref("penarikan/" + b + "/" + r).update({ kodeKwitansi: hasil.kode, kwitansiAt: firebase.database.ServerValue.TIMESTAMP });
-    var nomor = String(it.teleponWarga || (typeof WARGA_KONTAK !== "undefined" ? WARGA_KONTAK[r] : "") || "").replace(/[^0-9]/g, "");
+    function nomorWA_(n){ var d = String(n || "").replace(/[^0-9]/g, ""); if (!d) return ""; if (d.indexOf("62") === 0) return d; if (d.charAt(0) === "0") return "62" + d.slice(1); return "62" + d; }
+    var nomor = nomorWA_(it.teleponWarga || (typeof WARGA_KONTAK !== "undefined" ? WARGA_KONTAK[r] : "") || "");
     if (!nomor) {
-      try { var snap = await db.ref("wargaKontak/" + r + "/telepon").once("value"); nomor = String(snap.val() || "").replace(/[^0-9]/g, ""); } catch (e) {}
+      try { var snap = await db.ref("wargaKontak/" + r + "/telepon").once("value"); nomor = nomorWA_(snap.val()); } catch (e) {}
     }
     var pesan = salam_() + " Bpk/Ibu " + (it.nama || "") + ", pembayaran *iuran bulanan RT 08* (" + bulanLong_(b) + ") sebesar " + fmtRp_(it.jumlah) +
       " via transfer sudah kami terima dan dikonfirmasi Bendahara. Berikut kwitansinya. Terima kasih atas partisipasinya 🙏 (Kode: " + hasil.kode + ")";
+    /* Nomor warga sudah ada: langsung buka chat ke nomor itu, tanpa cari kontak. */
+    if (nomor) {
+      unduhPdf_(hasil.bytes, hasil.namaFile);
+      rtOpenWa(nomor, pesan + "\n\n(PDF kwitansi sudah diunduh — tekan 📎 lalu lampirkan file tersebut di chat ini.)");
+      showToast("Chat WhatsApp ke warga dibuka. Tinggal lampirkan PDF lalu kirim.");
+      return;
+    }
     try {
       var file = new File([hasil.bytes], hasil.namaFile, { type: "application/pdf" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], text: pesan });
-        showToast(nomor ? "Pilih WhatsApp lalu kirim ke nomor warga." : "Pilih WhatsApp lalu kontak pemilik rumah (nomor belum ada di data).");
+        showToast("Pilih WhatsApp lalu kontak pemilik rumah (nomor belum ada di data).");
         return;
       }
     } catch (e) { if (e && e.name === "AbortError") return; console.warn(e); }
     unduhPdf_(hasil.bytes, hasil.namaFile);
-    if (nomor) rtOpenWa(nomor, pesan + "\n\n(PDF sudah diunduh — mohon dilampirkan di chat ini.)");
-    else showToast("PDF diunduh. Nomor WA warga belum ada — kirim manual lewat WhatsApp.");
+    showToast("PDF diunduh. Nomor WA warga belum ada — kirim manual lewat WhatsApp.");
   }
   db.ref("penarikan").on("value", function(snap){
     penarikanSemua_ = snap.val() || {};
