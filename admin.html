@@ -656,6 +656,7 @@ function initDashboard_(){
     bt.disabled = false;
     document.querySelectorAll(".finance-test-delete").forEach(function(x){ x.style.display = testMode_ ? "inline-flex" : "none"; });
     document.querySelectorAll(".finance-locked-badge").forEach(function(x){ x.style.display = testMode_ ? "none" : "inline-block"; });
+    document.querySelectorAll(".iuran-test-reset").forEach(function(x){ x.style.display = testMode_ ? "inline-flex" : "none"; });
   }
   function loadTestMode_(){
     return db.ref("appConfig/testMode").once("value").then(function(snap){
@@ -1194,7 +1195,8 @@ function initDashboard_(){
       }
       return '<div class="entry-row"><div class="entry-body"><h4>' + esc_(it.rumah) + ' — ' + esc_(it.nama || "-") + '</h4>' +
         '<p>' + bulanLong_(it.bulanKey) + ' • ' + fmtRp_(it.jumlah) + ' ' + tag + '</p></div>' +
-        '<button class="btn btn-gold btn-sm kwt-btn" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">🧾 ' + (gatewayAktif_() ? (it.kwitansiWA === 'terkirim' ? 'Kirim Ulang' : 'Kirim WA') : (it.kodeKwitansi ? 'Kirim Ulang' : 'Kirim Kwitansi')) + '</button></div>';
+        '<button class="btn btn-gold btn-sm kwt-btn" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">🧾 ' + (gatewayAktif_() ? (it.kwitansiWA === 'terkirim' ? 'Kirim Ulang' : 'Kirim WA') : (it.kodeKwitansi ? 'Kirim Ulang' : 'Kirim Kwitansi')) + '</button>' +
+        '<button class="btn btn-tolak btn-sm iuran-test-reset tf-reset" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '" title="Reset iuran rumah ini (khusus simulasi)" style="display:' + (testMode_ ? 'inline-flex' : 'none') + '">♻️ Reset</button></div>';
     }).join("");
   }
   function unduhPdf_(bytes, nama){
@@ -1808,6 +1810,22 @@ function initDashboard_(){
     }).catch(function(){ ov.querySelector("#buktiIsi").textContent = "Gagal memuat bukti. Periksa aturan Firebase (node buktiTransfer)."; });
   }
   document.getElementById("listTransferOk").addEventListener("click", function(e){
+    var rs = e.target.closest(".tf-reset");
+    if (rs) {
+      if (!testMode_) { showToast("TEST MODE OFF: reset iuran terkunci."); return; }
+      var rb = rs.getAttribute("data-b"), rr = rs.getAttribute("data-r");
+      var re = (penarikanSemua_[rb] || {})[rr] || {};
+      if (!confirm("RESET iuran (simulasi)?\n\n" + (re.rumah || rr) + " — " + fmtBulanID_(rb) + " — " + fmtRp_(re.jumlah) +
+          "\n\nCatatan iuran rumah, foto bukti, dan pemasukan Kas RT dari transfer ini ikut dihapus.\nHumas bisa mencatat ulang dari awal.\nTidak bisa dibatalkan.")) return;
+      rs.disabled = true;
+      var ru = {};
+      ru["penarikan/" + rb + "/" + rr] = null;
+      ru["buktiTransfer/" + rb + "/" + rr] = null;
+      ru["keuangan/iuran_transfer_" + rb + "_" + rr] = null;
+      db.ref().update(ru).then(function(){ showToast("Iuran direset."); })
+        .catch(function(err){ rs.disabled = false; showToast(pesanGagal_(err, "Reset iuran")); });
+      return;
+    }
     var kb = e.target.closest(".kwt-btn");
     if (!kb) return;
     var kbB = kb.getAttribute("data-b"), kbR = kb.getAttribute("data-r");
@@ -1871,6 +1889,7 @@ function initDashboard_(){
         ? '<button class="btn btn-brand btn-sm setoran-btn" data-id="' + esc_(it.id) + '" data-info="' + esc_("Petugas: " + (it.petugas || "-") + "\nBulan: " + fmtBulanID_(it.bulanKey) + "\nJumlah: " + fmtRp_(it.jumlah) + " dari " + jmlRumah + " rumah") + '">✅ Terima Setoran</button>'
         : '<span class="entry-badge kegiatan">Diterima</span>' + (gatewayAktif_() ? ' <button class="btn btn-gold btn-sm setoran-wa" data-id="' + esc_(it.id) + '">📨 Kirim Kwitansi WA</button>' : '');
       if (it.status !== "diterima") aksi += ' <button class="btn btn-tolak btn-sm setoran-hapus" data-id="' + it.id + '" title="Batalkan setoran">🗑️</button>';
+      else aksi += ' <button class="btn btn-tolak btn-sm iuran-test-reset setoran-reset" data-id="' + esc_(it.id) + '" title="Reset setoran (khusus simulasi)" style="display:' + (testMode_ ? 'inline-flex' : 'none') + '">♻️ Reset</button>';
       return '<div class="entry-row"><div class="entry-body"><h4>' + esc_(it.petugas) + ' — ' + fmtRp_(it.jumlah) + '</h4>' +
         '<p>' + fmtBulanID_(it.bulanKey) + ' • ' + jmlRumah + ' rumah</p></div><div style="display:flex;gap:6px;align-items:center">' + aksi + '</div></div>';
     }).join("");
@@ -1883,6 +1902,27 @@ function initDashboard_(){
       if (!sw) { showToast("Data setoran tidak ditemukan."); return; }
       waBtn.disabled = true; showToast("Mengirim kwitansi ke WhatsApp warga (yang belum terkirim)...");
       kirimKwitansiBatch_(sw.bulanKey, sw.rumahKeys).then(function(h){ showToast(ringkasHasilWA_(h)); waBtn.disabled = false; });
+      return;
+    }
+    var rsSet = e.target.closest(".setoran-reset");
+    if (rsSet) {
+      if (!testMode_) { showToast("TEST MODE OFF: reset setoran terkunci."); return; }
+      var rsid = rsSet.getAttribute("data-id");
+      var rsit = setoranSemua_[rsid];
+      if (!rsit) { showToast("Data setoran tidak ditemukan."); return; }
+      var rsn = Object.keys(rsit.rumahKeys || {}).length;
+      if (!confirm("RESET setoran (simulasi)?\n\n" + (rsit.petugas || "-") + " — " + fmtRp_(rsit.jumlah) + " dari " + rsn + " rumah — " + fmtBulanID_(rsit.bulanKey) +
+          "\n\nSetoran, catatan iuran SEMUA rumah di dalamnya, dan pemasukan Kas RT-nya ikut dihapus.\nTidak bisa dibatalkan.")) return;
+      rsSet.disabled = true;
+      var rsu = {};
+      rsu["humasSetoran/" + rsid] = null;
+      rsu["keuangan/iuran_cash_" + rsid] = null;
+      Object.keys(rsit.rumahKeys || {}).forEach(function(rk){
+        rsu["penarikan/" + rsit.bulanKey + "/" + rk] = null;
+        rsu["buktiTransfer/" + rsit.bulanKey + "/" + rk] = null;
+      });
+      db.ref().update(rsu).then(function(){ showToast("Setoran direset."); })
+        .catch(function(err){ rsSet.disabled = false; showToast(pesanGagal_(err, "Reset setoran")); });
       return;
     }
     var del = e.target.closest(".setoran-hapus");
