@@ -1175,11 +1175,19 @@ function initDashboard_(){
   var BULAN_LONG_ = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
   function bulanLong_(k){ var m = /^(\d{4})-(\d{2})$/.exec(k || ""); return m ? BULAN_LONG_[parseInt(m[2], 10) - 1] + " " + m[1] : (k || "-"); }
   function salam_(){ var j = new Date().getHours(); return j >= 4 && j < 11 ? "Selamat pagi" : j < 15 && j >= 11 ? "Selamat siang" : j >= 15 && j < 18 ? "Selamat sore" : "Selamat malam"; }
+  function anggotaPaket_(b, r){
+    var e = (penarikanSemua_[b] || {})[r];
+    if (!e) return [];
+    if (!e.paketId || !e.paketBulan) return [{ b: b, r: r, e: e }];
+    var out = [];
+    String(e.paketBulan).split(",").forEach(function(m){ var x = (penarikanSemua_[m] || {})[r]; if (x && x.paketId === e.paketId) out.push({ b: m, r: r, e: x }); });
+    return out.length ? out : [{ b: b, r: r, e: e }];
+  }
   function renderTransferOk_(){
     var ok = [];
     Object.keys(penarikanSemua_).forEach(function(bk){
       var bln = penarikanSemua_[bk] || {};
-      Object.keys(bln).forEach(function(rk){ var e = bln[rk]; if (e && e.status === "lunas_transfer") ok.push(Object.assign({ bulanKey: bk, rumahKey: rk }, e)); });
+      Object.keys(bln).forEach(function(rk){ var e = bln[rk]; if (e && e.status === "lunas_transfer" && !(e.paketKe > 1)) ok.push(Object.assign({ bulanKey: bk, rumahKey: rk }, e)); });
     });
     ok.sort(function(a, b){ return (b.confirmedAt || b.updatedAt || 0) - (a.confirmedAt || a.updatedAt || 0); });
     ok = ok.slice(0, 20);
@@ -1194,7 +1202,7 @@ function initDashboard_(){
         else tag += ' <span class="entry-badge" style="background:#eef2fb;color:#1b3a73">⏳ Belum dikirim</span>';
       }
       return '<div class="entry-row"><div class="entry-body"><h4>' + esc_(it.rumah) + ' — ' + esc_(it.nama || "-") + '</h4>' +
-        '<p>' + bulanLong_(it.bulanKey) + ' • ' + fmtRp_(it.jumlah) + ' ' + tag + '</p></div>' +
+        '<p>' + (it.periodeLabel || bulanLong_(it.bulanKey)) + ' • ' + fmtRp_(it.paketTotal || it.jumlah) + (it.paketN > 1 ? ' • 📦 ' + it.paketN + ' bulan' : '') + ' ' + tag + '</p></div>' +
         '<button class="btn btn-gold btn-sm kwt-btn" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">🧾 ' + (gatewayAktif_() ? (it.kwitansiWA === 'terkirim' ? 'Kirim Ulang' : 'Kirim WA') : (it.kodeKwitansi ? 'Kirim Ulang' : 'Kirim Kwitansi')) + '</button>' +
         '<button class="btn btn-tolak btn-sm iuran-test-reset tf-reset" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '" title="Reset iuran rumah ini (khusus simulasi)" style="display:' + (testMode_ ? 'inline-flex' : 'none') + '">♻️ Reset</button></div>';
     }).join("");
@@ -1212,9 +1220,9 @@ function initDashboard_(){
     var hasil;
     try {
       hasil = RTSurat.buat("kwitansiIuran", {
-        nama: it.nama || "-", blok: it.rumah, bulan: bulanLong_(b),
-        rincian: "Iuran Bulanan" + (it.tambahanKK ? " + Iuran RUKEM (tambahan KK)" : ""),
-        jumlah: fmtRp_(it.jumlah), metode: "Transfer Bank (" + bank + ")", petugas: it.petugas || "-"
+        nama: it.nama || "-", blok: it.rumah, bulan: it.periodeLabel || bulanLong_(b),
+        rincian: "Iuran Bulanan" + (it.paketN > 1 ? " × " + it.paketN + " bulan" : "") + (it.tambahanKK ? " + Iuran RUKEM (tambahan KK)" : ""),
+        jumlah: fmtRp_(it.paketTotal || it.jumlah), metode: "Transfer Bank (" + bank + ")", petugas: it.petugas || "-"
       }, RT_CONFIG, null, new Date(), "KW-" + b.slice(2, 4) + b.slice(5, 7) + "-" + String(it.blok || "").toUpperCase() + "-" + String(it.no || "").toUpperCase());
     } catch (e) { console.error(e); showToast("Gagal membuat PDF kwitansi."); return; }
     db.ref("penarikan/" + b + "/" + r).update({ kodeKwitansi: hasil.kode, kwitansiAt: firebase.database.ServerValue.TIMESTAMP });
@@ -1223,7 +1231,7 @@ function initDashboard_(){
     if (!nomor) {
       try { var snap = await db.ref("wargaKontak/" + r + "/telepon").once("value"); nomor = nomorWA_(snap.val()); } catch (e) {}
     }
-    var pesan = salam_() + " Bpk/Ibu " + (it.nama || "") + ", pembayaran *iuran bulanan RT 08* (" + bulanLong_(b) + ") sebesar " + fmtRp_(it.jumlah) +
+    var pesan = salam_() + " Bpk/Ibu " + (it.nama || "") + ", pembayaran *iuran bulanan RT 08* (" + (it.periodeLabel || bulanLong_(b)) + ") sebesar " + fmtRp_(it.paketTotal || it.jumlah) +
       " via transfer sudah kami terima dan dikonfirmasi Bendahara. Berikut kwitansinya. Terima kasih atas partisipasinya 🙏 (Kode: " + hasil.kode + ")";
     /* Aplikasi Android: buka chat WA warga dengan PDF sudah TERLAMPIR (tinggal tekan Kirim). */
     if (nomor && window.RTAndroid && typeof window.RTAndroid.sharePdf === "function") {
@@ -1295,9 +1303,9 @@ function initDashboard_(){
     var cash = it.metode === "cash" || it.status === "lunas_cash";
     var bank = (RT_CONFIG.rekeningBendahara && RT_CONFIG.rekeningBendahara.bank) || "Bank";
     return RTSurat.buat("kwitansiIuran", {
-      nama: it.nama || "-", blok: it.rumah, bulan: bulanLong_(b),
-      rincian: "Iuran Bulanan" + (it.tambahanKK ? " + Iuran RUKEM (tambahan KK)" : ""),
-      jumlah: fmtRp_(it.jumlah), metode: cash ? "Tunai (Cash)" : "Transfer Bank (" + bank + ")", petugas: it.petugas || "-"
+      nama: it.nama || "-", blok: it.rumah, bulan: it.periodeLabel || bulanLong_(b),
+      rincian: "Iuran Bulanan" + (it.paketN > 1 ? " × " + it.paketN + " bulan" : "") + (it.tambahanKK ? " + Iuran RUKEM (tambahan KK)" : ""),
+      jumlah: fmtRp_(it.paketTotal || it.jumlah), metode: cash ? "Tunai (Cash)" : "Transfer Bank (" + bank + ")", petugas: it.petugas || "-"
     }, RT_CONFIG, null, new Date(), "KW-" + b.slice(2, 4) + b.slice(5, 7) + "-" + String(it.blok || "").toUpperCase() + "-" + String(it.no || "").toUpperCase());
   }
   async function nomorWargaWA_(r, it){
@@ -1313,6 +1321,7 @@ function initDashboard_(){
     var it = itOverride || (penarikanSemua_[b] || {})[r];
     if (!it) return "tidak_ada";
     if (it.kwitansiWA === "terkirim" && !paksa) return "sudah";
+    if (it.paketKe > 1) return "sudah"; /* kwitansi paket dikirim sekali, lewat bulan pertama */
     sedangKirimWA_[id] = true;
     var ref = db.ref("penarikan/" + b + "/" + r), TS = firebase.database.ServerValue.TIMESTAMP;
     try {
@@ -1321,7 +1330,7 @@ function initDashboard_(){
       if (!nomor) { await ref.update({ kwitansiWA: "tanpa_nomor", kwitansiWAError: null }); return "tanpa_nomor"; }
       var hasil = buatPdfKwitansi_(b, r, it);
       var cash = it.metode === "cash" || it.status === "lunas_cash";
-      var pesan = salam_() + " Bpk/Ibu " + (it.nama || "") + ", pembayaran *iuran bulanan RT 08* (" + it.rumah + ") bulan " + bulanLong_(b) + " sebesar *" + fmtRp_(it.jumlah) + "* " +
+      var pesan = salam_() + " Bpk/Ibu " + (it.nama || "") + ", pembayaran *iuran bulanan RT 08* (" + it.rumah + ") bulan " + (it.periodeLabel || bulanLong_(b)) + " sebesar *" + fmtRp_(it.paketTotal || it.jumlah) + "* " +
         (cash ? "(Tunai) sudah kami terima dan dicatat Bendahara." : "via transfer sudah kami terima dan dikonfirmasi Bendahara.") +
         " Kwitansi PDF terlampir. Terima kasih atas partisipasinya 🙏 (Kode: " + hasil.kode + ")";
       await kirimWAFile_(nomor, pesan, hasil.bytes, hasil.namaFile, "application/pdf");
@@ -1774,7 +1783,7 @@ function initDashboard_(){
       var bln = penarikanSemua_[bk] || {};
       Object.keys(bln).forEach(function(rk){
         var e = bln[rk];
-        if (e && e.status === "transfer_pending") items.push(Object.assign({ bulanKey: bk, rumahKey: rk }, e));
+        if (e && e.status === "transfer_pending" && !(e.paketKe > 1)) items.push(Object.assign({ bulanKey: bk, rumahKey: rk }, e));
       });
     });
     items.sort(function(a, b){ return (b.updatedAt || 0) - (a.updatedAt || 0); });
@@ -1785,7 +1794,7 @@ function initDashboard_(){
     if (items.length === 0) { box.innerHTML = '<div class="empty-note">Tidak ada transfer yang menunggu konfirmasi.</div>'; return; }
     box.innerHTML = items.map(function(it){
       return '<div class="entry-row"><div class="entry-body"><h4>' + esc_(it.rumah) + ' — ' + esc_(it.nama || "-") + '</h4>' +
-        '<p>' + fmtBulanID_(it.bulanKey) + ' • ' + fmtRp_(it.jumlah) + ' • Petugas: ' + esc_(it.petugas || "-") + '</p></div>' +
+        '<p>' + esc_(it.periodeLabel || fmtBulanID_(it.bulanKey)) + ' • ' + fmtRp_(it.paketTotal || it.jumlah) + (it.paketN > 1 ? ' • 📦 ' + it.paketN + ' bulan (bayar di muka)' : '') + ' • Petugas: ' + esc_(it.petugas || "-") + '</p></div>' +
         '<div style="display:flex;gap:6px;flex-direction:column">' +
         (it.adaBukti ? '<button class="btn btn-gold btn-sm transfer-bukti" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">🧾 Lihat Bukti</button>' : '<span style="font-size:10.5px;color:var(--red);font-weight:800;text-align:center">Tanpa bukti</span>') +
         '<button class="btn btn-brand btn-sm transfer-btn" data-act="terima" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">✅ Sudah Masuk Rekening</button>' +
@@ -1815,13 +1824,16 @@ function initDashboard_(){
       if (!testMode_) { showToast("TEST MODE OFF: reset iuran terkunci."); return; }
       var rb = rs.getAttribute("data-b"), rr = rs.getAttribute("data-r");
       var re = (penarikanSemua_[rb] || {})[rr] || {};
-      if (!confirm("RESET iuran (simulasi)?\n\n" + (re.rumah || rr) + " — " + fmtBulanID_(rb) + " — " + fmtRp_(re.jumlah) +
-          "\n\nCatatan iuran rumah, foto bukti, dan pemasukan Kas RT dari transfer ini ikut dihapus.\nHumas bisa mencatat ulang dari awal.\nTidak bisa dibatalkan.")) return;
+      var agt = anggotaPaket_(rb, rr);
+      if (!confirm("RESET iuran (simulasi)?\n\n" + (re.rumah || rr) + " — " + (re.periodeLabel || fmtBulanID_(rb)) + " — " + fmtRp_(re.paketTotal || re.jumlah) +
+          "\n\nCatatan iuran rumah" + (agt.length > 1 ? " (" + agt.length + " bulan)" : "") + ", foto bukti, dan pemasukan Kas RT dari transfer ini ikut dihapus.\nHumas bisa mencatat ulang dari awal.\nTidak bisa dibatalkan.")) return;
       rs.disabled = true;
       var ru = {};
-      ru["penarikan/" + rb + "/" + rr] = null;
-      ru["buktiTransfer/" + rb + "/" + rr] = null;
-      ru["keuangan/iuran_transfer_" + rb + "_" + rr] = null;
+      agt.forEach(function(x){
+        ru["penarikan/" + x.b + "/" + x.r] = null;
+        ru["buktiTransfer/" + x.b + "/" + x.r] = null;
+        ru["keuangan/iuran_transfer_" + x.b + "_" + x.r] = null;
+      });
       db.ref().update(ru).then(function(){ showToast("Iuran direset."); })
         .catch(function(err){ rs.disabled = false; showToast(pesanGagal_(err, "Reset iuran")); });
       return;
@@ -1841,22 +1853,26 @@ function initDashboard_(){
     var b = btn.getAttribute("data-b"), r = btn.getAttribute("data-r"), act = btn.getAttribute("data-act");
     var entry = (penarikanSemua_[b] || {})[r];
     if (!entry) { showToast("Data tidak ditemukan. Muat ulang halaman."); return; }
+    var anggota = anggotaPaket_(b, r);
+    var totalPaket = entry.paketTotal || entry.jumlah, periodeTeks = entry.periodeLabel || fmtBulanID_(b);
     if (act === "terima") {
       if (entry.status !== "transfer_pending") { showToast("Transfer ini sudah diproses. Halaman akan diperbarui."); return; }
-      if (!confirm("Konfirmasi transfer MASUK?\n\n" + entry.rumah + " — " + (entry.nama || "-") + "\nBulan: " + fmtBulanID_(b) + "\nJumlah: " + fmtRp_(entry.jumlah) +
-          "\n\nPastikan uang " + fmtRp_(entry.jumlah) + " SUDAH ada di mutasi rekening.\nSetelah ini otomatis tercatat sebagai Pemasukan di Kas RT.")) return;
+      var pending = anggota.filter(function(x){ return x.e.status === "transfer_pending"; });
+      if (!confirm("Konfirmasi transfer MASUK?\n\n" + entry.rumah + " — " + (entry.nama || "-") + "\nPeriode: " + periodeTeks + (pending.length > 1 ? " (" + pending.length + " bulan)" : "") + "\nJumlah: " + fmtRp_(totalPaket) +
+          "\n\nPastikan uang " + fmtRp_(totalPaket) + " SUDAH ada di mutasi rekening.\nSetelah ini otomatis tercatat sebagai Pemasukan di Kas RT" + (pending.length > 1 ? " (satu pemasukan per bulan)." : "."))) return;
       btn.disabled = true;
       var upd = {};
-      upd["penarikan/" + b + "/" + r + "/status"] = "lunas_transfer";
-      upd["penarikan/" + b + "/" + r + "/confirmedAt"] = firebase.database.ServerValue.TIMESTAMP;
-      var kKey = "iuran_transfer_" + b + "_" + r;
-      upd["keuangan/" + kKey] = {
-        tanggal: tglWIB_(), jenis: "masuk",
-        keterangan: "Iuran Bulanan (Transfer) - " + entry.rumah + " - " + fmtBulanID_(b),
-        kategori: "Iuran Bulanan", jumlah: entry.jumlah, source: "penarikan/" + b + "/" + r,
-        createdAt: firebase.database.ServerValue.TIMESTAMP,
-        createdBy: (firebase.auth().currentUser && firebase.auth().currentUser.email) || ""
-      };
+      pending.forEach(function(x, idx){
+        upd["penarikan/" + x.b + "/" + x.r + "/status"] = "lunas_transfer";
+        upd["penarikan/" + x.b + "/" + x.r + "/confirmedAt"] = firebase.database.ServerValue.TIMESTAMP;
+        upd["keuangan/iuran_transfer_" + x.b + "_" + x.r] = {
+          tanggal: tglWIB_(), jenis: "masuk",
+          keterangan: "Iuran Bulanan (Transfer) - " + x.e.rumah + " - " + fmtBulanID_(x.b) + (x.e.paketN > 1 ? " (bayar di muka " + x.e.paketKe + "/" + x.e.paketN + ")" : ""),
+          kategori: "Iuran Bulanan", jumlah: x.e.jumlah, source: "penarikan/" + x.b + "/" + x.r,
+          createdAt: firebase.database.ServerValue.TIMESTAMP,
+          createdBy: (firebase.auth().currentUser && firebase.auth().currentUser.email) || ""
+        };
+      });
       db.ref().update(upd).then(function(){
         if (!gatewayAktif_()) { showToast("Transfer dikonfirmasi & masuk Kas RT. Kirim kwitansi dari daftar 🧾 di bawah."); return; }
         showToast("Transfer dikonfirmasi & masuk Kas RT. Mengirim kwitansi ke WhatsApp warga...");
@@ -1864,9 +1880,18 @@ function initDashboard_(){
         return kirimKwitansiOtomatis_(b, r, entryOk).then(function(st){ showToast(pesanHasilWA_(st, entry.rumah)); });
       }).catch(function(err){ btn.disabled = false; showToast(pesanGagal_(err, "Konfirmasi transfer")); });
     } else {
-      if (!confirm("Transfer belum masuk?\n\nStatus rumah ini dikembalikan ke \"Belum Bayar\" dan Humas bisa mencatat ulang.")) return;
+      if (!confirm("Transfer belum masuk?\n\nStatus rumah ini dikembalikan ke \"Belum Bayar\"" + (anggota.length > 1 ? " (seluruh " + anggota.length + " bulan dalam paket dibatalkan)" : "") + " dan Humas bisa mencatat ulang.")) return;
       btn.disabled = true;
-      db.ref("penarikan/" + b + "/" + r + "/status").set("belum")
+      var u = {};
+      anggota.forEach(function(x){
+        var pth = "penarikan/" + x.b + "/" + x.r;
+        if (x.e.paketId && x.e.paketKe > 1) { u[pth] = null; u["buktiTransfer/" + x.b + "/" + x.r] = null; }
+        else {
+          u[pth + "/status"] = "belum";
+          if (x.e.paketId) ["paketId","paketKe","paketN","paketBulan","paketTotal","periodeLabel"].forEach(function(f){ u[pth + "/" + f] = null; });
+        }
+      });
+      db.ref().update(u)
         .then(function(){ showToast("Dikembalikan ke status Belum."); })
         .catch(function(err){ btn.disabled = false; showToast(pesanGagal_(err, "Pengembalian status")); });
     }
