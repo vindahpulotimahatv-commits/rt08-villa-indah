@@ -1723,7 +1723,14 @@ function initDashboard_(){
     document.getElementById("xlsBulanWrap").style.display = this.value === "pilih" ? "block" : "none";
   });
   document.getElementById("btnXlsUnduh").addEventListener("click", async function(){
-    try { var x = await bangunExcel_(); if (!x) return; unduhBlobAdmin_(x.bytes, x.namaFile, XLSX_MIME_); showToast("Excel diunduh: " + x.namaFile); }
+    try {
+      var x = await bangunExcel_(); if (!x) return;
+      /* Aplikasi Android: unduhan blob tidak jalan di WebView, jadi buka menu Bagikan (Simpan ke Drive/File, WhatsApp, dll). */
+      if (window.RTAndroid && typeof window.RTAndroid.shareFile === "function") {
+        try { if (window.RTAndroid.shareFile(bytesKeB64_(x.bytes), x.namaFile, XLSX_MIME_, "", "", false)) { showToast("Pilih tujuan: simpan atau kirim file Excel."); return; } } catch (e2) { console.warn(e2); }
+      }
+      unduhBlobAdmin_(x.bytes, x.namaFile, XLSX_MIME_); showToast("Excel diunduh: " + x.namaFile);
+    }
     catch (e) { console.error(e); showToast(e && e.message ? e.message : "Gagal membuat Excel."); }
   });
   document.getElementById("btnXlsKirim").addEventListener("click", async function(){
@@ -1744,6 +1751,10 @@ function initDashboard_(){
       btn.disabled = false;
       showToast(gagal.length ? ok + " terkirim, gagal: " + gagal.join("; ") : "✅ Laporan terkirim ke " + ok + " pengurus.");
       return;
+    }
+    /* Aplikasi Android: buka WhatsApp dengan Excel sudah terlampir, lalu pilih kontak/grup pengurus. */
+    if (window.RTAndroid && typeof window.RTAndroid.shareFile === "function") {
+      try { if (window.RTAndroid.shareFile(bytesKeB64_(x.bytes), x.namaFile, XLSX_MIME_, "", pesan, true)) { showToast("Pilih kontak/grup pengurus di WhatsApp, lalu tekan Kirim."); return; } } catch (e3) { console.warn(e3); }
     }
     try {
       var file = new File([x.bytes], x.namaFile, { type: XLSX_MIME_ });

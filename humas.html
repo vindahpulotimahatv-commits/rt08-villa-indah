@@ -601,6 +601,9 @@ async function kirimExcelSetoran_(id, batch){
     var file = new File([x.bytes], x.namaFile, { type: XLSX_MIME });
     var pesan = salam_() + " Pak/Bu Bendahara, berikut *laporan setoran iuran bulanan* " + bulanLabel_(batch.bulanKey) + " dari Humas (" + batch.petugas + "): " +
       fmtRp_(batch.jumlah) + " dari " + x.jumlahRumah + " rumah.\n\nMohon dikonfirmasi di halaman Admin (tab Iuran Bulanan) setelah uang fisik diterima. Terima kasih 🙏";
+    if (window.RTAndroid && typeof window.RTAndroid.shareFile === "function") {
+      try { if (window.RTAndroid.shareFile(b64_(x.bytes), x.namaFile, XLSX_MIME, nomorWA_(RT_CONFIG.waBendahara) || "", pesan, true)) return; } catch (e4) { console.warn(e4); }
+    }
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], text: pesan });
       showToast("Pilih WhatsApp lalu kontak Bendahara.");
