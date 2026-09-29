@@ -931,6 +931,7 @@ function tampilHasilKwitansi_(){
   document.getElementById("modalBody").innerHTML =
     '<h3>✅ Kwitansi Siap</h3><p class="msub">' + esc_(payload.rumah) + ' · ' + esc_(payload.nama || "-") + ' · ' + fmtRp_(payload.jumlah) + '</p>' +
     '<p class="kwitansi-file">📎 ' + esc_(hasil.namaFile) + '</p>' + catatanTujuan +
+    '<p class="kwitansi-file">Mode kirim: ' + (modeAPK_() ? '✅ Aplikasi Android (PDF langsung terlampir)' : (navigator.canShare ? '📤 Browser (menu Bagikan)' : '💻 Browser tanpa menu Bagikan (lampirkan manual)')) + '</p>' +
     '<div class="msheet-actions">' +
       '<button class="btn btn-gold" id="btnKirimKwitansi" type="button">📤 Kirim ke WhatsApp ' + esc_(tujuan.label) + '</button>' +
       '<button class="btn btn-line" id="btnChatKwitansi" type="button">💬 Buka Chat ' + esc_(tujuan.label) + ' (lampirkan PDF manual)</button>' +
@@ -948,6 +949,7 @@ function tampilHasilKwitansi_(){
   document.getElementById("btnSelesaiKwitansi").addEventListener("click", closeModal_);
 }
 
+function modeAPK_(){ return !!(window.RTAndroid && typeof window.RTAndroid.sharePdf === "function"); }
 function teksKwitansi_(payload, hasil, tujuan){
   return tujuan.label === "Warga"
     ? (salam_() + " Bpk/Ibu " + (payload.nama || "") + ", pembayaran *iuran bulanan RT 08* (" + payload.rumah + ") bulan " + bulanLabel_(bulanKey) +
@@ -963,7 +965,7 @@ async function kirimKwitansi_(){
   var pesan = teksKwitansi_(payload, hasil, tujuan);
   if (!tujuan.nomor) { showToast("Nomor WhatsApp " + tujuan.label + " belum diatur di config.js. PDF diunduh saja."); unduhBlob_(hasil.bytes, hasil.namaFile); return; }
   if (window.RTAndroid && typeof window.RTAndroid.sharePdf === "function") {
-    try { if (window.RTAndroid.sharePdf(b64_(hasil.bytes), hasil.namaFile, tujuan.nomor, pesan)) return; } catch (e) { console.warn(e); }
+    try { if (window.RTAndroid.sharePdf(b64_(hasil.bytes), hasil.namaFile, tujuan.nomor, pesan)) return; showToast("Aplikasi tidak bisa membuka WhatsApp (pastikan WhatsApp terpasang). Memakai cara cadangan."); } catch (e) { console.warn(e); showToast("Gagal dari aplikasi: " + ((e && e.message) || e)); }
   }
   /* Browser HP (Chrome/Safari): menu Bagikan membawa PDF TERLAMPIR ke WhatsApp. wa.me tidak bisa melampirkan file,
      jadi ini satu-satunya cara agar PDF langsung ikut. Pengguna tinggal memilih kontak (nomor ditampilkan di notifikasi). */
