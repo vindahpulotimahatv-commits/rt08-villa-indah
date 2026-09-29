@@ -6,7 +6,9 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Base64;
 import android.view.KeyEvent;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -18,12 +20,15 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.work.Constraints;
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.NetworkType;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
@@ -56,6 +61,8 @@ public class MainActivity extends AppCompatActivity {
         settings.setUseWideViewPort(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setMediaPlaybackRequiresUserGesture(false);
+
+        webView.addJavascriptInterface(new RTAndroidBridge(), "RTAndroid");
 
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -100,6 +107,64 @@ public class MainActivity extends AppCompatActivity {
         });
 
         webView.loadUrl(resolveStartUrl(getIntent()));
+    }
+
+    /* Jembatan JavaScript -> Android: dipanggil situs (humas.html, layanan.html) sebagai
+       window.RTAndroid.sharePdf(base64, namaFile, nomorWA, pesan).
+       Membuka chat WhatsApp ke nomor itu dengan PDF sudah TERLAMPIR & pesan terisi;
+       pengguna tinggal menekan tombol Kirim. Mengembalikan false bila gagal (situs lalu
+       memakai cara cadangan). */
+    private class RTAndroidBridge {
+        @JavascriptInterface
+        public boolean sharePdf(String base64, String namaFile, String nomor, String pesan) {
+            try {
+                byte[] data = Base64.decode(base64, Base64.DEFAULT);
+                if (data == null || data.length == 0) return false;
+                String aman = (namaFile == null ? "dokumen.pdf" : namaFile).replaceAll("[^A-Za-z0-9._-]", "-");
+                if (!aman.toLowerCase().endsWith(".pdf")) aman = aman + ".pdf";
+                File dir = new File(getCacheDir(), "share");
+                if (!dir.exists() && !dir.mkdirs()) return false;
+                File[] lama = dir.listFiles();
+                if (lama != null) for (File f : lama) f.delete();
+                final File file = new File(dir, aman);
+                FileOutputStream out = new FileOutputStream(file);
+                try { out.write(data); } finally { out.close(); }
+
+                final Uri uri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".fileprovider", file);
+                final String digit = nomor == null ? "" : nomor.replaceAll("[^0-9]", "");
+                final String teks = pesan == null ? "" : pesan;
+                final String pkg = paketWhatsApp();
+                if (pkg == null) return false;
+
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        try {
+                            Intent i = new Intent(Intent.ACTION_SEND);
+                            i.setType("application/pdf");
+                            i.putExtra(Intent.EXTRA_STREAM, uri);
+                            i.putExtra(Intent.EXTRA_TEXT, teks);
+                            i.setPackage(pkg);
+                            if (digit.length() > 0) i.putExtra("jid", digit + "@s.whatsapp.net");
+                            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            startActivity(i);
+                        } catch (Exception e) {
+                            Toast.makeText(MainActivity.this, "Gagal membuka WhatsApp.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+    }
+
+    private String paketWhatsApp() {
+        String[] kandidat = { "com.whatsapp", "com.whatsapp.w4b" };
+        for (String p : kandidat) {
+            try { getPackageManager().getPackageInfo(p, 0); return p; } catch (PackageManager.NameNotFoundException ignore) {}
+        }
+        return null;
     }
 
     @Override
