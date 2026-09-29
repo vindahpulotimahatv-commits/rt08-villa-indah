@@ -433,6 +433,24 @@ textarea{min-height:76px;resize:vertical}
       <div class="finance-summary" id="financeSummary"></div>
     </div>
     <div class="list-card">
+      <div class="list-title">📊 Export Laporan Keuangan (Excel)</div>
+      <p class="sub" style="padding:0 14px;margin:0 0 8px;color:var(--muted);font-size:12px">Semua jenis keuangan — pemasukan, pengeluaran, dan iuran bulanan — dalam satu file Excel (Ringkasan, Transaksi, Pemasukan, Pengeluaran, Iuran Bulanan). Siap dikirim ke Ketua RT &amp; pengurus.</p>
+      <div style="padding:0 14px 14px;display:grid;gap:10px">
+        <div class="field"><label>Periode laporan</label>
+          <select id="xlsPeriode">
+            <option value="bulan_ini">Bulan ini</option>
+            <option value="bulan_lalu">Bulan lalu</option>
+            <option value="tahun_ini">Tahun ini</option>
+            <option value="semua">Semua data</option>
+            <option value="pilih">Pilih bulan tertentu…</option>
+          </select>
+        </div>
+        <div class="field" id="xlsBulanWrap" style="display:none"><label>Bulan</label><input type="month" id="xlsBulan"></div>
+        <button type="button" class="btn btn-brand" id="btnXlsUnduh">📥 Unduh Excel</button>
+        <button type="button" class="btn btn-gold" id="btnXlsKirim">📤 Kirim ke Ketua &amp; Pengurus</button>
+      </div>
+    </div>
+    <div class="list-card">
       <div class="list-title">Riwayat Transaksi</div>
       <div id="listKeuangan"><div class="empty-note">Memuat data...</div></div>
     </div>
@@ -464,6 +482,7 @@ textarea{min-height:76px;resize:vertical}
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="config.js"></script>
 <script src="warga-data.js"></script>
 <script src="warga-kontak.js"></script>
@@ -1105,6 +1124,7 @@ function initDashboard_(){
     var val = snap.val() || {};
     var items = Object.keys(val).map(function(k){ return Object.assign({ id:k }, val[k]); });
     items.sort(function(a,b){ return (b.tanggal||"").localeCompare(a.tanggal||"") || (b.createdAt||0)-(a.createdAt||0); });
+    keuanganSemua_ = items.slice();
 
     var totalMasuk = 0, totalKeluar = 0, bulanMasuk = 0, bulanKeluar = 0;
     var ym = tglWIB_().slice(0, 7);
@@ -1149,6 +1169,7 @@ function initDashboard_(){
   }
 
   var penarikanSemua_ = {};   // { bulanKey: { rumahKey: entry } }
+  var setoranSemua_ = {};     // { setoranId: batch }
   var BULAN_LONG_ = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
   function bulanLong_(k){ var m = /^(\d{4})-(\d{2})$/.exec(k || ""); return m ? BULAN_LONG_[parseInt(m[2], 10) - 1] + " " + m[1] : (k || "-"); }
   function salam_(){ var j = new Date().getHours(); return j >= 4 && j < 11 ? "Selamat pagi" : j < 15 && j >= 11 ? "Selamat siang" : j >= 15 && j < 18 ? "Selamat sore" : "Selamat malam"; }
@@ -1164,9 +1185,15 @@ function initDashboard_(){
     if (ok.length === 0) { box.innerHTML = '<div class="empty-note">Belum ada transfer terkonfirmasi.</div>'; return; }
     box.innerHTML = ok.map(function(it){
       var tag = it.kodeKwitansi ? '<span class="entry-badge kegiatan">Kwitansi ' + esc_(it.kodeKwitansi) + '</span>' : '';
+      if (gatewayAktif_()) {
+        if (it.kwitansiWA === "terkirim") tag += ' <span class="entry-badge kegiatan">✅ WA terkirim</span>';
+        else if (it.kwitansiWA === "gagal") tag += ' <span class="entry-badge" style="background:#fde8e8;color:#b42318">⚠️ WA gagal' + (it.kwitansiWAError ? ': ' + esc_(it.kwitansiWAError) : '') + '</span>';
+        else if (it.kwitansiWA === "tanpa_nomor") tag += ' <span class="entry-badge" style="background:#fff4d6;color:#8a6a10">📵 Nomor WA belum ada</span>';
+        else tag += ' <span class="entry-badge" style="background:#eef2fb;color:#1b3a73">⏳ Belum dikirim</span>';
+      }
       return '<div class="entry-row"><div class="entry-body"><h4>' + esc_(it.rumah) + ' — ' + esc_(it.nama || "-") + '</h4>' +
         '<p>' + bulanLong_(it.bulanKey) + ' • ' + fmtRp_(it.jumlah) + ' ' + tag + '</p></div>' +
-        '<button class="btn btn-gold btn-sm kwt-btn" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">🧾 ' + (it.kodeKwitansi ? 'Kirim Ulang' : 'Kirim Kwitansi') + '</button></div>';
+        '<button class="btn btn-gold btn-sm kwt-btn" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">🧾 ' + (gatewayAktif_() ? (it.kwitansiWA === 'terkirim' ? 'Kirim Ulang' : 'Kirim WA') : (it.kodeKwitansi ? 'Kirim Ulang' : 'Kirim Kwitansi')) + '</button></div>';
     }).join("");
   }
   function unduhPdf_(bytes, nama){
@@ -1195,6 +1222,10 @@ function initDashboard_(){
     }
     var pesan = salam_() + " Bpk/Ibu " + (it.nama || "") + ", pembayaran *iuran bulanan RT 08* (" + bulanLong_(b) + ") sebesar " + fmtRp_(it.jumlah) +
       " via transfer sudah kami terima dan dikonfirmasi Bendahara. Berikut kwitansinya. Terima kasih atas partisipasinya 🙏 (Kode: " + hasil.kode + ")";
+    /* Aplikasi Android: buka chat WA warga dengan PDF sudah TERLAMPIR (tinggal tekan Kirim). */
+    if (nomor && window.RTAndroid && typeof window.RTAndroid.sharePdf === "function") {
+      try { if (window.RTAndroid.sharePdf(bytesKeB64_(hasil.bytes), hasil.namaFile, nomor, pesan)) { showToast("WhatsApp warga dibuka dengan PDF terlampir. Tekan Kirim."); return; } } catch (e) { console.warn(e); }
+    }
     /* Nomor warga sudah ada: langsung buka chat ke nomor itu, tanpa cari kontak. */
     if (nomor) {
       unduhPdf_(hasil.bytes, hasil.namaFile);
@@ -1213,6 +1244,266 @@ function initDashboard_(){
     unduhPdf_(hasil.bytes, hasil.namaFile);
     showToast("PDF diunduh. Nomor WA warga belum ada — kirim manual lewat WhatsApp.");
   }
+
+  /* ---- KIRIM WHATSAPP OTOMATIS (kwitansi PDF & file Excel) lewat jembatan Apps Script ---- */
+  function gatewayAktif_(){ return !!(RT_CONFIG.waGateway && RT_CONFIG.waGateway.url); }
+  function bytesKeB64_(bytes){
+    var u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), s = "";
+    for (var i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+    return btoa(s);
+  }
+  function alasanGateway_(j){
+    var peta = {
+      tidak_login: "Sesi login tidak valid. Keluar lalu masuk lagi.",
+      tidak_diizinkan: "Akun ini tidak ada di ALLOWED_UIDS pada Code-KirimWA.gs.",
+      token_belum_diatur: "Token Fonnte belum diisi di Script Properties.",
+      nomor_tidak_valid: "Nomor WhatsApp tujuan tidak valid.",
+      file_terlalu_besar: "Ukuran file terlalu besar.",
+      gateway_menolak: "Gateway menolak" + (j && j.message ? ": " + j.message : "."),
+      server_error: "Kesalahan di Apps Script" + (j && j.message ? ": " + j.message : ".")
+    };
+    return peta[j && j.reason] || ("Gagal kirim (" + ((j && j.reason) || "tidak diketahui") + ").");
+  }
+  async function kirimWAFile_(target, pesan, bytes, namaFile, mime){
+    var user = firebase.auth().currentUser;
+    if (!user) throw new Error("Sesi login habis. Masuk lagi.");
+    var token = await user.getIdToken();
+    var res;
+    try {
+      res = await fetch(RT_CONFIG.waGateway.url, {
+        method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "kirim_file", idToken: token, target: target, message: pesan, filename: namaFile, mime: mime, fileBase64: bytesKeB64_(bytes) })
+      });
+    } catch (e) { throw new Error("Tidak bisa menghubungi jembatan WA. Cek internet & URL di config.js."); }
+    var j; try { j = await res.json(); } catch (e) { throw new Error("Jawaban jembatan WA tidak terbaca. Pastikan Web App di-deploy untuk 'Anyone'."); }
+    if (!j.ok) throw new Error(alasanGateway_(j));
+    return true;
+  }
+  function buatPdfKwitansi_(b, r, it){
+    var cash = it.metode === "cash" || it.status === "lunas_cash";
+    var bank = (RT_CONFIG.rekeningBendahara && RT_CONFIG.rekeningBendahara.bank) || "Bank";
+    return RTSurat.buat("kwitansiIuran", {
+      nama: it.nama || "-", blok: it.rumah, bulan: bulanLong_(b),
+      rincian: "Iuran Bulanan" + (it.tambahanKK ? " + Iuran RUKEM (tambahan KK)" : ""),
+      jumlah: fmtRp_(it.jumlah), metode: cash ? "Tunai (Cash)" : "Transfer Bank (" + bank + ")", petugas: it.petugas || "-"
+    }, RT_CONFIG, null, new Date(), "KW-" + b.slice(2, 4) + b.slice(5, 7) + "-" + String(it.blok || "").toUpperCase() + "-" + String(it.no || "").toUpperCase());
+  }
+  async function nomorWargaWA_(r, it){
+    var n = nomorWAValid_(it.teleponWarga || (typeof WARGA_KONTAK !== "undefined" ? WARGA_KONTAK[r] : "") || "");
+    if (!n) { try { var snap = await db.ref("wargaKontak/" + r + "/telepon").once("value"); n = nomorWAValid_(snap.val()); } catch (e) {} }
+    return n;
+  }
+  var sedangKirimWA_ = {};
+  /* Hasil: "terkirim" | "sudah" | "tanpa_nomor" | "gagal" | "sibuk" | "tidak_ada". Status dicatat di penarikan/{bulan}/{rumah}/kwitansiWA. */
+  async function kirimKwitansiOtomatis_(b, r, itOverride, paksa){
+    var id = b + "/" + r;
+    if (sedangKirimWA_[id]) return "sibuk";
+    var it = itOverride || (penarikanSemua_[b] || {})[r];
+    if (!it) return "tidak_ada";
+    if (it.kwitansiWA === "terkirim" && !paksa) return "sudah";
+    sedangKirimWA_[id] = true;
+    var ref = db.ref("penarikan/" + b + "/" + r), TS = firebase.database.ServerValue.TIMESTAMP;
+    try {
+      if (typeof RTSurat === "undefined") throw new Error("surat-pdf.js belum termuat.");
+      var nomor = await nomorWargaWA_(r, it);
+      if (!nomor) { await ref.update({ kwitansiWA: "tanpa_nomor", kwitansiWAError: null }); return "tanpa_nomor"; }
+      var hasil = buatPdfKwitansi_(b, r, it);
+      var cash = it.metode === "cash" || it.status === "lunas_cash";
+      var pesan = salam_() + " Bpk/Ibu " + (it.nama || "") + ", pembayaran *iuran bulanan RT 08* (" + it.rumah + ") bulan " + bulanLong_(b) + " sebesar *" + fmtRp_(it.jumlah) + "* " +
+        (cash ? "(Tunai) sudah kami terima dan dicatat Bendahara." : "via transfer sudah kami terima dan dikonfirmasi Bendahara.") +
+        " Kwitansi PDF terlampir. Terima kasih atas partisipasinya 🙏 (Kode: " + hasil.kode + ")";
+      await kirimWAFile_(nomor, pesan, hasil.bytes, hasil.namaFile, "application/pdf");
+      await ref.update({ kwitansiWA: "terkirim", kwitansiWAAt: TS, kwitansiWAError: null, kodeKwitansi: hasil.kode, kwitansiAt: TS });
+      return "terkirim";
+    } catch (err) {
+      console.error("Kirim kwitansi otomatis gagal:", err);
+      try { await ref.update({ kwitansiWA: "gagal", kwitansiWAError: String((err && err.message) || err).slice(0, 140) }); } catch (e2) {}
+      return "gagal";
+    } finally { delete sedangKirimWA_[id]; }
+  }
+  async function kirimKwitansiBatch_(bulanKey, rumahKeys, paksa){
+    var h = { terkirim: 0, sudah: 0, tanpa_nomor: 0, gagal: 0, lain: 0 };
+    var keys = Object.keys(rumahKeys || {});
+    for (var i = 0; i < keys.length; i++) {
+      var st = await kirimKwitansiOtomatis_(bulanKey, keys[i], null, paksa);
+      if (h[st] === undefined) st = "lain";
+      h[st]++;
+      if (st === "terkirim" && i < keys.length - 1) await new Promise(function(ok){ setTimeout(ok, 2500); });
+    }
+    return h;
+  }
+  function ringkasHasilWA_(h){
+    var t = [];
+    if (h.terkirim) t.push(h.terkirim + " kwitansi terkirim ke WhatsApp warga");
+    if (h.sudah) t.push(h.sudah + " sudah terkirim sebelumnya");
+    if (h.tanpa_nomor) t.push(h.tanpa_nomor + " tanpa nomor WA");
+    if (h.gagal) t.push(h.gagal + " GAGAL (tekan Kirim ulang)");
+    return t.length ? t.join(", ") + "." : "Tidak ada kwitansi yang perlu dikirim.";
+  }
+  function pesanHasilWA_(st, rumah){
+    if (st === "terkirim") return "✅ Kwitansi " + rumah + " terkirim otomatis ke WhatsApp warga.";
+    if (st === "sudah") return "Kwitansi " + rumah + " sudah pernah terkirim.";
+    if (st === "tanpa_nomor") return "Nomor WA " + rumah + " belum ada di data — kwitansi belum terkirim. Isi nomornya lalu tekan Kirim.";
+    if (st === "sibuk") return "Kwitansi " + rumah + " sedang diproses.";
+    return "⚠️ Kwitansi " + rumah + " GAGAL terkirim. Tekan Kirim Ulang di daftar Transfer Terkonfirmasi.";
+  }
+
+  /* ---- EXPORT EXCEL LAPORAN KEUANGAN (semua jenis) ---- */
+  var keuanganSemua_ = [];
+  var XLSX_MIME_ = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  function pad2_(n){ return (n < 10 ? "0" : "") + n; }
+  function tglIndo_(iso){ var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ""); return m ? m[3] + "/" + m[2] + "/" + m[1] : (iso || ""); }
+  function tsIndo_(ts){ if (!ts) return ""; var d = new Date(ts); return pad2_(d.getDate()) + "/" + pad2_(d.getMonth() + 1) + "/" + d.getFullYear(); }
+  function periodeXls_(){
+    var mode = document.getElementById("xlsPeriode").value, now = tglWIB_();
+    var y = parseInt(now.slice(0, 4), 10), m = parseInt(now.slice(5, 7), 10);
+    function bln(yy, mm){ return { mulai: yy + "-" + pad2_(mm) + "-01", akhir: yy + "-" + pad2_(mm) + "-" + pad2_(new Date(yy, mm, 0).getDate()), bMulai: yy + "-" + pad2_(mm), bAkhir: yy + "-" + pad2_(mm), label: bulanLong_(yy + "-" + pad2_(mm)) }; }
+    if (mode === "bulan_ini") return bln(y, m);
+    if (mode === "bulan_lalu") return m === 1 ? bln(y - 1, 12) : bln(y, m - 1);
+    if (mode === "tahun_ini") return { mulai: y + "-01-01", akhir: y + "-12-31", bMulai: y + "-01", bAkhir: y + "-12", label: "Tahun " + y };
+    if (mode === "pilih") {
+      var v = document.getElementById("xlsBulan").value;
+      if (!/^\d{4}-\d{2}$/.test(v)) { showToast("Pilih bulan dulu."); return null; }
+      return bln(parseInt(v.slice(0, 4), 10), parseInt(v.slice(5, 7), 10));
+    }
+    return { mulai: null, akhir: null, bMulai: null, bAkhir: null, label: "Semua Data" };
+  }
+  function statusIuranXls_(e){
+    if (e.status === "lunas_transfer") return { teks: "Lunas (Transfer) - Terkonfirmasi", ok: true, tunggu: false };
+    if (e.status === "lunas_cash") return e.disetorKonfirmasi ? { teks: "Lunas (Cash) - Setoran Diterima", ok: true, tunggu: false } : { teks: "Cash - Belum Diterima Bendahara", ok: false, tunggu: true };
+    if (e.status === "transfer_pending") return { teks: "Transfer - Menunggu Konfirmasi", ok: false, tunggu: true };
+    return { teks: "Belum Bayar" + (e.catatan ? " (" + e.catatan + ")" : ""), ok: false, tunggu: false };
+  }
+  function bangunExcelKeuangan_(){
+    if (typeof XLSX === "undefined") throw new Error("Library Excel belum termuat. Periksa internet lalu muat ulang halaman.");
+    var P = periodeXls_(); if (!P) return null;
+    var semua = keuanganSemua_.slice().sort(function(a, b){ return (a.tanggal || "").localeCompare(b.tanggal || "") || (a.createdAt || 0) - (b.createdAt || 0); });
+    var saldoAwal = 0, dlm = [];
+    semua.forEach(function(it){
+      var j = parseFloat(it.jumlah) || 0, t = it.tanggal || "", masuk = it.jenis === "masuk";
+      if (P.mulai && t < P.mulai) { saldoAwal += masuk ? j : -j; return; }
+      if (P.akhir && t > P.akhir) return;
+      dlm.push(it);
+    });
+    var totMasuk = 0, totKeluar = 0, perKat = {}, perBln = {};
+    dlm.forEach(function(it){
+      var j = parseFloat(it.jumlah) || 0, masuk = it.jenis === "masuk", kat = it.kategori || "Tanpa Kategori", bk = (it.tanggal || "").slice(0, 7);
+      if (masuk) totMasuk += j; else totKeluar += j;
+      perKat[kat] = perKat[kat] || { m: 0, k: 0 }; perKat[kat][masuk ? "m" : "k"] += j;
+      perBln[bk] = perBln[bk] || { m: 0, k: 0 }; perBln[bk][masuk ? "m" : "k"] += j;
+    });
+    var saldoAkhir = saldoAwal + totMasuk - totKeluar;
+
+    /* data iuran bulanan pada periode */
+    var iuran = [];
+    Object.keys(penarikanSemua_).forEach(function(bk){
+      if (P.bMulai && (bk < P.bMulai || bk > P.bAkhir)) return;
+      var bln = penarikanSemua_[bk] || {};
+      Object.keys(bln).forEach(function(rk){ if (bln[rk]) iuran.push(Object.assign({ bulanKey: bk, rumahKey: rk }, bln[rk])); });
+    });
+    iuran.sort(function(a, b){ return a.bulanKey.localeCompare(b.bulanKey) || String(a.rumah || "").localeCompare(String(b.rumah || ""), "id", { numeric: true }); });
+    var perIuran = {};
+    iuran.forEach(function(e){
+      var o = perIuran[e.bulanKey] = perIuran[e.bulanKey] || { lunas: 0, jml: 0, tunggu: 0, belum: 0 };
+      var st = statusIuranXls_(e);
+      if (st.ok) { o.lunas++; o.jml += parseFloat(e.jumlah) || 0; } else if (st.tunggu) o.tunggu++; else o.belum++;
+    });
+
+    var judul = "LAPORAN KEUANGAN RT 08 / RW 021 VILLA INDAH PULO TIMAHA";
+    var wb = XLSX.utils.book_new();
+    function angka_(ws){ Object.keys(ws).forEach(function(k){ if (k.charAt(0) !== "!" && ws[k].t === "n") ws[k].z = "#,##0"; }); return ws; }
+    function tambah_(nama, aoa, lebar){ var ws = angka_(XLSX.utils.aoa_to_sheet(aoa)); ws["!cols"] = lebar.map(function(w){ return { wch: w }; }); XLSX.utils.book_append_sheet(wb, ws, nama); }
+
+    /* 1. Ringkasan */
+    var r1 = [[judul], ["Periode", P.label], ["Dicetak", tsIndo_(Date.now())], [],
+      ["RINGKASAN KAS"], ["Saldo Awal Periode", saldoAwal], ["Total Pemasukan", totMasuk], ["Total Pengeluaran", totKeluar], ["Saldo Akhir Periode", saldoAkhir], [],
+      ["REKAP PER KATEGORI"], ["Kategori", "Pemasukan (Rp)", "Pengeluaran (Rp)"]];
+    Object.keys(perKat).sort().forEach(function(k){ r1.push([k, perKat[k].m, perKat[k].k]); });
+    r1.push([], ["REKAP PER BULAN"], ["Bulan", "Pemasukan (Rp)", "Pengeluaran (Rp)", "Selisih (Rp)"]);
+    Object.keys(perBln).sort().forEach(function(k){ r1.push([bulanLong_(k), perBln[k].m, perBln[k].k, perBln[k].m - perBln[k].k]); });
+    r1.push([], ["REKAP IURAN BULANAN"], ["Bulan", "Rumah Lunas (Terkonfirmasi)", "Total Terkonfirmasi (Rp)", "Menunggu Konfirmasi", "Belum Bayar"]);
+    Object.keys(perIuran).sort().forEach(function(k){ var o = perIuran[k]; r1.push([bulanLong_(k), o.lunas, o.jml, o.tunggu, o.belum]); });
+    r1.push([], ["", "Bendahara", "", "Mengetahui, Ketua RT"], [], [], [], ["", "( " + (RT_CONFIG.namaBendahara || "Bendahara") + " )", "", "( " + (RT_CONFIG.namaKetua || "Ketua RT") + " )"]);
+    tambah_("Ringkasan", r1, [30, 28, 26, 24, 16]);
+
+    /* 2. Semua transaksi (dengan saldo berjalan) */
+    var r2 = [["No", "Tanggal", "Jenis", "Kategori", "Keterangan", "Pemasukan (Rp)", "Pengeluaran (Rp)", "Saldo (Rp)"]];
+    var saldo = saldoAwal;
+    if (P.mulai) r2.push(["", "", "", "", "Saldo awal periode", "", "", saldo]);
+    dlm.forEach(function(it, i){
+      var j = parseFloat(it.jumlah) || 0, masuk = it.jenis === "masuk"; saldo += masuk ? j : -j;
+      r2.push([i + 1, tglIndo_(it.tanggal), masuk ? "Pemasukan" : "Pengeluaran", it.kategori || "-", it.keterangan || "", masuk ? j : "", masuk ? "" : j, saldo]);
+    });
+    r2.push(["", "", "", "", "TOTAL", totMasuk, totKeluar, saldoAkhir]);
+    tambah_("Transaksi", r2, [6, 12, 13, 18, 56, 16, 16, 16]);
+
+    /* 3 & 4. Pemasukan / Pengeluaran */
+    ["masuk", "keluar"].forEach(function(jenis){
+      var rows = [["No", "Tanggal", "Kategori", "Keterangan", "Jumlah (Rp)"]], tot = 0, n = 0;
+      dlm.forEach(function(it){ if (it.jenis !== jenis) return; var j = parseFloat(it.jumlah) || 0; tot += j; rows.push([++n, tglIndo_(it.tanggal), it.kategori || "-", it.keterangan || "", j]); });
+      rows.push(["", "", "", "TOTAL", tot]);
+      tambah_(jenis === "masuk" ? "Pemasukan" : "Pengeluaran", rows, [6, 12, 18, 60, 16]);
+    });
+
+    /* 5. Iuran bulanan per rumah */
+    var r5 = [["No", "Bulan", "Blok / No. Rumah", "Nama Warga", "Petugas Humas", "Metode", "Status", "Jumlah (Rp)", "Tgl Konfirmasi", "Kode Kwitansi", "Kwitansi WA"]];
+    var totOk = 0;
+    iuran.forEach(function(e, i){
+      var st = statusIuranXls_(e); if (st.ok) totOk += parseFloat(e.jumlah) || 0;
+      var wa = e.kwitansiWA === "terkirim" ? "Terkirim" : e.kwitansiWA === "gagal" ? "Gagal" : e.kwitansiWA === "tanpa_nomor" ? "Tanpa nomor WA" : "-";
+      r5.push([i + 1, bulanLong_(e.bulanKey), e.rumah || "", e.nama || "", e.petugas || "", e.metode === "cash" ? "Cash" : e.metode === "transfer" ? "Transfer" : "-", st.teks, parseFloat(e.jumlah) || 0, tsIndo_(e.confirmedAt), e.kodeKwitansi || "", wa]);
+    });
+    r5.push(["", "", "", "", "", "", "TOTAL LUNAS TERKONFIRMASI", totOk]);
+    tambah_("Iuran Bulanan", r5, [6, 16, 16, 28, 18, 10, 34, 14, 15, 22, 16]);
+
+    var bytes = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    var namaFile = "Laporan-Keuangan_RT08_" + P.label.replace(/[^A-Za-z0-9]+/g, "-") + ".xlsx";
+    return { bytes: bytes, namaFile: namaFile, label: P.label, totMasuk: totMasuk, totKeluar: totKeluar, saldoAkhir: saldoAkhir };
+  }
+  function unduhBlobAdmin_(bytes, nama, mime){
+    var url = URL.createObjectURL(new Blob([bytes], { type: mime }));
+    var a = document.createElement("a"); a.href = url; a.download = nama; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 30000);
+  }
+  function penerimaLaporan_(){
+    var cfg = Array.isArray(RT_CONFIG.waPengurusLaporan) ? RT_CONFIG.waPengurusLaporan : [];
+    var daftar = cfg.length ? cfg : [{ nama: "Ketua RT", nomor: RT_CONFIG.waKetua }, { nama: "Sekretaris", nomor: RT_CONFIG.waSekretaris }];
+    return daftar.map(function(d){ return { nama: d.nama || "Pengurus", nomor: nomorWAValid_(d.nomor) }; }).filter(function(d){ return d.nomor; });
+  }
+  document.getElementById("xlsPeriode").addEventListener("change", function(){
+    document.getElementById("xlsBulanWrap").style.display = this.value === "pilih" ? "block" : "none";
+  });
+  document.getElementById("btnXlsUnduh").addEventListener("click", function(){
+    try { var x = bangunExcelKeuangan_(); if (!x) return; unduhBlobAdmin_(x.bytes, x.namaFile, XLSX_MIME_); showToast("Excel diunduh: " + x.namaFile); }
+    catch (e) { console.error(e); showToast(e && e.message ? e.message : "Gagal membuat Excel."); }
+  });
+  document.getElementById("btnXlsKirim").addEventListener("click", async function(){
+    var btn = this, x;
+    try { x = bangunExcelKeuangan_(); if (!x) return; } catch (e) { console.error(e); showToast(e && e.message ? e.message : "Gagal membuat Excel."); return; }
+    var pesan = "Laporan Keuangan RT 08 / RW 021 Villa Indah — periode *" + x.label + "*.\n" +
+      "Pemasukan: " + fmtRp_(x.totMasuk) + "\nPengeluaran: " + fmtRp_(x.totKeluar) + "\nSaldo akhir: *" + fmtRp_(x.saldoAkhir) + "*\n\nFile Excel terlampir. Dikirim oleh Bendahara lewat Portal RT 08.";
+    if (gatewayAktif_()) {
+      var penerima = penerimaLaporan_();
+      if (!penerima.length) { showToast("Belum ada nomor penerima. Isi waKetua / waPengurusLaporan di config.js."); return; }
+      if (!confirm("Kirim laporan " + x.label + " (Excel) ke:\n\n" + penerima.map(function(d){ return "• " + d.nama + " (" + d.nomor + ")"; }).join("\n") + "\n\nLanjutkan?")) return;
+      btn.disabled = true; var ok = 0, gagal = [];
+      for (var i = 0; i < penerima.length; i++) {
+        try { await kirimWAFile_(penerima[i].nomor, pesan, x.bytes, x.namaFile, XLSX_MIME_); ok++; }
+        catch (e) { gagal.push(penerima[i].nama + ": " + ((e && e.message) || "gagal")); }
+        if (i < penerima.length - 1) await new Promise(function(res){ setTimeout(res, 2500); });
+      }
+      btn.disabled = false;
+      showToast(gagal.length ? ok + " terkirim, gagal: " + gagal.join("; ") : "✅ Laporan terkirim ke " + ok + " pengurus.");
+      return;
+    }
+    try {
+      var file = new File([x.bytes], x.namaFile, { type: XLSX_MIME_ });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: pesan }); showToast("Pilih WhatsApp lalu kontak/grup pengurus."); return; }
+    } catch (e) { if (e && e.name === "AbortError") return; console.warn(e); }
+    unduhBlobAdmin_(x.bytes, x.namaFile, XLSX_MIME_);
+    showToast("Excel diunduh. Lampirkan manual ke WhatsApp (atau isi waGateway di config.js agar terkirim otomatis).");
+  });
+
   db.ref("penarikan").on("value", function(snap){
     penarikanSemua_ = snap.val() || {};
     renderTransferOk_();
@@ -1258,7 +1549,11 @@ function initDashboard_(){
   }
   document.getElementById("listTransferOk").addEventListener("click", function(e){
     var kb = e.target.closest(".kwt-btn");
-    if (kb) kirimKwitansiTransfer_(kb.getAttribute("data-b"), kb.getAttribute("data-r"));
+    if (!kb) return;
+    var kbB = kb.getAttribute("data-b"), kbR = kb.getAttribute("data-r");
+    if (!gatewayAktif_()) { kirimKwitansiTransfer_(kbB, kbR); return; }
+    kb.disabled = true; showToast("Mengirim kwitansi ke WhatsApp warga...");
+    kirimKwitansiOtomatis_(kbB, kbR, null, true).then(function(st){ showToast(pesanHasilWA_(st, ((penarikanSemua_[kbB] || {})[kbR] || {}).rumah || "")); kb.disabled = false; });
   });
   document.getElementById("listTransfer").addEventListener("click", function(e){
     var bk = e.target.closest(".transfer-bukti");
@@ -1284,8 +1579,12 @@ function initDashboard_(){
         createdAt: firebase.database.ServerValue.TIMESTAMP,
         createdBy: (firebase.auth().currentUser && firebase.auth().currentUser.email) || ""
       };
-      db.ref().update(upd).then(function(){ showToast("Transfer dikonfirmasi & masuk Kas RT. Kirim kwitansi dari daftar 🧾 di bawah."); })
-        .catch(function(err){ btn.disabled = false; showToast(pesanGagal_(err, "Konfirmasi transfer")); });
+      db.ref().update(upd).then(function(){
+        if (!gatewayAktif_()) { showToast("Transfer dikonfirmasi & masuk Kas RT. Kirim kwitansi dari daftar 🧾 di bawah."); return; }
+        showToast("Transfer dikonfirmasi & masuk Kas RT. Mengirim kwitansi ke WhatsApp warga...");
+        var entryOk = Object.assign({}, entry, { status: "lunas_transfer" });
+        return kirimKwitansiOtomatis_(b, r, entryOk).then(function(st){ showToast(pesanHasilWA_(st, entry.rumah)); });
+      }).catch(function(err){ btn.disabled = false; showToast(pesanGagal_(err, "Konfirmasi transfer")); });
     } else {
       if (!confirm("Transfer belum masuk?\n\nStatus rumah ini dikembalikan ke \"Belum Bayar\" dan Humas bisa mencatat ulang.")) return;
       btn.disabled = true;
@@ -1297,6 +1596,7 @@ function initDashboard_(){
 
   db.ref("humasSetoran").on("value", function(snap){
     var val = snap.val() || {};
+    setoranSemua_ = val;
     var items = Object.keys(val).map(function(k){ return Object.assign({ id: k }, val[k]); });
     items.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
     var pending = items.filter(function(it){ return it.status === "menunggu"; });
@@ -1309,7 +1609,7 @@ function initDashboard_(){
       var jmlRumah = it.rumahKeys ? Object.keys(it.rumahKeys).length : 0;
       var aksi = it.status === "menunggu"
         ? '<button class="btn btn-brand btn-sm setoran-btn" data-id="' + esc_(it.id) + '" data-info="' + esc_("Petugas: " + (it.petugas || "-") + "\nBulan: " + fmtBulanID_(it.bulanKey) + "\nJumlah: " + fmtRp_(it.jumlah) + " dari " + jmlRumah + " rumah") + '">✅ Terima Setoran</button>'
-        : '<span class="entry-badge kegiatan">Diterima</span>';
+        : '<span class="entry-badge kegiatan">Diterima</span>' + (gatewayAktif_() ? ' <button class="btn btn-gold btn-sm setoran-wa" data-id="' + esc_(it.id) + '">📨 Kirim Kwitansi WA</button>' : '');
       if (it.status !== "diterima") aksi += ' <button class="btn btn-tolak btn-sm setoran-hapus" data-id="' + it.id + '" title="Batalkan setoran">🗑️</button>';
       return '<div class="entry-row"><div class="entry-body"><h4>' + esc_(it.petugas) + ' — ' + fmtRp_(it.jumlah) + '</h4>' +
         '<p>' + fmtBulanID_(it.bulanKey) + ' • ' + jmlRumah + ' rumah</p></div><div style="display:flex;gap:6px;align-items:center">' + aksi + '</div></div>';
@@ -1317,6 +1617,14 @@ function initDashboard_(){
   }, function(){ document.getElementById("listSetoranHumas").innerHTML = '<div class="empty-note">Gagal memuat data. Periksa aturan Firebase.</div>'; });
 
   document.getElementById("listSetoranHumas").addEventListener("click", function(e){
+    var waBtn = e.target.closest(".setoran-wa");
+    if (waBtn) {
+      var sw = setoranSemua_[waBtn.getAttribute("data-id")];
+      if (!sw) { showToast("Data setoran tidak ditemukan."); return; }
+      waBtn.disabled = true; showToast("Mengirim kwitansi ke WhatsApp warga (yang belum terkirim)...");
+      kirimKwitansiBatch_(sw.bulanKey, sw.rumahKeys).then(function(h){ showToast(ringkasHasilWA_(h)); waBtn.disabled = false; });
+      return;
+    }
     var del = e.target.closest(".setoran-hapus");
     if (del) {
       if (!confirm("Batalkan setoran yang masih menunggu konfirmasi? Data keuangan yang sudah diterima tidak dapat dihapus.")) return;
@@ -1340,8 +1648,9 @@ function initDashboard_(){
     var infoSetor = btn.getAttribute("data-info") || "";
     if (!confirm("Terima setoran cash?\n\n" + infoSetor + "\n\nPastikan uang fisik sejumlah itu SUDAH Anda terima dari Humas.\nSetelah ini otomatis tercatat sebagai Pemasukan di Kas RT.")) return;
     btn.disabled = true; btn.textContent = "Memproses...";
+    var itSetoran_ = null;
     db.ref("humasSetoran/" + id).once("value").then(function(snap){
-      var it = snap.val();
+      var it = snap.val(); itSetoran_ = it;
       if (!it) throw new Error("!Setoran tidak ditemukan.");
       if (it.status !== "menunggu") throw new Error("!Setoran ini sudah diproses.");
       if (!Object.keys(penarikanSemua_).length) throw new Error("!Data penarikan belum termuat. Tunggu sebentar lalu coba lagi.");
@@ -1367,7 +1676,11 @@ function initDashboard_(){
         createdBy: (firebase.auth().currentUser && firebase.auth().currentUser.email) || ""
       };
       return db.ref().update(upd);
-    }).then(function(){ showToast("Setoran diterima & masuk ke Kas RT."); })
+    }).then(function(){
+      if (!gatewayAktif_() || !itSetoran_) { showToast("Setoran diterima & masuk ke Kas RT."); return; }
+      showToast("Setoran diterima & masuk ke Kas RT. Mengirim kwitansi ke warga...");
+      return kirimKwitansiBatch_(itSetoran_.bulanKey, itSetoran_.rumahKeys).then(function(h){ showToast("Setoran diterima. " + ringkasHasilWA_(h)); });
+    })
     .catch(function(err){ btn.disabled = false; btn.textContent = "✅ Terima Setoran"; showToast(err && err.message && err.message.charAt(0) === "!" ? err.message.slice(1) : pesanGagal_(err, "Penerimaan setoran")); });
   });
 
