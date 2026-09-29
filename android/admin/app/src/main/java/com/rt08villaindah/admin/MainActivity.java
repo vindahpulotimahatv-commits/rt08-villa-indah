@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.util.Base64;
 import android.view.KeyEvent;
 import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -17,6 +18,10 @@ import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -32,6 +37,19 @@ import java.io.FileOutputStream;
 import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
+
+    private ValueCallback<Uri[]> filePathCallback;
+    /* Pemilih file/foto untuk <input type="file"> di situs (bukti transfer, foto laporan, dll). */
+    private final ActivityResultLauncher<Intent> fileChooserLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            new ActivityResultCallback<ActivityResult>() {
+                @Override public void onActivityResult(ActivityResult result) {
+                    if (filePathCallback == null) return;
+                    Uri[] hasil = WebChromeClient.FileChooserParams.parseResult(result.getResultCode(), result.getData());
+                    filePathCallback.onReceiveValue(hasil);
+                    filePathCallback = null;
+                }
+            });
 
     private WebView webView;
     private ProgressBar progressBar;
@@ -69,6 +87,21 @@ public class MainActivity extends AppCompatActivity {
             public void onProgressChanged(WebView view, int newProgress) {
                 progressBar.setProgress(newProgress);
                 progressBar.setVisibility(newProgress >= 100 ? android.view.View.GONE : android.view.View.VISIBLE);
+            }
+
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
+                if (filePathCallback != null) { filePathCallback.onReceiveValue(null); filePathCallback = null; }
+                filePathCallback = callback;
+                try {
+                    fileChooserLauncher.launch(params.createIntent());
+                } catch (Exception e) {
+                    filePathCallback = null;
+                    callback.onReceiveValue(null);
+                    Toast.makeText(MainActivity.this, "Tidak bisa membuka pemilih foto.", Toast.LENGTH_SHORT).show();
+                    return false;
+                }
+                return true;
             }
         });
 
