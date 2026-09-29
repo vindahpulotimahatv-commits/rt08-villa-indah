@@ -933,39 +933,48 @@ function tampilHasilKwitansi_(){
     '<p class="kwitansi-file">📎 ' + esc_(hasil.namaFile) + '</p>' + catatanTujuan +
     '<div class="msheet-actions">' +
       '<button class="btn btn-gold" id="btnKirimKwitansi" type="button">📤 Kirim ke WhatsApp ' + esc_(tujuan.label) + '</button>' +
+      '<button class="btn btn-line" id="btnChatKwitansi" type="button">💬 Buka Chat ' + esc_(tujuan.label) + ' (lampirkan PDF manual)</button>' +
       '<button class="btn btn-line" id="btnUnduhKwitansi" type="button">⬇️ Unduh PDF</button>' +
       '<button class="btn btn-brand" id="btnSelesaiKwitansi" type="button">Selesai</button>' +
     '</div>';
   document.getElementById("btnKirimKwitansi").addEventListener("click", kirimKwitansi_);
+  document.getElementById("btnChatKwitansi").addEventListener("click", function(){
+    if (!tujuan.nomor) { showToast("Nomor WhatsApp belum tersedia."); return; }
+    unduhBlob_(hasil.bytes, hasil.namaFile);
+    rtOpenWa(tujuan.nomor, teksKwitansi_(payload, hasil, tujuan) + "\n\n(PDF kwitansi sudah diunduh — tekan 📎 lalu lampirkan file tersebut di chat ini.)");
+    showToast("Chat WhatsApp dibuka. Lampirkan PDF lalu kirim.");
+  });
   document.getElementById("btnUnduhKwitansi").addEventListener("click", function(){ unduhBlob_(hasil.bytes, hasil.namaFile); showToast("PDF diunduh."); });
   document.getElementById("btnSelesaiKwitansi").addEventListener("click", closeModal_);
 }
 
-async function kirimKwitansi_(){
-  if (!hasilKwitansi) return;
-  var hasil = hasilKwitansi.hasil, payload = hasilKwitansi.payload;
-  var tujuan = tujuanKwitansi_(payload);
-  var pesan = tujuan.label === "Warga"
+function teksKwitansi_(payload, hasil, tujuan){
+  return tujuan.label === "Warga"
     ? (salam_() + " Bpk/Ibu " + (payload.nama || "") + ", pembayaran *iuran bulanan RT 08* (" + payload.rumah + ") bulan " + bulanLabel_(bulanKey) +
        " sebesar *" + fmtRp_(payload.jumlah) + "* (Tunai) sudah kami terima. Kwitansi PDF kami lampirkan. Terima kasih atas partisipasinya 🙏 (Kode: " + hasil.kode + ")")
     : (salam_() + " Pak/Bu Bendahara, berikut kwitansi iuran bulanan a.n. " + (payload.nama || "-") + " (" + payload.rumah + "), bulan " +
        bulanLabel_(bulanKey) + " sebesar " + fmtRp_(payload.jumlah) + ". Nomor WA warga ini belum ada di data, jadi untuk sementara " +
        "dikirim ke Bendahara. (Kode: " + hasil.kode + ")");
+}
+async function kirimKwitansi_(){
+  if (!hasilKwitansi) return;
+  var hasil = hasilKwitansi.hasil, payload = hasilKwitansi.payload;
+  var tujuan = tujuanKwitansi_(payload);
+  var pesan = teksKwitansi_(payload, hasil, tujuan);
   if (!tujuan.nomor) { showToast("Nomor WhatsApp " + tujuan.label + " belum diatur di config.js. PDF diunduh saja."); unduhBlob_(hasil.bytes, hasil.namaFile); return; }
   if (window.RTAndroid && typeof window.RTAndroid.sharePdf === "function") {
     try { if (window.RTAndroid.sharePdf(b64_(hasil.bytes), hasil.namaFile, tujuan.nomor, pesan)) return; } catch (e) { console.warn(e); }
   }
-  /* Nomor warga sudah diketahui: langsung buka chat ke nomor itu (tanpa cari kontak). PDF ikut terunduh untuk dilampirkan. */
-  if (tujuan.label !== "Warga") {
-    try {
-      var file = new File([hasil.bytes], hasil.namaFile, { type: "application/pdf" });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], text: pesan });
-        showToast("Pilih WhatsApp lalu kirim ke " + tujuan.label + ".");
-        return;
-      }
-    } catch (e) { if (e && e.name === "AbortError") return; console.warn(e); }
-  }
+  /* Browser HP (Chrome/Safari): menu Bagikan membawa PDF TERLAMPIR ke WhatsApp. wa.me tidak bisa melampirkan file,
+     jadi ini satu-satunya cara agar PDF langsung ikut. Pengguna tinggal memilih kontak (nomor ditampilkan di notifikasi). */
+  try {
+    var file = new File([hasil.bytes], hasil.namaFile, { type: "application/pdf" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      showToast("Pilih WhatsApp lalu kontak " + (tujuan.label === "Warga" ? (payload.nama || "warga") + " (" + tujuan.nomor.replace(/^62/, "0") + ")" : tujuan.label) + ".");
+      await navigator.share({ files: [file], text: pesan });
+      return;
+    }
+  } catch (e) { if (e && e.name === "AbortError") return; console.warn(e); }
   unduhBlob_(hasil.bytes, hasil.namaFile);
   rtOpenWa(tujuan.nomor, pesan + "\n\n(PDF kwitansi sudah diunduh — tekan 📎 lalu lampirkan file tersebut di chat ini.)");
   showToast("Chat WhatsApp ke " + tujuan.label + " dibuka. Tinggal lampirkan PDF lalu kirim.");

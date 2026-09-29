@@ -1226,7 +1226,16 @@ function initDashboard_(){
     if (nomor && window.RTAndroid && typeof window.RTAndroid.sharePdf === "function") {
       try { if (window.RTAndroid.sharePdf(bytesKeB64_(hasil.bytes), hasil.namaFile, nomor, pesan)) { showToast("WhatsApp warga dibuka dengan PDF terlampir. Tekan Kirim."); return; } } catch (e) { console.warn(e); }
     }
-    /* Nomor warga sudah ada: langsung buka chat ke nomor itu, tanpa cari kontak. */
+    /* Browser HP: menu Bagikan membawa PDF + teks dalam SATU pesan (PDF langsung terlampir). Pilih kontak warga di WhatsApp. */
+    try {
+      var fileBagi = new File([hasil.bytes], hasil.namaFile, { type: "application/pdf" });
+      if (navigator.canShare && navigator.canShare({ files: [fileBagi] })) {
+        showToast("Pilih WhatsApp lalu kontak " + (it.nama || "warga") + (nomor ? " (" + nomor.replace(/^62/, "0") + ")" : "") + ".");
+        await navigator.share({ files: [fileBagi], text: pesan });
+        return;
+      }
+    } catch (e) { if (e && e.name === "AbortError") return; console.warn(e); }
+    /* Cadangan (PC): buka chat ke nomor itu, PDF diunduh untuk dilampirkan manual. */
     if (nomor) {
       unduhPdf_(hasil.bytes, hasil.namaFile);
       rtOpenWa(nomor, pesan + "\n\n(PDF kwitansi sudah diunduh — tekan 📎 lalu lampirkan file tersebut di chat ini.)");
