@@ -416,7 +416,7 @@ function loadKeuangan_(){
 
     const totalMasuk = items.reduce((s,it)=> s + (it.jenis==="masuk" ? (parseFloat(it.jumlah)||0) : 0), 0);
     const totalKeluar = items.reduce((s,it)=> s + (it.jenis==="keluar" ? (parseFloat(it.jumlah)||0) : 0), 0);
-    const ymNow = new Date().toISOString().slice(0,7);
+    const ymNow = (function(){ var o = {}; new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit" }).formatToParts(new Date()).forEach(function(p){ o[p.type] = p.value; }); return o.year + "-" + o.month; })();
     const bulanMasuk = (perBulan[ymNow]||{masuk:0}).masuk;
     const bulanKeluar = (perBulan[ymNow]||{keluar:0}).keluar;
     document.getElementById("finSaldo").textContent = fmtRpT_(totalMasuk - totalKeluar);

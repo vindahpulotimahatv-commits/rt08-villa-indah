@@ -423,7 +423,7 @@ textarea{min-height:76px;resize:vertical}
           </div>
           <div class="field full"><label>Keterangan</label><input id="kKeterangan" required placeholder="Contoh: Iuran warga bulan Agustus"></div>
           <div class="field"><label>Kategori (opsional)</label><input id="kKategori" placeholder="Contoh: Iuran, Operasional, Kegiatan"></div>
-          <div class="field"><label>Jumlah (Rp)</label><input type="number" id="kJumlah" required min="1" placeholder="500000"></div>
+          <div class="field"><label>Jumlah (Rp)</label><input type="number" id="kJumlah" required min="1" step="1" inputmode="numeric" placeholder="500000"></div>
         </div>
         <button class="btn btn-brand" type="submit">➕ Simpan Transaksi</button>
       </form>
@@ -442,7 +442,7 @@ textarea{min-height:76px;resize:vertical}
   <div class="panel" id="panel-iuran">
     <div class="list-card" style="margin-bottom:18px">
       <div class="list-title">📤 Konfirmasi Transfer Masuk <span id="transferBadge"></span></div>
-      <p class="sub" style="padding:0 14px;margin:0 0 6px;color:var(--muted);font-size:12px">Dikirim petugas Humas lewat <b>humas.html</b> saat warga bayar transfer. Cek dulu mutasi rekening RT, lalu tekan <b>Diterima</b> atau <b>Belum</b>.</p>
+      <p class="sub" style="padding:0 14px;margin:0 0 6px;color:var(--muted);font-size:12px">Dikirim petugas Humas lewat <b>humas.html</b> saat warga bayar transfer. Cek dulu mutasi rekening RT, lalu tekan <b>Sudah Masuk Rekening</b> (uang tercatat ke Kas RT) atau <b>Belum Masuk</b> (dikembalikan ke Humas).</p>
       <div id="listTransfer"><div class="empty-note">Memuat data...</div></div>
     </div>
     <div class="list-card" style="margin-bottom:18px">
@@ -498,6 +498,38 @@ function fmtTanggal_(iso){
 var ICON_JENIS_AGENDA = { "Rapat":"👥", "Lingkungan":"🧹", "Acara Warga":"🎉", "Pemuda & Olahraga":"⚽", "Lainnya":"📌" };
 function fmtRp_(n){
   return "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+}
+
+
+/* Pesan gagal yang mudah dimengerti (bukan sekadar "Gagal"). */
+function pesanGagal_(err, aksi){
+  var kode = (err && err.code) ? String(err.code) : "";
+  if (/PERMISSION/i.test(kode)) return aksi + " ditolak: akun ini tidak punya izin, atau aturan Firebase belum diperbarui. Coba keluar lalu masuk lagi.";
+  if (/NETWORK|UNAVAILABLE|DISCONNECT/i.test(kode)) return aksi + " gagal: koneksi internet terputus. Cek sinyal lalu coba lagi.";
+  return aksi + " gagal. Data belum berubah, silakan coba lagi.";
+}
+
+/* ---- Helper anti-salah-input (ditambahkan) ---- */
+/* Tanggal hari ini menurut WIB (bukan UTC) - toISOString() salah tanggal antara 00.00-06.59 WIB. */
+function tglWIB_(){
+  var o = {};
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" })
+    .formatToParts(new Date()).forEach(function(p){ o[p.type] = p.value; });
+  return o.year + "-" + o.month + "-" + o.day;
+}
+/* Nomor HP Indonesia -> 628xxxxxxxxx. Kembalikan "" bila format tidak valid. */
+function nomorWAValid_(n){
+  var d = String(n || "").replace(/[^0-9]/g, "");
+  if (!d) return "";
+  if (d.indexOf("620") === 0) d = "62" + d.slice(3);
+  else if (d.charAt(0) === "0") d = "62" + d.slice(1);
+  else if (d.indexOf("62") !== 0) d = "62" + d;
+  return /^628\d{8,11}$/.test(d) ? d : "";
+}
+/* Foto hanya boleh data URL gambar; selain itu dibuang (cegah injeksi dari form publik). */
+function fotoAman_(u){
+  u = String(u || "");
+  return /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(u) ? u : "";
 }
 // Resize + kompres foto di browser (canvas) sebelum disimpan sebagai base64 ke Realtime Database.
 // Menghindari kebutuhan Firebase Storage (yang berbayar) sekaligus menghemat kuota database gratis.
@@ -633,7 +665,7 @@ function initDashboard_(){
     }).catch(function(){ renderTestMode_(); showToast("Gagal mengubah TEST MODE."); });
   });
 
-  var today = new Date().toISOString().slice(0, 10);
+  var today = tglWIB_();
   document.getElementById("agTanggal").value = today;
   document.getElementById("inTanggal").value = today;
 
@@ -647,7 +679,7 @@ function initDashboard_(){
   function nomorWaCw_(n){
     var d = String(n || "").replace(/[^0-9]/g, "");
     if (!d) return "";
-    if (d.indexOf("62") === 0) return d;
+    if (d.indexOf("620") === 0) return "62" + d.slice(3); if (d.indexOf("62") === 0) return d;
     if (d.charAt(0) === "0") return "62" + d.slice(1);
     return "62" + d;
   }
@@ -691,11 +723,11 @@ function initDashboard_(){
     var box = document.getElementById("listLaporan");
     if (items.length === 0) { box.innerHTML = '<div class="empty-note">Belum ada laporan masuk dari warga.</div>'; return; }
     box.innerHTML = items.map(function(it){
-      var fotoHtml = it.foto ? '<img src="' + it.foto + '" alt="Foto laporan" style="width:100%;max-width:260px;border-radius:12px;margin:8px 0;display:block">' : '';
+      var fotoHtml = fotoAman_(it.foto) ? '<img src="' + fotoAman_(it.foto) + '" alt="Foto laporan" style="width:100%;max-width:260px;border-radius:12px;margin:8px 0;display:block">' : '';
       var waHtml = it.wa ? ' • <a href="https://wa.me/' + esc_(it.wa).replace(/[^0-9]/g,"") + '" target="_blank" rel="noopener">Hubungi Pelapor</a>' : '';
       return '<div class="entry-row">' +
         '<div class="entry-body"><span class="entry-badge">' + esc_(it.kategori || "-") + '</span><h4>' + esc_(it.nama) + ' — Blok ' + esc_(it.blok) + '</h4><p>' + esc_(it.keterangan || "-") + waHtml + '</p>' + fotoHtml + '</div>' +
-        '<button class="entry-del" data-id="' + it.id + '" data-node="laporan" title="Hapus">✕</button>' +
+        '<button class="entry-del" data-id="' + esc_(it.id) + '" data-node="laporan" title="Hapus">✕</button>' +
         '</div>';
     }).join("");
   });
@@ -752,7 +784,7 @@ function initDashboard_(){
 
       if(items.length === 0){ lcList.innerHTML = '<div class="empty-note">Belum ada obrolan warga masuk.</div>'; return; }
       lcList.innerHTML = items.map(function(it){
-        return '<div class="lc-item' + (it.unread > 0 ? " unread" : "") + '" data-vid="' + it.vid + '">' +
+        return '<div class="lc-item' + (it.unread > 0 ? " unread" : "") + '" data-vid="' + esc_(it.vid) + '">' +
           '<div class="lc-item-av">' + (it.unread > 0 ? "🔵" : "💬") + '</div>' +
           '<div class="lc-item-body"><div class="lc-item-nama">' + esc_(it.nama) + (it.rumah ? ' <span style="color:var(--muted);font-weight:700">· ' + esc_(it.rumah) + '</span>' : "") + '</div>' +
           '<div class="lc-item-msg">' + esc_(it.lastMsg) + '</div></div>' +
@@ -951,8 +983,10 @@ function initDashboard_(){
     var nama = document.getElementById("uNama").value.trim();
     var kategori = document.getElementById("uKategori").value;
     var deskripsi = document.getElementById("uDeskripsi").value.trim();
-    var wa = document.getElementById("uWa").value.trim();
+    var waRaw = document.getElementById("uWa").value.trim();
+    var wa = nomorWAValid_(waRaw);
     if (!nama) { showToast("Nama usaha wajib diisi."); return; }
+    if (waRaw && !wa) { showToast("Nomor WhatsApp tidak valid. Contoh: 081234567890"); return; }
     db.ref("umkm").push({
       nama: nama, kategori: kategori, deskripsi: deskripsi, wa: wa, foto: uFotoData || "",
       createdAt: firebase.database.ServerValue.TIMESTAMP
@@ -997,15 +1031,15 @@ function initDashboard_(){
       return '<div class="peng-card">' +
         '<span class="entry-badge kegiatan">' + esc_(it.kategori || "Usaha") + '</span>' +
         '<h4>' + esc_(it.nama) + '</h4>' +
-        (it.foto ? '<img class="peng-foto" src="' + it.foto + '" alt="Foto ' + esc_(it.nama) + '">' : '<p><i>(tanpa foto)</i></p>') +
+        (fotoAman_(it.foto) ? '<img class="peng-foto" src="' + fotoAman_(it.foto) + '" alt="Foto ' + esc_(it.nama) + '">' : '<p><i>(tanpa foto)</i></p>') +
         '<p><b>Pemilik:</b> ' + esc_(it.pemilik || "-") + '</p>' +
         '<p><b>Produk/Jasa:</b> ' + esc_(it.deskripsi || "-") + '</p>' +
         '<p><b>Alamat:</b> ' + esc_(it.alamat || "-") + '</p>' +
         '<p><b>WhatsApp:</b> ' + esc_(waTampilAdm_(it.wa)) + (wa ? ' • <a href="https://wa.me/' + wa + '" target="_blank" rel="noopener">Hubungi</a>' : '') + '</p>' +
         (it.jam ? '<p><b>Jam buka:</b> ' + esc_(it.jam) + '</p>' : '') +
         (tgl ? '<p style="font-size:11px">Masuk: ' + esc_(tgl) + '</p>' : '') +
-        '<div class="peng-act"><button class="btn btn-brand btn-sm peng-btn" data-act="terima" data-id="' + it.id + '">✅ Terima</button>' +
-        '<button class="btn btn-tolak btn-sm peng-btn" data-act="tolak" data-id="' + it.id + '">❌ Tolak</button></div>' +
+        '<div class="peng-act"><button class="btn btn-brand btn-sm peng-btn" data-act="terima" data-id="' + esc_(it.id) + '">✅ Terima</button>' +
+        '<button class="btn btn-tolak btn-sm peng-btn" data-act="tolak" data-id="' + esc_(it.id) + '">❌ Tolak</button></div>' +
       '</div>';
     }).join("");
   }, function(){
@@ -1029,7 +1063,7 @@ function initDashboard_(){
     upd["umkm/" + newKey] = {
       nama: it.nama || "", kategori: it.kategori || "Lainnya", deskripsi: it.deskripsi || "",
       wa: it.wa || "", alamat: it.alamat || "", jam: it.jam || "", pemilik: it.pemilik || "",
-      foto: it.foto || "", createdAt: firebase.database.ServerValue.TIMESTAMP
+      foto: fotoAman_(it.foto), createdAt: firebase.database.ServerValue.TIMESTAMP
     };
     upd["umkmPengajuan/" + id] = null;
     db.ref().update(upd).then(function(){
@@ -1047,6 +1081,15 @@ function initDashboard_(){
     var kategori = document.getElementById("kKategori").value.trim();
     var jumlah = parseFloat(document.getElementById("kJumlah").value);
     if (!tanggal || !keterangan || !jumlah || jumlah <= 0) { showToast("Lengkapi tanggal, keterangan, dan jumlah."); return; }
+    if (Math.floor(jumlah) !== jumlah) { showToast("Jumlah harus bilangan bulat rupiah (tanpa koma/desimal)."); return; }
+    if (jumlah > 1000000000) { showToast("Jumlah melebihi batas Rp 1.000.000.000. Periksa jumlah nol."); return; }
+    var selisihHari = Math.abs((new Date(tanggal) - new Date(tglWIB_())) / 86400000);
+    var peringatan = selisihHari > 31 ? "\n\n⚠️ Tanggal berbeda lebih dari 31 hari dari hari ini. Periksa tahun/bulan." : "";
+    if (!confirm("Simpan transaksi ini?\n\n" + (jenis === "masuk" ? "PEMASUKAN " : "PENGELUARAN ") + fmtRp_(jumlah) +
+        "\nTanggal: " + tanggal + "\nKeterangan: " + keterangan + peringatan +
+        "\n\nSetelah disimpan, transaksi TERKUNCI (tidak bisa diubah/dihapus kecuali TEST MODE aktif).")) return;
+    var btnSimpanKeu = e.target.querySelector('button[type="submit"]');
+    if (btnSimpanKeu) btnSimpanKeu.disabled = true;
     db.ref("keuangan").push({
       tanggal: tanggal, jenis: jenis, keterangan: keterangan, kategori: kategori, jumlah: jumlah,
       createdAt: firebase.database.ServerValue.TIMESTAMP,
@@ -1055,7 +1098,8 @@ function initDashboard_(){
       showToast("Transaksi tersimpan dan otomatis masuk ke Laporan Keuangan.");
       document.getElementById("formKeuangan").reset();
       document.getElementById("kTanggal").value = today;
-    }).catch(function(){ showToast("Gagal menyimpan. Coba lagi."); });
+    }).catch(function(err){ showToast(pesanGagal_(err, "Penyimpanan transaksi")); })
+      .then(function(){ if (btnSimpanKeu) btnSimpanKeu.disabled = false; });
   });
   db.ref("keuangan").on("value", function(snap){
     var val = snap.val() || {};
@@ -1063,7 +1107,7 @@ function initDashboard_(){
     items.sort(function(a,b){ return (b.tanggal||"").localeCompare(a.tanggal||"") || (b.createdAt||0)-(a.createdAt||0); });
 
     var totalMasuk = 0, totalKeluar = 0, bulanMasuk = 0, bulanKeluar = 0;
-    var ym = new Date().toISOString().slice(0, 7);
+    var ym = tglWIB_().slice(0, 7);
     items.forEach(function(it){
       var j = parseFloat(it.jumlah) || 0;
       if (it.jenis === "masuk") { totalMasuk += j; if ((it.tanggal||"").slice(0,7) === ym) bulanMasuk += j; }
@@ -1141,10 +1185,10 @@ function initDashboard_(){
         nama: it.nama || "-", blok: it.rumah, bulan: bulanLong_(b),
         rincian: "Iuran Bulanan" + (it.tambahanKK ? " + Iuran RUKEM (tambahan KK)" : ""),
         jumlah: fmtRp_(it.jumlah), metode: "Transfer Bank (" + bank + ")", petugas: it.petugas || "-"
-      }, RT_CONFIG, null, new Date());
+      }, RT_CONFIG, null, new Date(), "KW-" + b.slice(2, 4) + b.slice(5, 7) + "-" + String(it.blok || "").toUpperCase() + "-" + String(it.no || "").toUpperCase());
     } catch (e) { console.error(e); showToast("Gagal membuat PDF kwitansi."); return; }
     db.ref("penarikan/" + b + "/" + r).update({ kodeKwitansi: hasil.kode, kwitansiAt: firebase.database.ServerValue.TIMESTAMP });
-    function nomorWA_(n){ var d = String(n || "").replace(/[^0-9]/g, ""); if (!d) return ""; if (d.indexOf("62") === 0) return d; if (d.charAt(0) === "0") return "62" + d.slice(1); return "62" + d; }
+    function nomorWA_(n){ var d = String(n || "").replace(/[^0-9]/g, ""); if (!d) return ""; if (d.indexOf("620") === 0) return "62" + d.slice(3); if (d.indexOf("62") === 0) return d; if (d.charAt(0) === "0") return "62" + d.slice(1); return "62" + d; }
     var nomor = nomorWA_(it.teleponWarga || (typeof WARGA_KONTAK !== "undefined" ? WARGA_KONTAK[r] : "") || "");
     if (!nomor) {
       try { var snap = await db.ref("wargaKontak/" + r + "/telepon").once("value"); nomor = nomorWA_(snap.val()); } catch (e) {}
@@ -1191,8 +1235,8 @@ function initDashboard_(){
         '<p>' + fmtBulanID_(it.bulanKey) + ' • ' + fmtRp_(it.jumlah) + ' • Petugas: ' + esc_(it.petugas || "-") + '</p></div>' +
         '<div style="display:flex;gap:6px;flex-direction:column">' +
         (it.adaBukti ? '<button class="btn btn-gold btn-sm transfer-bukti" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">🧾 Lihat Bukti</button>' : '<span style="font-size:10.5px;color:var(--red);font-weight:800;text-align:center">Tanpa bukti</span>') +
-        '<button class="btn btn-brand btn-sm transfer-btn" data-act="terima" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">✅ Diterima</button>' +
-        '<button class="btn btn-tolak btn-sm transfer-btn" data-act="batal" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">↩️ Belum</button></div>' +
+        '<button class="btn btn-brand btn-sm transfer-btn" data-act="terima" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">✅ Sudah Masuk Rekening</button>' +
+        '<button class="btn btn-tolak btn-sm transfer-btn" data-act="batal" data-b="' + it.bulanKey + '" data-r="' + it.rumahKey + '">↩️ Belum Masuk</button></div>' +
         '</div>';
     }).join("");
   }, function(){ document.getElementById("listTransfer").innerHTML = '<div class="empty-note">Gagal memuat data. Periksa aturan Firebase.</div>'; });
@@ -1225,26 +1269,29 @@ function initDashboard_(){
     var entry = (penarikanSemua_[b] || {})[r];
     if (!entry) { showToast("Data tidak ditemukan. Muat ulang halaman."); return; }
     if (act === "terima") {
+      if (entry.status !== "transfer_pending") { showToast("Transfer ini sudah diproses. Halaman akan diperbarui."); return; }
+      if (!confirm("Konfirmasi transfer MASUK?\n\n" + entry.rumah + " — " + (entry.nama || "-") + "\nBulan: " + fmtBulanID_(b) + "\nJumlah: " + fmtRp_(entry.jumlah) +
+          "\n\nPastikan uang " + fmtRp_(entry.jumlah) + " SUDAH ada di mutasi rekening.\nSetelah ini otomatis tercatat sebagai Pemasukan di Kas RT.")) return;
       btn.disabled = true;
       var upd = {};
       upd["penarikan/" + b + "/" + r + "/status"] = "lunas_transfer";
       upd["penarikan/" + b + "/" + r + "/confirmedAt"] = firebase.database.ServerValue.TIMESTAMP;
       var kKey = "iuran_transfer_" + b + "_" + r;
       upd["keuangan/" + kKey] = {
-        tanggal: new Date().toISOString().slice(0, 10), jenis: "masuk",
+        tanggal: tglWIB_(), jenis: "masuk",
         keterangan: "Iuran Bulanan (Transfer) - " + entry.rumah + " - " + fmtBulanID_(b),
         kategori: "Iuran Bulanan", jumlah: entry.jumlah, source: "penarikan/" + b + "/" + r,
         createdAt: firebase.database.ServerValue.TIMESTAMP,
         createdBy: (firebase.auth().currentUser && firebase.auth().currentUser.email) || ""
       };
       db.ref().update(upd).then(function(){ showToast("Transfer dikonfirmasi & masuk Kas RT. Kirim kwitansi dari daftar 🧾 di bawah."); })
-        .catch(function(){ btn.disabled = false; showToast("Gagal, coba lagi."); });
+        .catch(function(err){ btn.disabled = false; showToast(pesanGagal_(err, "Konfirmasi transfer")); });
     } else {
-      if (!confirm("Kembalikan status rumah ini ke \"Belum Ditarik\"?")) return;
+      if (!confirm("Transfer belum masuk?\n\nStatus rumah ini dikembalikan ke \"Belum Bayar\" dan Humas bisa mencatat ulang.")) return;
       btn.disabled = true;
       db.ref("penarikan/" + b + "/" + r + "/status").set("belum")
         .then(function(){ showToast("Dikembalikan ke status Belum."); })
-        .catch(function(){ btn.disabled = false; showToast("Gagal, coba lagi."); });
+        .catch(function(err){ btn.disabled = false; showToast(pesanGagal_(err, "Pengembalian status")); });
     }
   });
 
@@ -1261,7 +1308,7 @@ function initDashboard_(){
     box.innerHTML = items.map(function(it){
       var jmlRumah = it.rumahKeys ? Object.keys(it.rumahKeys).length : 0;
       var aksi = it.status === "menunggu"
-        ? '<button class="btn btn-brand btn-sm setoran-btn" data-id="' + it.id + '">✅ Terima Setoran</button>'
+        ? '<button class="btn btn-brand btn-sm setoran-btn" data-id="' + esc_(it.id) + '" data-info="' + esc_("Petugas: " + (it.petugas || "-") + "\nBulan: " + fmtBulanID_(it.bulanKey) + "\nJumlah: " + fmtRp_(it.jumlah) + " dari " + jmlRumah + " rumah") + '">✅ Terima Setoran</button>'
         : '<span class="entry-badge kegiatan">Diterima</span>';
       if (it.status !== "diterima") aksi += ' <button class="btn btn-tolak btn-sm setoran-hapus" data-id="' + it.id + '" title="Batalkan setoran">🗑️</button>';
       return '<div class="entry-row"><div class="entry-body"><h4>' + esc_(it.petugas) + ' — ' + fmtRp_(it.jumlah) + '</h4>' +
@@ -1290,17 +1337,30 @@ function initDashboard_(){
     var btn = e.target.closest(".setoran-btn");
     if (!btn) return;
     var id = btn.getAttribute("data-id");
+    var infoSetor = btn.getAttribute("data-info") || "";
+    if (!confirm("Terima setoran cash?\n\n" + infoSetor + "\n\nPastikan uang fisik sejumlah itu SUDAH Anda terima dari Humas.\nSetelah ini otomatis tercatat sebagai Pemasukan di Kas RT.")) return;
     btn.disabled = true; btn.textContent = "Memproses...";
     db.ref("humasSetoran/" + id).once("value").then(function(snap){
       var it = snap.val();
-      if (!it) throw new Error("Setoran tidak ditemukan");
+      if (!it) throw new Error("!Setoran tidak ditemukan.");
+      if (it.status !== "menunggu") throw new Error("!Setoran ini sudah diproses.");
+      if (!Object.keys(penarikanSemua_).length) throw new Error("!Data penarikan belum termuat. Tunggu sebentar lalu coba lagi.");
+      var totalCek = 0, bermasalah = 0;
+      Object.keys(it.rumahKeys || {}).forEach(function(rk){
+        var ent = (penarikanSemua_[it.bulanKey] || {})[rk];
+        if (!ent || ent.status !== "lunas_cash" || ent.setoranId !== id) bermasalah++;
+        else totalCek += parseFloat(ent.jumlah) || 0;
+      });
+      if (bermasalah > 0 || totalCek !== (parseFloat(it.jumlah) || 0)) {
+        throw new Error("!Data setoran tidak sinkron dengan catatan rumah (" + fmtRp_(it.jumlah) + " vs " + fmtRp_(totalCek) + "). Batalkan setoran ini (🗑️) lalu minta Humas mengajukan ulang.");
+      }
       var upd = {};
       upd["humasSetoran/" + id + "/status"] = "diterima";
       upd["humasSetoran/" + id + "/confirmedAt"] = firebase.database.ServerValue.TIMESTAMP;
       Object.keys(it.rumahKeys || {}).forEach(function(rk){ upd["penarikan/" + it.bulanKey + "/" + rk + "/disetorKonfirmasi"] = true; });
       var kKey = "iuran_cash_" + id;
       upd["keuangan/" + kKey] = {
-        tanggal: new Date().toISOString().slice(0, 10), jenis: "masuk",
+        tanggal: tglWIB_(), jenis: "masuk",
         keterangan: "Setoran Iuran Bulanan (Cash) - " + it.petugas + " - " + fmtBulanID_(it.bulanKey),
         kategori: "Iuran Bulanan", jumlah: it.jumlah, source: "humasSetoran/" + id,
         createdAt: firebase.database.ServerValue.TIMESTAMP,
@@ -1308,7 +1368,7 @@ function initDashboard_(){
       };
       return db.ref().update(upd);
     }).then(function(){ showToast("Setoran diterima & masuk ke Kas RT."); })
-    .catch(function(){ btn.disabled = false; btn.textContent = "✅ Terima Setoran"; showToast("Gagal, coba lagi."); });
+    .catch(function(err){ btn.disabled = false; btn.textContent = "✅ Terima Setoran"; showToast(err && err.message && err.message.charAt(0) === "!" ? err.message.slice(1) : pesanGagal_(err, "Penerimaan setoran")); });
   });
 
   /* ---- DELETE (delegasi klik untuk semua daftar) ---- */
@@ -1318,10 +1378,22 @@ function initDashboard_(){
     var id = btn.getAttribute("data-id");
     var node = btn.getAttribute("data-node");
     if (node === "keuangan" && !testMode_) { showToast("TEST MODE OFF: transaksi keuangan terkunci."); return; }
-    if (!confirm(node === "keuangan" ? "Hapus transaksi simulasi ini? Tindakan tidak bisa dibatalkan." : "Hapus data ini? Tindakan tidak bisa dibatalkan.")) return;
-    db.ref(node + "/" + id).remove().then(function(){
-      showToast("Data dihapus.");
-    }).catch(function(){ showToast("Gagal menghapus. Coba lagi."); });
+    function hapusSekarang_(){
+      db.ref(node + "/" + id).remove().then(function(){
+        showToast("Data dihapus.");
+      }).catch(function(err){ showToast(pesanGagal_(err, "Penghapusan")); });
+    }
+    if (node !== "keuangan") {
+      if (!confirm("Hapus data ini? Tindakan tidak bisa dibatalkan.")) return;
+      hapusSekarang_();
+      return;
+    }
+    db.ref("keuangan/" + id).once("value").then(function(snap){
+      var v = snap.val() || {};
+      var dariIuran = v.source ? "\n\n⚠️ Transaksi ini dibuat OTOMATIS dari Iuran Bulanan (" + (String(v.source).indexOf("humasSetoran") === 0 ? "setoran cash" : "transfer") + ").\nJika dihapus, kas berkurang tetapi catatan iuran rumah tetap berstatus LUNAS/DITERIMA dan tidak bisa diterima ulang. Hanya lakukan ini untuk membersihkan data simulasi." : "";
+      if (!confirm("Hapus transaksi simulasi ini?\n\n" + (v.jenis === "masuk" ? "Pemasukan " : "Pengeluaran ") + fmtRp_(v.jumlah) + " — " + (v.keterangan || "") + dariIuran + "\n\nTindakan tidak bisa dibatalkan.")) return;
+      hapusSekarang_();
+    }).catch(function(err){ showToast(pesanGagal_(err, "Pembacaan transaksi")); });
   });
 }
 </script>

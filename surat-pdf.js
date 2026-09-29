@@ -602,13 +602,13 @@
   }
 
   /* Membuat PDF. Mengembalikan { bytes, namaFile, kode, pesan } */
-  function buat(key, data, cfg, logo, now) {
+  function buat(key, data, cfg, logo, now, kodeTetap) {
     var J = JENIS[key];
     if (!J) throw new Error("Jenis surat tidak dikenal: " + key);
     now = now || new Date();
     var c = ctxDari(cfg, now), d = bersihkan(J, data || {});
     var p2 = function (v) { return (v < 10 ? "0" : "") + v; };
-    var kode = J.kode + "-" + String(now.getFullYear()).slice(2) + p2(now.getMonth() + 1) + p2(now.getDate()) + "-" + (1000 + Math.floor(Math.random() * 9000));
+    var kode = kodeTetap || (J.kode + "-" + String(now.getFullYear()).slice(2) + p2(now.getMonth() + 1) + p2(now.getDate()) + "-" + (1000 + Math.floor(Math.random() * 9000)));
     var doc = new Doc(), L = new Layout(doc);
     if (!J.ringkas) kop(L, c, logo);   // ringkas = dokumen non-formal (mis. kwitansi elektronik): tanpa kop resmi
     J.render(L, d, c, kode);
