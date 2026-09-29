@@ -1,6 +1,7 @@
 package com.rt08villaindah.humas;
 
 import android.Manifest;
+import android.content.ClipData;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -182,6 +183,57 @@ public class MainActivity extends AppCompatActivity {
                             startActivity(i);
                         } catch (Exception e) {
                             Toast.makeText(MainActivity.this, "Gagal membuka WhatsApp.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        /* Bagikan file APA SAJA (Excel, PDF, dll). langsungWA=true -> buka WhatsApp dengan file terlampir
+           (nomor kosong = pilih kontak/grup sendiri); langsungWA=false -> menu Bagikan (bisa Simpan ke Drive/File, WhatsApp, dll). */
+        @JavascriptInterface
+        public boolean shareFile(String base64, String namaFile, String mime, String nomor, String pesan, boolean langsungWA) {
+            try {
+                byte[] data = Base64.decode(base64, Base64.DEFAULT);
+                if (data == null || data.length == 0) return false;
+                String aman = (namaFile == null ? "berkas" : namaFile).replaceAll("[^A-Za-z0-9._-]", "-");
+                File dir = new File(getCacheDir(), "share");
+                if (!dir.exists() && !dir.mkdirs()) return false;
+                File[] lama = dir.listFiles();
+                if (lama != null) for (File f : lama) f.delete();
+                final File file = new File(dir, aman);
+                FileOutputStream out = new FileOutputStream(file);
+                try { out.write(data); } finally { out.close(); }
+
+                final Uri uri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".fileprovider", file);
+                final String digit = nomor == null ? "" : nomor.replaceAll("[^0-9]", "");
+                final String teks = pesan == null ? "" : pesan;
+                final String tipe = (mime == null || mime.length() == 0) ? "application/octet-stream" : mime;
+                final String pkg = langsungWA ? paketWhatsApp() : null;
+
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        try {
+                            Intent i = new Intent(Intent.ACTION_SEND);
+                            i.setType(tipe);
+                            i.putExtra(Intent.EXTRA_STREAM, uri);
+                            i.putExtra(Intent.EXTRA_TEXT, teks);
+                            i.setClipData(ClipData.newRawUri("", uri));
+                            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            if (pkg != null) {
+                                i.setPackage(pkg);
+                                if (digit.length() > 0) i.putExtra("jid", digit + "@s.whatsapp.net");
+                                startActivity(i);
+                            } else {
+                                Intent pilih = Intent.createChooser(i, "Bagikan / simpan file");
+                                pilih.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                startActivity(pilih);
+                            }
+                        } catch (Exception e) {
+                            Toast.makeText(MainActivity.this, "Gagal membuka menu bagikan.", Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
