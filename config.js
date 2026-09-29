@@ -14,19 +14,17 @@ const RT_CONFIG = {
   namaKompleks: "Villa Indah Pulo Timaha",
   jumlahKK: "102", // KK aktif
 
-  // ---------- Password Halaman Admin (admin.html) ----------
-  // Dipakai untuk mengunci halaman kelola Agenda & Informasi.
-  // GANTI password ini secara berkala. Catatan: ini hanya kunci tampilan
-  // (bukan keamanan tingkat server), jadi tetap jangan bagikan sembarangan.
-  adminPassword: "rt08admin2026",
+  // ---------- Keamanan ----------
+  // Login admin/humas menggunakan Firebase Authentication.
+  // JANGAN simpan password atau secret di file ini karena file ini dikirim ke browser.
+  firebaseAuthRequired: true,
+  // UID akun Firebase yang berhak mengakses panel masing-masing.
+  adminUid: "DOHOhpaimmTY2oB1WxbNQg0BLIG2",
+  humasUid: "1VnzbcWA8edwPLFNfASNnUK9bn22",
 
-  // ---------- Password Halaman Humas (humas.html) ----------
-  // Dipakai petugas Humas Keliling untuk membuka halaman penarikan iuran bulanan di HP.
-  // GANTI password ini secara berkala, beda dengan adminPassword di atas.
-  humasPassword: "rt08humas2026",
-
-  // Password untuk tombol HAPUS catatan penarikan di halaman Humas (jaga-jaga salah input).
-  hapusPassword: "123",
+  // Mode uji coba. Nilai ini hanya dipakai sebagai default saat Firebase belum punya appConfig/testMode.
+  // ON = transaksi keuangan boleh dihapus oleh Admin untuk simulasi. OFF = hapus transaksi keuangan ditolak server.
+  testModeDefault: true,
 
   // Rekening Bendahara untuk pembayaran TRANSFER (tampil di halaman Humas & pesan reminder WhatsApp).
   rekeningBendahara: { bank: "BCA", nomor: "7660432943", nama: "Hendyanto" },

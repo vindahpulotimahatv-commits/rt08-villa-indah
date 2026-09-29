@@ -230,9 +230,10 @@ textarea{min-height:76px;resize:vertical}
   <div class="gate-card">
     <div class="emoji">🔐</div>
     <h2>Halaman Khusus Pengurus</h2>
-    <p>Masukkan password admin untuk mengelola Agenda &amp; Informasi warga. Konten yang ditambahkan di sini otomatis tampil di halaman Agenda, Informasi, dan Beranda.</p>
-    <input type="password" id="gatePass" placeholder="Password admin" autocomplete="off">
-    <p class="err" id="gateErr">Password salah. Coba lagi.</p>
+    <p>Masuk menggunakan akun Firebase Authentication yang sudah dibuat khusus untuk pengurus. Password tidak disimpan di source code.</p>
+    <input type="email" id="gateEmail" placeholder="Email pengurus" autocomplete="username">
+    <input type="password" id="gatePass" placeholder="Password Firebase" autocomplete="current-password">
+    <p class="err" id="gateErr">Email atau password salah, atau akun tidak memiliki akses.</p>
     <button class="btn btn-gold" id="btnMasuk">Masuk</button>
   </div>
 </div>
@@ -403,6 +404,14 @@ textarea{min-height:76px;resize:vertical}
 
   <!-- ===== PANEL KEUANGAN ===== -->
   <div class="panel" id="panel-keuangan">
+    <div class="form-card" id="testModeCard" style="border:2px solid #ecd8a0;background:#fffdf5">
+      <h3>🧪 Mode Uji Coba</h3>
+      <p class="sub">ON: Admin dapat menghapus transaksi keuangan untuk simulasi. OFF: transaksi keuangan tidak dapat dihapus. Status disimpan di Firebase dan dikunci oleh Firebase Rules.</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div id="testModeStatus" style="font-weight:900;color:#8a6a10">Memuat...</div>
+        <button type="button" class="btn btn-gold btn-sm" id="btnToggleTestMode">Memuat...</button>
+      </div>
+    </div>
     <div class="form-card">
       <h3>Catat Transaksi Kas</h3>
       <p class="sub">Setiap transaksi otomatis dihitung ke Saldo Kas &amp; rekap bulanan di halaman Transparansi.</p>
@@ -454,6 +463,7 @@ textarea{min-height:76px;resize:vertical}
 
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
 <script src="config.js"></script>
 <script src="warga-data.js"></script>
 <script src="warga-kontak.js"></script>
@@ -515,9 +525,14 @@ function compressImage_(file, maxWidth, quality){
 
 /* ---------------- GATE ---------------- */
 document.addEventListener("DOMContentLoaded", function(){
-  var SESSION_KEY = "rt08_admin_unlocked";
   var gateWrap = document.getElementById("gateWrap");
   var dashboard = document.getElementById("dashboard");
+  var gateErr = document.getElementById("gateErr");
+
+  if (!firebaseReady_()) { gateErr.textContent = "Firebase belum dikonfigurasi."; gateErr.style.display = "block"; return; }
+  if (!firebase.apps.length) firebase.initializeApp(RT_CONFIG.firebaseConfig);
+  var auth = firebase.auth();
+  auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function(){});
 
   function unlock(){
     gateWrap.style.display = "none";
@@ -525,23 +540,40 @@ document.addEventListener("DOMContentLoaded", function(){
     initDashboard_();
   }
 
-  if (sessionStorage.getItem(SESSION_KEY) === "1") {
-    unlock();
+  function isAdminUser_(user){
+    return !!(user && RT_CONFIG.adminUid && user.uid === RT_CONFIG.adminUid);
   }
 
-  document.getElementById("btnMasuk").addEventListener("click", function(){
-    var val = document.getElementById("gatePass").value;
-    if (val && val === (RT_CONFIG.adminPassword || "")) {
-      sessionStorage.setItem(SESSION_KEY, "1");
-      document.getElementById("gateErr").style.display = "none";
-      unlock();
-    } else {
-      document.getElementById("gateErr").style.display = "block";
+  auth.onAuthStateChanged(function(user){
+    if (user && isAdminUser_(user)) { unlock(); }
+    else if (user) {
+      auth.signOut();
+      gateErr.textContent = "Akun ini bukan akun Admin yang terdaftar.";
+      gateErr.style.display = "block";
     }
   });
-  document.getElementById("gatePass").addEventListener("keydown", function(e){
-    if (e.key === "Enter") document.getElementById("btnMasuk").click();
+
+  document.getElementById("btnMasuk").addEventListener("click", function(){
+    var email = document.getElementById("gateEmail").value.trim();
+    var pass = document.getElementById("gatePass").value;
+    if (!email || !pass) { gateErr.textContent = "Email dan password wajib diisi."; gateErr.style.display = "block"; return; }
+    var btn = this; btn.disabled = true; btn.textContent = "Memeriksa...";
+    auth.signInWithEmailAndPassword(email, pass).then(function(result){
+      if (!isAdminUser_(result.user)) {
+        return auth.signOut().then(function(){ throw new Error("not-admin"); });
+      }
+      gateErr.style.display = "none";
+    }).catch(function(err){
+      console.warn("Firebase Auth admin gagal", err);
+      gateErr.textContent = err && err.message === "not-admin"
+        ? "Akun ini bukan akun Admin yang terdaftar."
+        : (/invalid-credential|wrong-password|user-not-found/i.test(String(err && err.code))
+          ? "Email atau password salah."
+          : "Login ditolak. Pastikan akun Firebase dan Rules sudah dikonfigurasi.");
+      gateErr.style.display = "block";
+    }).finally(function(){ btn.disabled = false; btn.textContent = "Masuk"; });
   });
+  ["gateEmail","gatePass"].forEach(function(id){ document.getElementById(id).addEventListener("keydown", function(e){ if (e.key === "Enter") document.getElementById("btnMasuk").click(); }); });
 
   /* ---------------- TABS ---------------- */
   document.querySelectorAll(".tab-btn").forEach(function(btn){
@@ -560,12 +592,46 @@ function initDashboard_(){
   if (dashboardInited_) return;
   dashboardInited_ = true;
 
+  var testMode_ = false;
+  var testModeReady_ = false;
+  function renderTestMode_(){
+    var st = document.getElementById("testModeStatus");
+    var bt = document.getElementById("btnToggleTestMode");
+    if (!st || !bt) return;
+    if (!testModeReady_) { st.textContent = "Memuat..."; bt.disabled = true; return; }
+    st.textContent = testMode_ ? "🟢 TEST MODE ON — hapus transaksi simulasi diizinkan" : "🔴 TEST MODE OFF — transaksi keuangan terkunci";
+    bt.textContent = testMode_ ? "Matikan TEST MODE" : "Nyalakan TEST MODE";
+    bt.disabled = false;
+    document.querySelectorAll(".finance-test-delete").forEach(function(x){ x.style.display = testMode_ ? "inline-flex" : "none"; });
+    document.querySelectorAll(".finance-locked-badge").forEach(function(x){ x.style.display = testMode_ ? "none" : "inline-block"; });
+  }
+  function loadTestMode_(){
+    return db.ref("appConfig/testMode").once("value").then(function(snap){
+      if (snap.exists()) testMode_ = snap.val() === true;
+      else {
+        testMode_ = RT_CONFIG.testModeDefault === true;
+        return db.ref("appConfig/testMode").set(testMode_);
+      }
+    }).then(function(){ testModeReady_ = true; renderTestMode_(); });
+  }
+
   if (!firebaseReady_()) {
     document.getElementById("warnCard").style.display = "block";
     return;
   }
-  firebase.initializeApp(RT_CONFIG.firebaseConfig);
+  if (!firebase.apps.length) firebase.initializeApp(RT_CONFIG.firebaseConfig);
   db = firebase.database();
+
+  loadTestMode_().catch(function(){ testModeReady_ = false; renderTestMode_(); showToast("Tidak bisa membaca status TEST MODE."); });
+  document.getElementById("btnToggleTestMode").addEventListener("click", function(){
+    if (!testModeReady_) return;
+    var next = !testMode_;
+    if (!confirm(next ? "Nyalakan TEST MODE? Transaksi keuangan boleh dihapus untuk simulasi." : "Matikan TEST MODE? Setelah ini transaksi keuangan tidak bisa dihapus.")) return;
+    var b = this; b.disabled = true;
+    db.ref("appConfig/testMode").set(next).then(function(){
+      testMode_ = next; renderTestMode_(); showToast(next ? "TEST MODE ON." : "TEST MODE OFF.");
+    }).catch(function(){ renderTestMode_(); showToast("Gagal mengubah TEST MODE."); });
+  });
 
   var today = new Date().toISOString().slice(0, 10);
   document.getElementById("agTanggal").value = today;
@@ -983,7 +1049,8 @@ function initDashboard_(){
     if (!tanggal || !keterangan || !jumlah || jumlah <= 0) { showToast("Lengkapi tanggal, keterangan, dan jumlah."); return; }
     db.ref("keuangan").push({
       tanggal: tanggal, jenis: jenis, keterangan: keterangan, kategori: kategori, jumlah: jumlah,
-      createdAt: firebase.database.ServerValue.TIMESTAMP
+      createdAt: firebase.database.ServerValue.TIMESTAMP,
+      createdBy: (firebase.auth().currentUser && firebase.auth().currentUser.email) || ""
     }).then(function(){
       showToast("Transaksi tersimpan dan otomatis masuk ke Laporan Keuangan.");
       document.getElementById("formKeuangan").reset();
@@ -1018,9 +1085,11 @@ function initDashboard_(){
       return '<div class="entry-row">' +
         '<div class="entry-date">' + dt.d + '<small>' + dt.m + '</small></div>' +
         '<div class="entry-body"><h4>' + esc_(it.keterangan) + '</h4><p>' + esc_(it.kategori || "-") + ' • ' + amountHtml + '</p></div>' +
-        '<button class="entry-del" data-id="' + it.id + '" data-node="keuangan" title="Hapus">✕</button>' +
+        '<button type="button" class="entry-del finance-test-delete" data-id="' + esc_(it.id) + '" data-node="keuangan" title="Hapus transaksi simulasi" style="display:' + (testMode_ ? 'inline-flex' : 'none') + '">🗑</button>' +
+        '<span class="entry-badge kegiatan finance-locked-badge" title="Transaksi keuangan terkunci" style="display:' + (testMode_ ? 'none' : 'inline-block') + '">🔒 Terkunci</span>' +
         '</div>';
     }).join("");
+    renderTestMode_();
   });
 
   /* ---- IURAN BULANAN: KONFIRMASI TRANSFER + SETORAN CASH HUMAS ---- */
@@ -1160,11 +1229,13 @@ function initDashboard_(){
       var upd = {};
       upd["penarikan/" + b + "/" + r + "/status"] = "lunas_transfer";
       upd["penarikan/" + b + "/" + r + "/confirmedAt"] = firebase.database.ServerValue.TIMESTAMP;
-      var kKey = db.ref("keuangan").push().key;
+      var kKey = "iuran_transfer_" + b + "_" + r;
       upd["keuangan/" + kKey] = {
         tanggal: new Date().toISOString().slice(0, 10), jenis: "masuk",
         keterangan: "Iuran Bulanan (Transfer) - " + entry.rumah + " - " + fmtBulanID_(b),
-        kategori: "Iuran Bulanan", jumlah: entry.jumlah, createdAt: firebase.database.ServerValue.TIMESTAMP
+        kategori: "Iuran Bulanan", jumlah: entry.jumlah, source: "penarikan/" + b + "/" + r,
+        createdAt: firebase.database.ServerValue.TIMESTAMP,
+        createdBy: (firebase.auth().currentUser && firebase.auth().currentUser.email) || ""
       };
       db.ref().update(upd).then(function(){ showToast("Transfer dikonfirmasi & masuk Kas RT. Kirim kwitansi dari daftar 🧾 di bawah."); })
         .catch(function(){ btn.disabled = false; showToast("Gagal, coba lagi."); });
@@ -1192,7 +1263,7 @@ function initDashboard_(){
       var aksi = it.status === "menunggu"
         ? '<button class="btn btn-brand btn-sm setoran-btn" data-id="' + it.id + '">✅ Terima Setoran</button>'
         : '<span class="entry-badge kegiatan">Diterima</span>';
-      aksi += ' <button class="btn btn-tolak btn-sm setoran-hapus" data-id="' + it.id + '" title="Hapus (perlu password)">🗑️</button>';
+      if (it.status !== "diterima") aksi += ' <button class="btn btn-tolak btn-sm setoran-hapus" data-id="' + it.id + '" title="Batalkan setoran">🗑️</button>';
       return '<div class="entry-row"><div class="entry-body"><h4>' + esc_(it.petugas) + ' — ' + fmtRp_(it.jumlah) + '</h4>' +
         '<p>' + fmtBulanID_(it.bulanKey) + ' • ' + jmlRumah + ' rumah</p></div><div style="display:flex;gap:6px;align-items:center">' + aksi + '</div></div>';
     }).join("");
@@ -1201,10 +1272,7 @@ function initDashboard_(){
   document.getElementById("listSetoranHumas").addEventListener("click", function(e){
     var del = e.target.closest(".setoran-hapus");
     if (del) {
-      var pw = prompt("Masukkan password untuk menghapus riwayat setoran ini:");
-      if (pw === null) return;
-      if (pw !== String(RT_CONFIG.hapusPassword || "123")) { showToast("Password salah."); return; }
-      if (!confirm("Hapus riwayat setoran ini?\n\nCatatan pemasukannya di tab Keuangan (kalau sudah diterima) perlu dihapus manual.")) return;
+      if (!confirm("Batalkan setoran yang masih menunggu konfirmasi? Data keuangan yang sudah diterima tidak dapat dihapus.")) return;
       var sid = del.getAttribute("data-id");
       db.ref("humasSetoran/" + sid).once("value").then(function(snap){
         var it = snap.val() || {};
@@ -1230,11 +1298,13 @@ function initDashboard_(){
       upd["humasSetoran/" + id + "/status"] = "diterima";
       upd["humasSetoran/" + id + "/confirmedAt"] = firebase.database.ServerValue.TIMESTAMP;
       Object.keys(it.rumahKeys || {}).forEach(function(rk){ upd["penarikan/" + it.bulanKey + "/" + rk + "/disetorKonfirmasi"] = true; });
-      var kKey = db.ref("keuangan").push().key;
+      var kKey = "iuran_cash_" + id;
       upd["keuangan/" + kKey] = {
         tanggal: new Date().toISOString().slice(0, 10), jenis: "masuk",
         keterangan: "Setoran Iuran Bulanan (Cash) - " + it.petugas + " - " + fmtBulanID_(it.bulanKey),
-        kategori: "Iuran Bulanan", jumlah: it.jumlah, createdAt: firebase.database.ServerValue.TIMESTAMP
+        kategori: "Iuran Bulanan", jumlah: it.jumlah, source: "humasSetoran/" + id,
+        createdAt: firebase.database.ServerValue.TIMESTAMP,
+        createdBy: (firebase.auth().currentUser && firebase.auth().currentUser.email) || ""
       };
       return db.ref().update(upd);
     }).then(function(){ showToast("Setoran diterima & masuk ke Kas RT."); })
@@ -1247,7 +1317,8 @@ function initDashboard_(){
     if (!btn) return;
     var id = btn.getAttribute("data-id");
     var node = btn.getAttribute("data-node");
-    if (!confirm("Hapus data ini? Tindakan tidak bisa dibatalkan.")) return;
+    if (node === "keuangan" && !testMode_) { showToast("TEST MODE OFF: transaksi keuangan terkunci."); return; }
+    if (!confirm(node === "keuangan" ? "Hapus transaksi simulasi ini? Tindakan tidak bisa dibatalkan." : "Hapus data ini? Tindakan tidak bisa dibatalkan.")) return;
     db.ref(node + "/" + id).remove().then(function(){
       showToast("Data dihapus.");
     }).catch(function(){ showToast("Gagal menghapus. Coba lagi."); });

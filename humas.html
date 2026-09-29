@@ -119,10 +119,11 @@ button{font:inherit}
   <div class="gate-card">
     <div class="emoji">🧾</div>
     <h2>Halaman Khusus Humas</h2>
-    <p>Untuk petugas Humas Keliling — mencatat penarikan iuran bulanan warga per rumah. Isi nama petugas &amp; password Humas untuk masuk.</p>
-    <input type="text" id="gateNama" placeholder="Nama Petugas Humas" autocomplete="off">
-    <input type="password" id="gatePass" placeholder="Password Humas" autocomplete="off">
-    <p class="err" id="gateErr">Nama &amp; password wajib diisi dengan benar. Coba lagi.</p>
+    <p>Untuk petugas Humas Keliling. Masuk menggunakan akun Firebase Authentication; nama petugas dipakai sebagai identitas operasional pada setoran.</p>
+    <input type="text" id="gateNama" placeholder="Nama Petugas Humas" autocomplete="name">
+    <input type="email" id="gateEmail" placeholder="Email akun Humas" autocomplete="username">
+    <input type="password" id="gatePass" placeholder="Password Firebase" autocomplete="current-password">
+    <p class="err" id="gateErr">Nama, email, dan password wajib diisi dengan benar.</p>
     <button class="btn btn-gold" id="btnMasuk">Masuk</button>
   </div>
 </div>
@@ -187,6 +188,7 @@ button{font:inherit}
 
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="config.js"></script>
 <script src="warga-data.js"></script>
@@ -288,11 +290,17 @@ function unduhBlob_(bytes, namaFile){
 
 /* ---------- GATE ---------- */
 document.addEventListener("DOMContentLoaded", function(){
-  var SESSION_KEY = "rt08_humas_unlocked";
   var gateWrap = document.getElementById("gateWrap");
   var dashboard = document.getElementById("dashboard");
   var gateNama = document.getElementById("gateNama");
+  var gateErr = document.getElementById("gateErr");
+  var gateEmail = document.getElementById("gateEmail");
   if (petugasNama) gateNama.value = petugasNama;
+
+  if (!firebaseReady_()) { gateErr.textContent = "Firebase belum dikonfigurasi."; gateErr.style.display = "block"; return; }
+  if (!firebase.apps.length) firebase.initializeApp(RT_CONFIG.firebaseConfig);
+  var auth = firebase.auth();
+  auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function(){});
 
   function unlock(){
     gateWrap.style.display = "none";
@@ -300,26 +308,42 @@ document.addEventListener("DOMContentLoaded", function(){
     document.getElementById("namaPetugasTampil").textContent = petugasNama;
     initDashboard_();
   }
-  if (sessionStorage.getItem(SESSION_KEY) === "1" && petugasNama) unlock();
+  function isHumasUser_(user){
+    return !!(user && RT_CONFIG.humasUid && user.uid === RT_CONFIG.humasUid);
+  }
+  auth.onAuthStateChanged(function(user){
+    if (user && isHumasUser_(user) && petugasNama) unlock();
+    else if (user && !isHumasUser_(user)) {
+      auth.signOut();
+      gateErr.textContent = "Akun ini bukan akun Humas yang terdaftar.";
+      gateErr.style.display = "block";
+    }
+  });
 
   document.getElementById("btnMasuk").addEventListener("click", function(){
     var nama = gateNama.value.trim();
+    var email = gateEmail.value.trim();
     var pass = document.getElementById("gatePass").value;
-    if (nama && pass && pass === (RT_CONFIG.humasPassword || "")) {
+    if (!nama || !email || !pass) { gateErr.textContent = "Nama, email, dan password wajib diisi."; gateErr.style.display = "block"; return; }
+    var btn = this; btn.disabled = true; btn.textContent = "Memeriksa...";
+    auth.signInWithEmailAndPassword(email, pass).then(function(result){
+      if (!isHumasUser_(result.user)) {
+        return auth.signOut().then(function(){ throw new Error("not-humas"); });
+      }
       petugasNama = nama;
       localStorage.setItem("rt08_humas_nama", nama);
-      sessionStorage.setItem(SESSION_KEY, "1");
-      document.getElementById("gateErr").style.display = "none";
+      gateErr.style.display = "none";
       unlock();
-    } else {
-      document.getElementById("gateErr").style.display = "block";
-    }
+    }).catch(function(err){
+      console.warn("Firebase Auth humas gagal", err);
+      gateErr.textContent = err && err.message === "not-humas" ? "Akun ini bukan akun Humas yang terdaftar." : (/invalid-credential|wrong-password|user-not-found/i.test(String(err && err.code)) ? "Email atau password salah." : "Login ditolak. Pastikan akun Firebase dan Rules sudah dikonfigurasi.");
+      gateErr.style.display = "block";
+    }).finally(function(){ btn.disabled = false; btn.textContent = "Masuk"; });
   });
-  document.getElementById("gatePass").addEventListener("keydown", function(e){ if (e.key === "Enter") document.getElementById("btnMasuk").click(); });
+  ["gateNama","gateEmail","gatePass"].forEach(function(id){ document.getElementById(id).addEventListener("keydown", function(e){ if (e.key === "Enter") document.getElementById("btnMasuk").click(); }); });
 
   document.getElementById("btnGantiPetugas").addEventListener("click", function(){
-    sessionStorage.removeItem(SESSION_KEY);
-    location.reload();
+    auth.signOut().finally(function(){ localStorage.removeItem("rt08_humas_nama"); location.reload(); });
   });
 });
 
@@ -330,7 +354,7 @@ function initDashboard_(){
   dashboardInited_ = true;
 
   if (!firebaseReady_()) { document.getElementById("warnCard").style.display = "block"; return; }
-  firebase.initializeApp(RT_CONFIG.firebaseConfig);
+  if (!firebase.apps.length) firebase.initializeApp(RT_CONFIG.firebaseConfig);
   db = firebase.database();
 
   bulanKey = new Date().toISOString().slice(0, 7);
@@ -579,7 +603,7 @@ function ajukanSetoran_(){
   var newKey = db.ref("humasSetoran").push().key;
   var rumahKeys = {}; keys.forEach(function(k){ rumahKeys[k] = true; });
   var updates = {};
-  var batchBaru = { bulanKey: bulanKey, petugas: petugasNama, jumlah: total, rumahKeys: rumahKeys, status: "menunggu", createdAt: Date.now() };
+  var batchBaru = { bulanKey: bulanKey, petugas: petugasNama, jumlah: total, rumahKeys: rumahKeys, status: "menunggu", createdAt: Date.now(), createdBy: (firebase.auth().currentUser && firebase.auth().currentUser.email) || "" };
   updates["humasSetoran/" + newKey] = Object.assign({}, batchBaru, { createdAt: firebase.database.ServerValue.TIMESTAMP });
   keys.forEach(function(k){ updates["penarikan/" + bulanKey + "/" + k + "/setoranId"] = newKey; });
   document.getElementById("btnSetor").disabled = true;
@@ -739,13 +763,10 @@ function hapusCatatan_(){
   if (!currentRumah) return;
   var key = currentRumah.key, e = penarikanData[key];
   if (!e) return;
-  var pw = prompt("Masukkan password untuk menghapus catatan " + currentRumah.label + ":");
-  if (pw === null) return;
-  if (pw !== String(RT_CONFIG.hapusPassword || "123")) { showToast("Password salah. Catatan tidak dihapus."); return; }
   var batch = e.setoranId ? setoranData[e.setoranId] : null;
+  if (batch && batch.status === "diterima") { showToast("Catatan yang sudah diterima Bendahara tidak dapat dihapus."); return; }
+  if (e.status === "lunas_transfer") { showToast("Transfer yang sudah dikonfirmasi tidak dapat dihapus."); return; }
   var pesan = "Hapus catatan " + currentRumah.label + " (" + fmtRp_(e.jumlah) + ")?";
-  if (batch && batch.status === "diterima") pesan += "\n\nSetoran ini SUDAH diterima Admin. Catatan pemasukannya di tab Keuangan (admin) perlu dihapus manual.";
-  if (e.status === "lunas_transfer") pesan += "\n\nTransfer ini SUDAH dikonfirmasi Admin. Catatan pemasukannya di tab Keuangan (admin) perlu dihapus manual.";
   if (!confirm(pesan)) return;
   var updates = {};
   updates["penarikan/" + bulanKey + "/" + key] = null;
