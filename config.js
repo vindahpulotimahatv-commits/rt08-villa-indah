@@ -76,6 +76,9 @@ const RT_CONFIG = {
   //                  dengan KK (Kartu Keluarga) terpisah (Rp).
   iuranBulanan: 60000,
   iuranTambahanKK: 7500,
+  // bulanMulaiIuran: bulan pertama iuran dipakai sungguhan (format "TAHUN-BULAN").
+  //                  Bulan sebelumnya (masa simulasi) TIDAK dihitung sebagai tunggakan.
+  bulanMulaiIuran: "2026-10",
 
   // ---------- Ringkasan Kas RT ----------
   // Sudah TIDAK dipakai lagi — Saldo Kas, Pemasukan, dan Pengeluaran sekarang
