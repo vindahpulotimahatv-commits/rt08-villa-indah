@@ -434,7 +434,7 @@ textarea{min-height:76px;resize:vertical}
     </div>
     <div class="list-card">
       <div class="list-title">📊 Export Laporan Keuangan (Excel)</div>
-      <p class="sub" style="padding:0 14px;margin:0 0 8px;color:var(--muted);font-size:12px">Semua jenis keuangan — pemasukan, pengeluaran, dan iuran bulanan — dalam satu file Excel (Ringkasan, Transaksi, Pemasukan, Pengeluaran, Iuran Bulanan). Siap dikirim ke Ketua RT &amp; pengurus.</p>
+      <p class="sub" style="padding:0 14px;margin:0 0 8px;color:var(--muted);font-size:12px">Semua jenis keuangan dalam satu file Excel: Ringkasan, Transaksi, Pemasukan, Pengeluaran, <b>Iuran per Rumah</b> (tabel rumah × bulan, hijau = lunas), Detail Iuran, dan Rekap Petugas. Siap dikirim ke Ketua RT &amp; pengurus.</p>
       <div style="padding:0 14px 14px;display:grid;gap:10px">
         <div class="field"><label>Periode laporan</label>
           <select id="xlsPeriode">
@@ -483,6 +483,7 @@ textarea{min-height:76px;resize:vertical}
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="config.js"></script>
 <script src="warga-data.js"></script>
 <script src="warga-kontak.js"></script>
@@ -1469,6 +1470,245 @@ function initDashboard_(){
     var namaFile = "Laporan-Keuangan_RT08_" + P.label.replace(/[^A-Za-z0-9]+/g, "-") + ".xlsx";
     return { bytes: bytes, namaFile: namaFile, label: P.label, totMasuk: totMasuk, totKeluar: totKeluar, saldoAkhir: saldoAkhir };
   }
+
+  /* ---- EXCEL RAPI (ExcelJS): header berwarna, garis tabel, baris dibekukan, tabel iuran rumah x bulan ---- */
+  var XL_ = { navy: "FF1F3A5F", ok: "FFD9F2E0", tunggu: "FFFFF2CC", belum: "FFFAD7D7", kosong: "FFF2F2F2", total: "FFE8EEF7", putih: "FFFFFFFF", garis: "FFBFBFBF" };
+  function xlGaris_(){ var g = { style: "thin", color: { argb: XL_.garis } }; return { top: g, left: g, bottom: g, right: g }; }
+  function xlIsi_(cell, argb){ cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: argb } }; }
+  function xlJudul_(ws, baris, teks, kolomAkhir, opt){
+    opt = opt || {};
+    if (kolomAkhir > 1) ws.mergeCells(baris, 1, baris, kolomAkhir);
+    var c = ws.getCell(baris, 1); c.value = teks;
+    c.font = { bold: opt.tebal !== false, size: opt.size || 12, color: { argb: opt.warna || XL_.navy } };
+    c.alignment = { horizontal: opt.tengah === false ? "left" : "center", vertical: "middle" };
+    if (opt.isi) xlIsi_(c, opt.isi);
+    ws.getRow(baris).height = opt.tinggi || 20;
+  }
+  function xlHeader_(ws, baris, daftar){
+    var r = ws.getRow(baris); r.height = 32;
+    daftar.forEach(function(t, i){
+      var c = r.getCell(i + 1); c.value = t;
+      c.font = { bold: true, color: { argb: XL_.putih } }; xlIsi_(c, XL_.navy);
+      c.alignment = { horizontal: "center", vertical: "middle", wrapText: true }; c.border = xlGaris_();
+    });
+  }
+  function xlBaris_(ws, baris, nilai, opt){
+    opt = opt || {};
+    var r = ws.getRow(baris);
+    nilai.forEach(function(v, i){
+      var c = r.getCell(i + 1); c.value = (v === "" || v == null) ? null : v; c.border = xlGaris_();
+      var tengah = opt.tengah && opt.tengah.indexOf(i) >= 0;
+      c.alignment = { vertical: "middle", horizontal: tengah ? "center" : (typeof v === "number" ? "right" : "left"), wrapText: !!(opt.bungkus && opt.bungkus.indexOf(i) >= 0) };
+      if (typeof v === "number" && !tengah) c.numFmt = "#,##0";
+      if (opt.tebal) c.font = { bold: true };
+      if (opt.isi) xlIsi_(c, opt.isi);
+    });
+  }
+  function xlSheet_(wb, nama, lebar, xSplit, ySplit){
+    var view = { state: "frozen", ySplit: ySplit || 0 }; if (xSplit) view.xSplit = xSplit;
+    var ws = wb.addWorksheet(nama, { views: (ySplit || xSplit) ? [view] : [], pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 } });
+    ws.columns = lebar.map(function(w){ return { width: w }; });
+    return ws;
+  }
+  function kunciRumahXls_(s){ return String(s || "").toLowerCase().replace(/[\s\/\-\.]+/g, ""); }
+  function daftarBulanXls_(P, kunciData){
+    if (P.bMulai && P.bAkhir) {
+      var out = [], y = parseInt(P.bMulai.slice(0, 4), 10), m = parseInt(P.bMulai.slice(5, 7), 10), ye = parseInt(P.bAkhir.slice(0, 4), 10), me = parseInt(P.bAkhir.slice(5, 7), 10);
+      var sekarang = tglWIB_(), ys = parseInt(sekarang.slice(0, 4), 10), ms = parseInt(sekarang.slice(5, 7), 10);
+      if (ye > ys || (ye === ys && me > ms)) { ye = ys; me = ms; }   /* bulan yang belum tiba tidak ditampilkan */
+      while (y < ye || (y === ye && m <= me)) { out.push(y + "-" + pad2_(m)); m++; if (m > 12) { m = 1; y++; } }
+      return out;
+    }
+    return kunciData.slice().sort();
+  }
+  function statusSelXls_(e){
+    if (!e) return { teks: "–", isi: XL_.kosong, ok: false, tunggu: false, ada: false };
+    var st = statusIuranXls_(e);
+    if (st.ok) return { teks: null, isi: XL_.ok, ok: true, tunggu: false, ada: true };
+    if (st.tunggu) return { teks: e.status === "transfer_pending" ? "Transfer: menunggu" : "Cash: belum disetor", isi: XL_.tunggu, ok: false, tunggu: true, ada: true };
+    return { teks: "Belum bayar", isi: XL_.belum, ok: false, tunggu: false, ada: true };
+  }
+  async function bangunExcelRapi_(P){
+    var semua = keuanganSemua_.slice().sort(function(a, b){ return (a.tanggal || "").localeCompare(b.tanggal || "") || (a.createdAt || 0) - (b.createdAt || 0); });
+    var saldoAwal = 0, dlm = [];
+    semua.forEach(function(it){
+      var j = parseFloat(it.jumlah) || 0, t = it.tanggal || "", masuk = it.jenis === "masuk";
+      if (P.mulai && t < P.mulai) { saldoAwal += masuk ? j : -j; return; }
+      if (P.akhir && t > P.akhir) return;
+      dlm.push(it);
+    });
+    var totMasuk = 0, totKeluar = 0, perKat = {}, perBln = {};
+    dlm.forEach(function(it){
+      var j = parseFloat(it.jumlah) || 0, masuk = it.jenis === "masuk", kat = it.kategori || "Tanpa Kategori", bk = (it.tanggal || "").slice(0, 7);
+      if (masuk) totMasuk += j; else totKeluar += j;
+      perKat[kat] = perKat[kat] || { m: 0, k: 0 }; perKat[kat][masuk ? "m" : "k"] += j;
+      perBln[bk] = perBln[bk] || { m: 0, k: 0 }; perBln[bk][masuk ? "m" : "k"] += j;
+    });
+    var saldoAkhir = saldoAwal + totMasuk - totKeluar;
+
+    /* iuran bulanan pada periode */
+    var iuran = [], kunciBulan = {};
+    Object.keys(penarikanSemua_).forEach(function(bk){
+      if (P.bMulai && (bk < P.bMulai || bk > P.bAkhir)) return;
+      var bln = penarikanSemua_[bk] || {};
+      Object.keys(bln).forEach(function(rk){ if (bln[rk]) { iuran.push(Object.assign({ bulanKey: bk, rumahKey: rk }, bln[rk])); kunciBulan[bk] = 1; } });
+    });
+    iuran.sort(function(a, b){ return a.bulanKey.localeCompare(b.bulanKey) || String(a.rumah || "").localeCompare(String(b.rumah || ""), "id", { numeric: true }); });
+    var bulanList = daftarBulanXls_(P, Object.keys(kunciBulan));
+    var dasarTarif = RT_CONFIG.iuranBulanan || 60000;
+
+    /* daftar rumah: data induk warga + rumah lain yang ada di catatan iuran */
+    var rumahList = (typeof WARGA_DATA !== "undefined" ? WARGA_DATA : []).map(function(w){ return { key: kunciRumahXls_(w.blok + " " + w.no), rumah: w.blok + " No." + w.no, nama: w.nama || "" }; });
+    rumahList.sort(function(a, b){ return a.rumah.localeCompare(b.rumah, "id", { numeric: true }); });
+    var idx = {}; rumahList.forEach(function(h, i){ idx[h.key] = i; });
+    var petaIuran = {};   // kunci rumah -> bulan -> entri
+    iuran.forEach(function(e){
+      var k = idx[e.rumahKey] != null ? e.rumahKey : (typeof rtKunciRumah === "function" ? rtKunciRumah(e.rumah) : kunciRumahXls_(e.rumah));
+      if (idx[k] == null) { idx[k] = rumahList.length; rumahList.push({ key: k, rumah: e.rumah || e.rumahKey, nama: e.nama || "" }); }
+      (petaIuran[k] = petaIuran[k] || {})[e.bulanKey] = e;
+    });
+    var totalRumah = rumahList.length;
+
+    var judul = "LAPORAN KEUANGAN RT 08 / RW 021 VILLA INDAH PULO TIMAHA";
+    var wb = new ExcelJS.Workbook(); wb.creator = "Portal RT 08 Villa Indah"; wb.created = new Date();
+    var n, ws;
+
+    /* 1. Ringkasan */
+    ws = xlSheet_(wb, "Ringkasan", [34, 26, 26, 24, 20, 18], 0, 0);
+    xlJudul_(ws, 1, judul, 6, { size: 14, tinggi: 26 });
+    xlJudul_(ws, 2, "Periode: " + P.label, 6, { size: 11, warna: "FF000000", tebal: false });
+    xlJudul_(ws, 3, "Dicetak: " + tsIndo_(Date.now()), 6, { size: 10, warna: "FF666666", tebal: false });
+    n = 5;
+    function seksi_(t){ xlJudul_(ws, n, t, 6, { tengah: false, isi: XL_.total, size: 11 }); n++; }
+    seksi_("RINGKASAN KAS");
+    [["Saldo Awal Periode", saldoAwal], ["Total Pemasukan", totMasuk], ["Total Pengeluaran", totKeluar], ["Saldo Akhir Periode", saldoAkhir]].forEach(function(p, i){
+      xlBaris_(ws, n, [p[0], p[1]], { tebal: i === 3, isi: i === 3 ? XL_.total : null }); n++;
+    });
+    n++; seksi_("REKAP PER KATEGORI");
+    xlHeader_(ws, n++, ["Kategori", "Pemasukan (Rp)", "Pengeluaran (Rp)"]);
+    Object.keys(perKat).sort().forEach(function(k){ xlBaris_(ws, n++, [k, perKat[k].m, perKat[k].k]); });
+    n++; seksi_("REKAP PER BULAN");
+    xlHeader_(ws, n++, ["Bulan", "Pemasukan (Rp)", "Pengeluaran (Rp)", "Selisih (Rp)"]);
+    Object.keys(perBln).sort().forEach(function(k){ xlBaris_(ws, n++, [bulanLong_(k), perBln[k].m, perBln[k].k, perBln[k].m - perBln[k].k]); });
+    n++; seksi_("REKAP IURAN BULANAN (dari " + totalRumah + " rumah)");
+    xlHeader_(ws, n++, ["Bulan", "Rumah Lunas (Terkonfirmasi)", "Total Terkonfirmasi (Rp)", "Menunggu Konfirmasi", "Belum Bayar", "Belum Ditarik"]);
+    var rekapBulan = {};
+    bulanList.forEach(function(bk){
+      var o = rekapBulan[bk] = { lunas: 0, jml: 0, tunggu: 0, belum: 0 };
+      rumahList.forEach(function(h){
+        var e = (petaIuran[h.key] || {})[bk]; if (!e) return;
+        var st = statusIuranXls_(e);
+        if (st.ok) { o.lunas++; o.jml += parseFloat(e.jumlah) || 0; } else if (st.tunggu) o.tunggu++; else o.belum++;
+      });
+      o.kosong = totalRumah - o.lunas - o.tunggu - o.belum;
+      xlBaris_(ws, n++, [bulanLong_(bk), o.lunas, o.jml, o.tunggu, o.belum, o.kosong]);
+    });
+    n += 2;
+    ws.getCell(n, 2).value = "Bendahara"; ws.getCell(n, 4).value = "Mengetahui, Ketua RT";
+    [2, 4].forEach(function(c){ ws.getCell(n, c).font = { bold: true }; ws.getCell(n, c).alignment = { horizontal: "center" }; });
+    n += 5;
+    ws.getCell(n, 2).value = "( " + (RT_CONFIG.namaBendahara || "Bendahara") + " )"; ws.getCell(n, 4).value = "( " + (RT_CONFIG.namaKetua || "Ketua RT") + " )";
+    [2, 4].forEach(function(c){ ws.getCell(n, c).alignment = { horizontal: "center" }; });
+
+    /* 2. Iuran per Rumah (tabel rumah x bulan) */
+    var kolomIur = 3 + bulanList.length + 1;
+    ws = xlSheet_(wb, "Iuran per Rumah", [6, 16, 30].concat(bulanList.map(function(){ return 16; }), [18]), 3, 4);
+    xlJudul_(ws, 1, "IURAN BULANAN PER RUMAH — RT 08 / RW 021 VILLA INDAH PULO TIMAHA", Math.max(kolomIur, 5), { size: 13, tinggi: 24 });
+    xlJudul_(ws, 2, "Periode: " + P.label + "  •  Tarif Rp " + dasarTarif.toLocaleString("id-ID") + " per rumah (+ RUKEM per KK tambahan)", Math.max(kolomIur, 5), { size: 10, warna: "FF000000", tebal: false });
+    xlJudul_(ws, 3, "Hijau = lunas terkonfirmasi  •  Kuning = menunggu konfirmasi/setoran  •  Merah = belum bayar  •  Abu = belum ditarik", Math.max(kolomIur, 5), { size: 9, warna: "FF666666", tebal: false });
+    xlHeader_(ws, 4, ["No", "Blok / No. Rumah", "Nama Kepala Keluarga"].concat(bulanList.map(bulanLong_), ["Total Lunas (Rp)"]));
+    var brs = 5, totBulan = bulanList.map(function(){ return 0; }), totSemua = 0;
+    rumahList.forEach(function(h, i){
+      var tot = 0, nilai = [i + 1, h.rumah, h.nama], sel = [];
+      bulanList.forEach(function(bk, j){
+        var e = (petaIuran[h.key] || {})[bk], sc = statusSelXls_(e), jml = e ? (parseFloat(e.jumlah) || 0) : 0;
+        if (sc.ok) { nilai.push(jml); tot += jml; totBulan[j] += jml; } else nilai.push(sc.teks);
+        sel.push(sc);
+      });
+      nilai.push(tot); totSemua += tot;
+      xlBaris_(ws, brs, nilai, { tengah: [0] });
+      var r = ws.getRow(brs);
+      sel.forEach(function(sc, j){ var c = r.getCell(4 + j); xlIsi_(c, sc.isi); if (!sc.ok) c.alignment = { horizontal: "center", vertical: "middle" }; });
+      r.getCell(kolomIur).font = { bold: true };
+      brs++;
+    });
+    brs++;
+    function barisRingkas_(label, fn, fmtRp){
+      var nilai = ["", "", label];
+      bulanList.forEach(function(bk, j){ nilai.push(fn(bk, j)); });
+      nilai.push(fmtRp === "jml" ? totSemua : "");
+      xlBaris_(ws, brs, nilai, { tebal: true, isi: XL_.total }); brs++;
+    }
+    barisRingkas_("Rumah lunas", function(bk){ return rekapBulan[bk].lunas; });
+    barisRingkas_("TOTAL LUNAS (Rp)", function(bk, j){ return totBulan[j]; }, "jml");
+    barisRingkas_("Menunggu konfirmasi", function(bk){ return rekapBulan[bk].tunggu; });
+    barisRingkas_("Belum bayar", function(bk){ return rekapBulan[bk].belum; });
+    barisRingkas_("Belum ditarik", function(bk){ return rekapBulan[bk].kosong; });
+
+    /* 3. Detail iuran (daftar lengkap, bisa difilter) */
+    ws = xlSheet_(wb, "Detail Iuran", [6, 16, 16, 28, 18, 10, 32, 14, 14, 14, 15, 22, 16], 0, 4);
+    xlJudul_(ws, 1, "DETAIL IURAN BULANAN — " + P.label, 13, { size: 13, tinggi: 24 });
+    xlJudul_(ws, 2, "Iuran dasar dan RUKEM (tambahan KK) dipisah. Total dihitung hanya dari yang lunas terkonfirmasi.", 13, { size: 9, warna: "FF666666", tebal: false });
+    xlHeader_(ws, 4, ["No", "Bulan", "Blok / No. Rumah", "Nama Warga", "Petugas Humas", "Metode", "Status", "Iuran Dasar (Rp)", "RUKEM (Rp)", "Total (Rp)", "Tgl Konfirmasi", "Kode Kwitansi", "Kwitansi WA"]);
+    var b3 = 5, tD = 0, tR = 0, tT = 0;
+    iuran.forEach(function(e, i){
+      var st = statusIuranXls_(e), jml = parseFloat(e.jumlah) || 0;
+      var rukem = e.tambahanKK ? Math.max(0, jml - dasarTarif) : 0, dasar = jml - rukem;
+      if (st.ok) { tD += dasar; tR += rukem; tT += jml; }
+      var wa = e.kwitansiWA === "terkirim" ? "Terkirim" : e.kwitansiWA === "gagal" ? "Gagal" : e.kwitansiWA === "tanpa_nomor" ? "Tanpa nomor WA" : "-";
+      xlBaris_(ws, b3, [i + 1, bulanLong_(e.bulanKey), e.rumah || "", e.nama || "", e.petugas || "", e.metode === "cash" ? "Cash" : e.metode === "transfer" ? "Transfer" : "-", st.teks, dasar, rukem, jml, tsIndo_(e.confirmedAt), e.kodeKwitansi || "", wa], { tengah: [0, 5, 10] });
+      xlIsi_(ws.getCell(b3, 7), st.ok ? XL_.ok : st.tunggu ? XL_.tunggu : XL_.belum);
+      b3++;
+    });
+    xlBaris_(ws, b3, ["", "", "", "", "", "", "TOTAL LUNAS TERKONFIRMASI", tD, tR, tT, "", "", ""], { tebal: true, isi: XL_.total });
+    if (iuran.length) ws.autoFilter = { from: { row: 4, column: 1 }, to: { row: 4 + iuran.length, column: 13 } };
+
+    /* 4. Rekap per petugas Humas */
+    ws = xlSheet_(wb, "Rekap Petugas", [30, 16, 14, 16, 14, 26], 0, 4);
+    xlJudul_(ws, 1, "REKAP PER PETUGAS HUMAS — " + P.label, 6, { size: 13, tinggi: 24 });
+    xlHeader_(ws, 4, ["Petugas Humas", "Rumah Tercatat", "Bayar Cash", "Bayar Transfer", "Belum Bayar", "Total Lunas Terkonfirmasi (Rp)"]);
+    var pm = {};
+    iuran.forEach(function(e){
+      var pt = e.petugas || "(tanpa nama)", o = pm[pt] = pm[pt] || { rumah: 0, cash: 0, transfer: 0, belum: 0, jml: 0 }, st = statusIuranXls_(e);
+      o.rumah++; if (e.metode === "cash") o.cash++; else if (e.metode === "transfer") o.transfer++;
+      if (st.ok) o.jml += parseFloat(e.jumlah) || 0; else if (!st.tunggu) o.belum++;
+    });
+    var b4 = 5, t4 = { rumah: 0, cash: 0, transfer: 0, belum: 0, jml: 0 };
+    Object.keys(pm).sort().forEach(function(pt){ var o = pm[pt]; xlBaris_(ws, b4++, [pt, o.rumah, o.cash, o.transfer, o.belum, o.jml]); Object.keys(t4).forEach(function(k){ t4[k] += o[k]; }); });
+    xlBaris_(ws, b4, ["TOTAL", t4.rumah, t4.cash, t4.transfer, t4.belum, t4.jml], { tebal: true, isi: XL_.total });
+
+    /* 5. Transaksi (saldo berjalan) */
+    ws = xlSheet_(wb, "Transaksi", [6, 12, 13, 18, 56, 16, 16, 16], 0, 4);
+    xlJudul_(ws, 1, "SEMUA TRANSAKSI KAS — " + P.label, 8, { size: 13, tinggi: 24 });
+    xlHeader_(ws, 4, ["No", "Tanggal", "Jenis", "Kategori", "Keterangan", "Pemasukan (Rp)", "Pengeluaran (Rp)", "Saldo (Rp)"]);
+    var b5 = 5, saldo = saldoAwal;
+    if (P.mulai) { xlBaris_(ws, b5++, ["", "", "", "", "Saldo awal periode", "", "", saldo], { tebal: true, isi: XL_.kosong }); }
+    dlm.forEach(function(it, i){
+      var j = parseFloat(it.jumlah) || 0, masuk = it.jenis === "masuk"; saldo += masuk ? j : -j;
+      xlBaris_(ws, b5++, [i + 1, tglIndo_(it.tanggal), masuk ? "Pemasukan" : "Pengeluaran", it.kategori || "-", it.keterangan || "", masuk ? j : "", masuk ? "" : j, saldo], { tengah: [0, 1, 2], bungkus: [4] });
+    });
+    xlBaris_(ws, b5, ["", "", "", "", "TOTAL", totMasuk, totKeluar, saldoAkhir], { tebal: true, isi: XL_.total });
+
+    /* 6 & 7. Pemasukan / Pengeluaran */
+    ["masuk", "keluar"].forEach(function(jenis){
+      var w = xlSheet_(wb, jenis === "masuk" ? "Pemasukan" : "Pengeluaran", [6, 12, 20, 60, 16], 0, 4);
+      xlJudul_(w, 1, (jenis === "masuk" ? "PEMASUKAN KAS — " : "PENGELUARAN KAS — ") + P.label, 5, { size: 13, tinggi: 24 });
+      xlHeader_(w, 4, ["No", "Tanggal", "Kategori", "Keterangan", "Jumlah (Rp)"]);
+      var b = 5, tot = 0, nn = 0;
+      dlm.forEach(function(it){ if (it.jenis !== jenis) return; var j = parseFloat(it.jumlah) || 0; tot += j; xlBaris_(w, b++, [++nn, tglIndo_(it.tanggal), it.kategori || "-", it.keterangan || "", j], { tengah: [0, 1], bungkus: [3] }); });
+      xlBaris_(w, b, ["", "", "", "TOTAL", tot], { tebal: true, isi: XL_.total });
+    });
+
+    var buf = await wb.xlsx.writeBuffer();
+    var namaFile = "Laporan-Keuangan_RT08_" + P.label.replace(/[^A-Za-z0-9]+/g, "-") + ".xlsx";
+    return { bytes: new Uint8Array(buf), namaFile: namaFile, label: P.label, totMasuk: totMasuk, totKeluar: totKeluar, saldoAkhir: saldoAkhir };
+  }
+  /* Pintu masuk: pakai Excel rapi (ExcelJS). Kalau library-nya gagal termuat, otomatis pakai versi lama (SheetJS). */
+  async function bangunExcel_(){
+    var P = periodeXls_(); if (!P) return null;
+    if (typeof ExcelJS === "undefined") return bangunExcelKeuangan_();
+    return await bangunExcelRapi_(P);
+  }
   function unduhBlobAdmin_(bytes, nama, mime){
     var url = URL.createObjectURL(new Blob([bytes], { type: mime }));
     var a = document.createElement("a"); a.href = url; a.download = nama; document.body.appendChild(a); a.click(); a.remove();
@@ -1482,13 +1722,13 @@ function initDashboard_(){
   document.getElementById("xlsPeriode").addEventListener("change", function(){
     document.getElementById("xlsBulanWrap").style.display = this.value === "pilih" ? "block" : "none";
   });
-  document.getElementById("btnXlsUnduh").addEventListener("click", function(){
-    try { var x = bangunExcelKeuangan_(); if (!x) return; unduhBlobAdmin_(x.bytes, x.namaFile, XLSX_MIME_); showToast("Excel diunduh: " + x.namaFile); }
+  document.getElementById("btnXlsUnduh").addEventListener("click", async function(){
+    try { var x = await bangunExcel_(); if (!x) return; unduhBlobAdmin_(x.bytes, x.namaFile, XLSX_MIME_); showToast("Excel diunduh: " + x.namaFile); }
     catch (e) { console.error(e); showToast(e && e.message ? e.message : "Gagal membuat Excel."); }
   });
   document.getElementById("btnXlsKirim").addEventListener("click", async function(){
     var btn = this, x;
-    try { x = bangunExcelKeuangan_(); if (!x) return; } catch (e) { console.error(e); showToast(e && e.message ? e.message : "Gagal membuat Excel."); return; }
+    try { x = await bangunExcel_(); if (!x) return; } catch (e) { console.error(e); showToast(e && e.message ? e.message : "Gagal membuat Excel."); return; }
     var pesan = "Laporan Keuangan RT 08 / RW 021 Villa Indah — periode *" + x.label + "*.\n" +
       "Pemasukan: " + fmtRp_(x.totMasuk) + "\nPengeluaran: " + fmtRp_(x.totKeluar) + "\nSaldo akhir: *" + fmtRp_(x.saldoAkhir) + "*\n\nFile Excel terlampir. Dikirim oleh Bendahara lewat Portal RT 08.";
     if (gatewayAktif_()) {
