@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="id"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#123a6b"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="assets/icon-192.png"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="RT08 Villa Indah"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Beranda | RT 08 Villa Indah Pulo Timaha</title><style>
+<title>Isi Pulsa, Token &amp; Paket Data | RT 08 Villa Indah Pulo Timaha</title><style>
 :root{
   --green:#123a6b;
   --green2:#1c4a86;
@@ -98,8 +98,6 @@ img,svg{max-width:100%;display:block}
 .live{display:inline-flex;gap:7px;align-items:center;font-size:11px;font-weight:900;color:var(--green)}
 .live:before{content:"";width:8px;height:8px;border-radius:50%;background:#3fa9e8;box-shadow:0 0 0 5px rgba(63,169,232,.14)}
 .house-art{margin:12px 0 6px;position:relative;z-index:1}
-.hero-photo{width:100%;height:220px;object-fit:cover;border-radius:26px;display:block;border:1px solid rgba(18,58,107,.08)}
-@media(max-width:640px){.hero-photo{height:190px}}
 .board-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;position:relative;z-index:1}
 .board-stat{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px}
 .board-stat strong{display:block;color:var(--green);font-size:18px}
@@ -141,7 +139,6 @@ img,svg{max-width:100%;display:block}
 .badge{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.45px;background:#fdeaea;color:var(--red);margin-bottom:6px}
 .badge.green{background:var(--mint);color:var(--green)}
 .badge.blue{background:#e9f1fb;color:var(--blue)}
-.badge.gold{background:#fff7e8;color:#8a6a10}
 .announcement h4{margin:0 0 4px;font-size:15px}
 .meta{color:var(--muted);font-size:12px;line-height:1.5;margin:0}
 .agenda-item{display:flex;gap:14px;align-items:flex-start;padding:13px 0;border-bottom:1px solid #e9eef7}
@@ -227,6 +224,7 @@ linear-gradient(135deg,#dde7f8,#f8e8bc)}
 .contact-card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
 .contact-icon{width:50px;height:50px;border-radius:15px;background:var(--mint);display:grid;place-items:center;font-size:22px}
 .contact-card strong{display:block}.contact-card span{font-size:12px;color:var(--muted)}
+.contact-name{display:block;font-size:11px;color:#c49325;font-weight:800;margin-top:2px}
 
 .callout{
   background:linear-gradient(135deg,#fff8e8,#fff);border:1px solid #ecd8a0;border-radius:24px;padding:22px;
@@ -244,7 +242,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 
 .mobile-nav{
   display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:120;
-  grid-template-columns:repeat(6,minmax(0,1fr));padding:8px;background:rgba(8,20,44,.95);backdrop-filter:blur(15px);
+  grid-template-columns:repeat(6,1fr);padding:8px;background:rgba(8,20,44,.95);backdrop-filter:blur(15px);
   border:1px solid rgba(213,166,43,.28);border-radius:21px;box-shadow:0 16px 45px rgba(0,0,0,.4)
 }
 .mobile-nav a{text-align:center;padding:7px 3px;border-radius:13px;font-size:9px;font-weight:900;color:rgba(255,255,255,.65)}
@@ -306,60 +304,27 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 .visual-board{position:relative}
 @media(max-width:640px){.quick-floating{right:3px;bottom:20px}}
 
-/* Bumper / opening splash */
-.bumper{
-  position:fixed;inset:0;z-index:9999;background:#081428;
-  display:flex;align-items:center;justify-content:center;
-  transition:opacity .6s ease;
-}
-.bumper img{
-  width:100%;height:100%;object-fit:cover;display:block;
-}
-.bumper-hint{
-  position:absolute;left:0;right:0;bottom:26px;text-align:center;
-  color:rgba(255,255,255,.85);font-size:12px;font-weight:800;letter-spacing:.4px;
-  animation:bumperPulse 1.8s ease-in-out infinite;
-}
-@keyframes bumperPulse{0%,100%{opacity:.55}50%{opacity:1}}
-.bumper.fade-out{opacity:0;pointer-events:none}
-body.bumper-lock{overflow:hidden}
-
-.bh-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.bh-card{display:block;background:#fff;border-radius:20px;overflow:hidden;box-shadow:var(--shadow);transition:.2s}
-.bh-card:hover{transform:translateY(-4px)}
-.bh-img{position:relative;height:130px;display:flex;align-items:center;justify-content:center;font-size:46px;background:linear-gradient(135deg,#123a6b,#081c38);overflow:hidden}
-.bh-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.bh-body{padding:13px 15px 16px}
-.bh-body span{display:inline-block;font-size:11px;font-weight:900;padding:4px 10px;border-radius:999px;background:#e7edf9;color:#123a6b}
-.bh-body h4{margin:9px 0 5px;font-size:15px;line-height:1.4;color:#12213f}
-.bh-body small{color:#59657f;font-size:11.5px}
-@media(max-width:900px){.bh-grid{grid-template-columns:1fr}}
-
-.mg-card{background:#fff;border-radius:26px;padding:22px 12px 10px;box-shadow:var(--shadow)}
-.mg-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px 6px}
-.mg-tile{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;color:var(--ink);-webkit-tap-highlight-color:transparent}
-.mg-ic{width:66px;height:66px;border-radius:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px rgba(10,25,56,.18);transition:.2s}
-.mg-ic svg{width:34px;height:34px}
-.mg-tile:active .mg-ic,.mg-tile:hover .mg-ic{transform:translateY(-3px)}
-.mg-wide{grid-column:1/-1;flex-direction:row;justify-content:center;gap:14px;padding:4px 0 8px}.mg-wide .mg-lb{padding-bottom:0;text-align:left;font-size:13px}
-.mg-lb{font-size:11.5px;font-weight:800;line-height:1.3;padding-bottom:12px;letter-spacing:-.1px}
-.bt-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:16px;padding:14px 18px;border-radius:16px;background:linear-gradient(135deg,#123a6b,#081c3a);border:1px solid rgba(213,166,43,.3)}
-.bt-bar h2{margin:0;font-size:14px;color:#fff;letter-spacing:-.2px}
-.bt-bar a{font-size:12px;font-weight:800;color:#f3cf6a;white-space:nowrap}
-.bt-list{background:#fff;border-radius:20px;margin-top:10px;padding:4px 14px;box-shadow:var(--shadow)}
-.bt-item{display:flex;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line);color:var(--ink)}
-.bt-item:last-child{border-bottom:0}
-.bt-th{position:relative;flex:0 0 104px;height:74px;border-radius:14px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:30px;background:linear-gradient(135deg,#123a6b,#081c3a)}
-.bt-th img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.bt-tx h4{margin:0 0 7px;font-size:14.5px;line-height:1.35;color:#12213f}
-.bt-tx small{color:#59657f;font-size:11.5px}
-@media(min-width:900px){.mg-grid{grid-template-columns:repeat(9,1fr)}.mg-wide{grid-column:auto;flex-direction:column;gap:8px;padding:0}.mg-wide .mg-lb{text-align:center;font-size:11.5px;padding-bottom:12px}.bt-list{padding:4px 22px}}
+.pl-opts,.pl-chips{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.pl-opt,.pl-chip{font:inherit;border:2px solid var(--line);background:#fff;color:var(--ink);border-radius:18px;padding:14px 6px;text-align:center;font-weight:900;cursor:pointer;transition:.15s}
+.pl-opt b{display:block;font-size:32px;margin-bottom:6px}
+.pl-opt small{display:block;font-weight:600;color:var(--muted);font-size:11px;margin-top:3px;line-height:1.35}
+.pl-chip{font-size:15px;padding:14px 4px}
+.pl-opt.on,.pl-chip.on{border-color:var(--gold);background:var(--cream);box-shadow:0 6px 16px rgba(213,166,43,.25)}
+.pl-step{margin-top:22px}.pl-step h3{margin:0 0 10px;font-size:16px}
+.pl-num{width:100%;min-height:54px;border:2px solid var(--line);border-radius:14px;padding:0 14px;font:inherit;font-size:19px;font-weight:800;letter-spacing:.5px;color:var(--ink);background:#fff}
+.pl-num:focus{outline:none;border-color:var(--blue)}
+.pl-hint{margin:8px 2px 0;font-size:12.5px;color:var(--muted);line-height:1.5;min-height:18px}
+.pl-hint.ok{color:#178a47;font-weight:800}.pl-hint.err{color:var(--red);font-weight:700}
+.pl-sum{background:var(--mint);border-radius:20px;padding:18px;margin-top:22px}
+.pl-sum dl{margin:0 0 14px;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+.pl-sum dt{color:var(--muted)}.pl-sum dd{margin:0;font-weight:900;text-align:right;word-break:break-all}
+.pl-act{display:flex;gap:10px;flex-wrap:wrap}.pl-act .btn{flex:1 1 200px}
+.pl-note{margin-top:12px;font-size:12px;color:var(--muted);line-height:1.6}
+.btn-ghost{background:#fff;color:var(--ink);border:2px solid var(--line)}
+[hidden]{display:none!important}
+@media(max-width:520px){.pl-opts,.pl-chips{gap:8px}.pl-opt b{font-size:28px}}
 </style>
 </head><body>
-<div class="bumper" id="bumper">
-  <img src="assets/bumper-intro.jpg" alt="Selamat Datang di Portal RT 08 / RW 021 Villa Indah Pulo Timaha">
-  <div class="bumper-hint">Ketuk layar untuk melanjutkan</div>
-</div>
 <div class="ticker"><div class="container"><div class="ticker-track">
 <span>📢 Portal Digital RT 08 / RW 021 Villa Indah Pulo Timaha</span>
 <span>🧹 Kerja Bakti • 30 Agustus 2026 • 07.00 WIB</span>
@@ -371,67 +336,35 @@ body.bumper-lock{overflow:hidden}
 <a class="header-banner" href="index.html"><img src="assets/header-banner.jpg" alt="RT 08 / RW 021 Villa Indah Pulo Timaha" loading="lazy"></a>
 <header class="site-header">
   <div class="container nav">
-    <nav class="desktop-nav"><a class="active" href="index.html">Beranda</a><a class="" href="informasi.html">Informasi</a><a class="" href="agenda.html">Agenda</a><a class="" href="layanan.html">Layanan</a><a class="" href="transparansi.html">Transparansi</a><a class="" href="umkm.html">UMKM</a><a class="" href="galeri.html">Galeri</a><a class="" href="kontak.html">Kontak</a><a class="" href="livechat.html">💬 Live Chat</a><a class="nav-cta" href="layanan.html#lapor">🚨 Lapor</a></nav>
+    <nav class="desktop-nav"><a class="" href="index.html">Beranda</a><a class="" href="informasi.html">Informasi</a><a class="" href="agenda.html">Agenda</a><a class="" href="layanan.html">Layanan</a><a class="" href="transparansi.html">Transparansi</a><a class="" href="umkm.html">UMKM</a><a class="" href="galeri.html">Galeri</a><a class="" href="kontak.html">Kontak</a><a class="" href="livechat.html">💬 Live Chat</a><a class="nav-cta" href="layanan.html#lapor">🚨 Lapor</a></nav>
   </div>
 </header>
 <main>
-<section class="hero"><div class="hero-glow"></div>
-<div class="container hero-grid">
-  <div>
-    <span class="kicker">● APLIKASI WARGA RT 08 / RW 021</span>
-    <h1>RT 08<br>lebih dekat<br>dengan warganya.</h1>
-    <p>Informasi, layanan, agenda, kas, UMKM, dan berbagai kebutuhan warga tersedia dalam satu portal.</p>
-    <div class="hero-actions"><a class="btn btn-light" href="informasi.html">📢 Info Terbaru</a><a class="btn btn-outline" href="layanan.html">📝 Layanan Warga</a></div>
-  </div>
-  <div class="visual-board">
-    <div class="visual-board-inner">
-      <div class="visual-top"><strong>Villa Indah Pulo Timaha</strong><span class="live">Portal Aktif</span></div>
-      <div class="house-art"><img class="hero-photo" src="assets/foto-warga-hut-ri.jpg" alt="Warga RT 08 Villa Indah Pulo Timaha merayakan HUT RI" loading="eager"></div>
-      <div class="board-stats">
-        <div class="board-stat"><strong id="statKK">—</strong><span>Jumlah KK</span></div>
-        <div class="board-stat"><strong id="statAgenda">—</strong><span>Agenda Aktif</span></div>
-        <div class="board-stat"><strong id="statInfo">—</strong><span>Pengumuman</span></div>
-      </div>
-    </div><div class="quick-floating">✨ Portal Warga Modern</div>
-  </div>
+<section class="page-hero"><div class="container"><div class="breadcrumb">BERANDA / ISI PULSA</div><h1>Isi Pulsa, Token &amp; Paket Data</h1><p>Pilih kebutuhan Anda, isi nomor, lalu lanjutkan pembayaran di isipulsa.web.id. Cukup beberapa ketukan dari HP.</p></div></section>
+<section class="section"><div class="container" style="max-width:720px"><div class="card">
+
+<div class="pl-step" style="margin-top:0"><h3>1. Mau beli apa?</h3>
+<div class="pl-opts" id="plOpts">
+  <button type="button" class="pl-opt" data-svc="pulsa"><b>📱</b>Pulsa<small>Semua operator</small></button>
+  <button type="button" class="pl-opt" data-svc="token"><b>⚡</b>Token Listrik<small>PLN prabayar</small></button>
+  <button type="button" class="pl-opt" data-svc="data"><b>🌐</b>Paket Data<small>Internet HP</small></button>
+</div></div>
+
+<div class="pl-step" id="stNum" hidden><h3 id="lbNum">2. Nomor HP</h3>
+<input class="pl-num" id="inNum" type="tel" inputmode="numeric" autocomplete="off" maxlength="16" placeholder="08xxxxxxxxxx">
+<div class="pl-hint" id="hint"></div></div>
+
+<div class="pl-step" id="stNom" hidden><h3>3. Pilih nominal</h3>
+<div class="pl-chips" id="chips"></div></div>
+
+<div class="pl-sum" id="sum" hidden>
+<dl><dt>Layanan</dt><dd id="sSvc"></dd><dt id="sNumLb">Nomor</dt><dd id="sNum"></dd><dt>Operator</dt><dd id="sOp"></dd><dt id="sNomLb">Nominal</dt><dd id="sNom"></dd></dl>
+<div class="pl-act"><a class="btn btn-gold" id="btnGo" target="_blank" rel="noopener">Lanjut Bayar ↗</a><button type="button" class="btn btn-ghost" id="btnCopy">📋 Salin Nomor</button></div>
+<div class="pl-note" id="sNote"></div>
 </div>
-</section>
 
-<section class="section-tight menu-grid-sec">
-<div class="container">
-  <div class="mg-card"><div class="mg-grid"><a class="mg-tile" href="informasi.html"><span class="mg-ic" style="background:linear-gradient(145deg,#2f7df6,#1a56c4)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span><span class="mg-lb">Informasi<br>&amp; Pengumuman</span></a><a class="mg-tile" href="agenda.html"><span class="mg-ic" style="background:linear-gradient(145deg,#2fb866,#178a47)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg></span><span class="mg-lb">Agenda<br>Kegiatan</span></a><a class="mg-tile" href="layanan.html"><span class="mg-ic" style="background:linear-gradient(145deg,#ffb020,#f07c00)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="mg-lb">Layanan<br>Warga</span></a><a class="mg-tile" href="transparansi.html"><span class="mg-ic" style="background:linear-gradient(145deg,#9b5cf6,#6d28d9)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg></span><span class="mg-lb">Transparansi<br>Kas RT</span></a><a class="mg-tile" href="umkm.html"><span class="mg-ic" style="background:linear-gradient(145deg,#ff5c8d,#e0245e)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 1.5-5h15L21 9"/><path d="M3 9v0a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M4 12v8h16v-8"/><path d="M10 20v-5h4v5"/></svg></span><span class="mg-lb">UMKM<br>Warga</span></a><a class="mg-tile" href="galeri.html"><span class="mg-ic" style="background:linear-gradient(145deg,#1fb8b8,#0e8a94)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></svg></span><span class="mg-lb">Galeri<br>Kegiatan</span></a><a class="mg-tile" href="layanan.html#lapor"><span class="mg-ic" style="background:linear-gradient(145deg,#f2545b,#d62839)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/></svg></span><span class="mg-lb">Lapor &amp;<br>Pengaduan</span></a><a class="mg-tile" href="kontak.html"><span class="mg-ic" style="background:linear-gradient(145deg,#4b5563,#2b323d)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span><span class="mg-lb">Kontak<br>Penting</span></a><a class="mg-tile mg-wide" href="pulsa.html"><span class="mg-ic" style="background:linear-gradient(145deg,#14b8a6,#0f766e)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/><path d="m12.5 6-2 4h3l-2 4"/></svg></span><span class="mg-lb">Isi Pulsa,<br>Token &amp; Paket Data</span></a></div></div>
-</div>
-</section>
-
-<section class="section-tight">
-<div class="container callout">
-  <div><h3>🚨 Ada masalah di lingkungan?</h3><p>Lampu jalan mati, sampah, drainase, keamanan, atau fasilitas umum bisa dilaporkan dari portal.</p></div>
-  <a class="btn btn-gold" href="layanan.html#lapor">Buat Laporan</a>
-</div>
-</section>
-
-<section class="section-tight">
-<div class="container grid-2">
-  <div class="card">
-    <div class="section-heading"><div><h2 style="font-size:24px">Info Terbaru</h2><p>Yang penting terlihat dulu.</p></div><a class="link-more" href="informasi.html">Semua info →</a></div>
-    <div id="infoListHome"><div class="announcement"><p class="meta">Memuat informasi...</p></div></div>
-  </div>
-  <div class="card">
-    <div class="section-heading"><div><h2 style="font-size:24px">Agenda Terdekat</h2><p>Ringkas tanpa kalender yang ramai.</p></div><a class="link-more" href="agenda.html">Lihat agenda →</a></div>
-    <div id="agendaListHome"><div class="agenda-item"><p class="meta">Memuat agenda...</p></div></div>
-  </div>
-</div>
-</section>
-
-<section class="section-tight">
-<div class="container">
-  <div class="bt-bar"><h2>Berita Terkini (InfoBekasi.co.id)</h2><a href="berita.html">Lihat Semua &rsaquo;</a></div>
-  <div class="bt-list" id="beritaHome"><div class="meta" style="padding:16px">Memuat berita...</div></div>
-</div>
-</section>
-
-
-
+<div class="pl-note" style="margin-top:18px">ℹ️ Transaksi dan pembayaran diproses di <b>isipulsa.web.id</b>, layanan pihak ketiga di luar pengurus RT. Harga dan biaya mengikuti situs tersebut. Periksa kembali nomor sebelum membayar.</div>
+</div></div></section>
 </main>
 <footer class="footer">
   <div class="container footer-grid">
@@ -443,103 +376,57 @@ body.bumper-lock{overflow:hidden}
       <a href="informasi.html">Pengumuman</a><a href="agenda.html">Agenda</a>
       <a href="layanan.html">Layanan Warga</a><a href="transparansi.html">Kas RT</a>
       <a href="umkm.html">UMKM Warga</a><a href="galeri.html">Galeri</a>
-      <a href="kontak.html">Kontak Penting</a><a href="pulsa.html">Isi Pulsa &amp; Token</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a>
+      <a href="kontak.html">Kontak Penting</a><a href="#" id="navGrupWA">💬 Grup WhatsApp Warga</a>
     </div>
   </div>
-</footer><nav class="mobile-nav"><a class="active" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="kontak.html"><b>📞</b>Kontak</a><a class="" href="livechat.html"><b>💬</b>Live Chat</a></nav>
-<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
-<script src="config.js"></script><script>
-(function(){
-  var bumper=document.getElementById("bumper");
-  if(!bumper) return;
-  if(sessionStorage.getItem("rt08BumperSeen")){
-    bumper.style.display="none";
-    return;
-  }
-  document.body.classList.add("bumper-lock");
-  function closeBumper(){
-    if(bumper.classList.contains("fade-out")) return;
-    bumper.classList.add("fade-out");
-    document.body.classList.remove("bumper-lock");
-    sessionStorage.setItem("rt08BumperSeen","1");
-    setTimeout(function(){ bumper.style.display="none"; },650);
-  }
-  var autoTimer=setTimeout(closeBumper,3200);
-  bumper.addEventListener("click",function(){ clearTimeout(autoTimer); closeBumper(); });
-})();
+</footer><nav class="mobile-nav"><a class="" href="index.html"><b>🏠</b>Beranda</a><a class="" href="informasi.html"><b>📢</b>Info</a><a class="" href="agenda.html"><b>📅</b>Agenda</a><a class="" href="berita.html"><b>📰</b>Berita</a><a class="" href="layanan.html"><b>📝</b>Layanan</a><a class="" href="livechat.html"><b>💬</b>Live Chat</a></nav><script src="config.js"></script><script>
 document.addEventListener("DOMContentLoaded",()=>{
   const g=document.getElementById("navGrupWA");
   if(g){
     if(RT_CONFIG.linkGrupWA){ g.href=RT_CONFIG.linkGrupWA; g.target="_blank"; g.rel="noopener"; }
     else { g.href="kontak.html"; g.removeAttribute("target"); }
   }
-  const kk=document.getElementById("statKK");
-  if(kk) kk.textContent = RT_CONFIG.jumlahKK || "—";
-
-  var ICON_KATEGORI_H={Penting:"📣",Kegiatan:"🧹",Fasilitas:"💡",Keamanan:"🛡️"};
-  var BADGE_KATEGORI_H={Penting:"",Kegiatan:"green",Fasilitas:"blue",Keamanan:"gold"};
-  var ICON_JENIS_AGENDA_H={"Rapat":"👥","Lingkungan":"🧹","Acara Warga":"🎉","Pemuda & Olahraga":"⚽","Lainnya":"📌"};
-  var BULAN_ID_H=["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
-  function escH_(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
-  function fmtTglLongH_(iso){
-    if(!iso) return "";
-    var BULAN=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
-    var p=iso.split("-"); return parseInt(p[2],10)+" "+(BULAN[parseInt(p[1],10)-1]||"")+" "+p[0];
+  function setContact(id, value){
+    const el=document.getElementById(id);
+    if(!el) return;
+    const digits = String(value||"").replace(/[^0-9+]/g,"");
+    if(digits && digits.replace(/\D/g,"").length>=6){
+      el.innerHTML = "";
+      const a=document.createElement("a");
+      a.href="tel:"+digits; a.textContent=value; a.style.color="inherit";
+      el.appendChild(a);
+    } else {
+      el.textContent = value || "-";
+    }
   }
-  function fmtTglH_(iso){
-    if(!iso) return {d:"--",m:"-"};
-    var p=iso.split("-"); var d=parseInt(p[2],10); var m=BULAN_ID_H[parseInt(p[1],10)-1]||"-";
-    return {d:(d<10?"0"+d:d),m:m};
+  setContact("cKetua", RT_CONFIG.teleponKetua);
+  setContact("cSekretaris", RT_CONFIG.teleponSekretaris);
+  setContact("cBendahara", RT_CONFIG.teleponBendahara);
+  setContact("cKeamanan", RT_CONFIG.teleponKeamanan);
+  setContact("cPemadam", RT_CONFIG.teleponPemadam);
+  setContact("cAmbulans", RT_CONFIG.teleponAmbulans);
+  function setName(id, value){
+    const el = document.getElementById(id);
+    if (el && value) el.textContent = "Pak " + value;
   }
-  var elInfo = document.getElementById("infoListHome");
-  var elAgenda = document.getElementById("agendaListHome");
-  var statAgendaEl = document.getElementById("statAgenda");
-  var statInfoEl = document.getElementById("statInfo");
-  var cfgH = RT_CONFIG.firebaseConfig || {};
-  if(!(cfgH.apiKey && cfgH.databaseURL && cfgH.appId)){
-    if(elInfo) elInfo.innerHTML='<div class="announcement"><p class="meta">Belum ada pengumuman.</p></div>';
-    if(elAgenda) elAgenda.innerHTML='<div class="agenda-item"><p class="meta">Belum ada agenda terjadwal.</p></div>';
-    if(statAgendaEl) statAgendaEl.textContent="0";
-    if(statInfoEl) statInfoEl.textContent="0";
-    return;
+  setName("cNamaKetua", RT_CONFIG.namaKetua);
+  setName("cNamaSekretaris", RT_CONFIG.namaSekretaris);
+  setName("cNamaBendahara", RT_CONFIG.namaBendahara);
+  setName("cNamaKeamanan", RT_CONFIG.namaKeamanan);
+
+  const btnH=document.getElementById("btnHubKeamanan");
+  if(btnH){
+    btnH.addEventListener("click", e=>{
+      e.preventDefault();
+      if(RT_CONFIG.waKeamanan){
+        window.open(rtWaLink(RT_CONFIG.waKeamanan,"Halo Keamanan RT 08, saya membutuhkan bantuan."), "_blank", "noopener");
+      } else if(RT_CONFIG.teleponKeamanan){
+        window.location.href = "tel:"+RT_CONFIG.teleponKeamanan.replace(/[^0-9+]/g,"");
+      } else {
+        showToast("Nomor keamanan belum diatur admin di config.js.");
+      }
+    });
   }
-  if(!firebase.apps.length) firebase.initializeApp(cfgH);
-  var dbH = firebase.database();
-
-  dbH.ref("informasi").on("value", function(snap){
-    var val = snap.val() || {};
-    var items = Object.keys(val).map(function(k){ return val[k]; });
-    items.sort(function(a,b){ return (b.tanggal||"").localeCompare(a.tanggal||"") || (b.createdAt||0)-(a.createdAt||0); });
-    if(statInfoEl) statInfoEl.textContent = items.length;
-    if(!elInfo) return;
-    var list = items.slice(0,3);
-    if(list.length===0){ elInfo.innerHTML='<div class="announcement"><p class="meta">Belum ada pengumuman.</p></div>'; return; }
-    elInfo.innerHTML = list.map(function(it){
-      var icon = ICON_KATEGORI_H[it.kategori] || "📣";
-      var badgeCls = BADGE_KATEGORI_H[it.kategori] || "";
-      var meta = fmtTglLongH_(it.tanggal) + (it.isi ? " • " + it.isi : "");
-      return '<div class="announcement"><div class="ann-icon">'+icon+'</div><div><span class="badge '+badgeCls+'">'+escH_(it.kategori||"Info")+'</span><h4>'+escH_(it.judul)+'</h4><p class="meta">'+escH_(meta)+'</p></div></div>';
-    }).join("");
-  });
-
-  dbH.ref("agenda").on("value", function(snap){
-    var val = snap.val() || {};
-    var items = Object.keys(val).map(function(k){ return val[k]; });
-    items.sort(function(a,b){ return (a.tanggal||"").localeCompare(b.tanggal||""); });
-    var today = new Date().toISOString().slice(0,10);
-    var upcoming = items.filter(function(it){ return (it.tanggal||"") >= today; });
-    if(statAgendaEl) statAgendaEl.textContent = upcoming.length;
-    var list = (upcoming.length ? upcoming : items).slice(0,3);
-    if(!elAgenda) return;
-    if(list.length===0){ elAgenda.innerHTML='<div class="agenda-item"><p class="meta">Belum ada agenda terjadwal.</p></div>'; return; }
-    elAgenda.innerHTML = list.map(function(it){
-      var dt=fmtTglH_(it.tanggal);
-      var icon = ICON_JENIS_AGENDA_H[it.jenis] || "📅";
-      var meta=[it.waktu?it.waktu+" WIB":"", it.lokasi||""].filter(Boolean).join(" • ") || it.keterangan || "-";
-      return '<div class="agenda-item"><div class="datebox">'+dt.d+'<small>'+dt.m+'</small></div><div><h4>'+icon+' '+escH_(it.judul)+'</h4><p class="meta">'+escH_(meta)+'</p></div></div>';
-    }).join("");
-  });
 });
 function showToast(msg){
   let t=document.querySelector(".toast");
@@ -548,19 +435,58 @@ function showToast(msg){
   clearTimeout(window.toastTimer);
   window.toastTimer=setTimeout(()=>t.classList.remove("show"),2600);
 }
-</script>
-<script>
+</script><script>
 (function(){
-  var el=document.getElementById("beritaHome"); if(!el) return;
-  var IK={Ekonomi:"🛒",Lingkungan:"🌳",Kesehatan:"🏥",Peristiwa:"🚨",Olahraga:"⚽",Kuliner:"🍜",Travel:"🧳",Sejarah:"📜",Events:"🎉"};
-  var B=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
-  function e(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
-  fetch("berita.json?t="+Date.now()).then(function(r){return r.json()}).then(function(d){
-    var it=(d.items||[]).slice().sort(function(a,b){return b.tgl.localeCompare(a.tgl)}).slice(0,3);
-    if(!it.length){el.innerHTML='<div class="meta" style="padding:16px">Belum ada berita.</div>';return}
-    el.innerHTML=it.map(function(n){var p=n.tgl.split("-");
-      return '<a class="bt-item" href="'+e(n.link)+'" target="_blank" rel="noopener"><div class="bt-th">'+(IK[n.kat]||"📰")+(n.img?'<img src="'+e(n.img)+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">':'')+'</div><div class="bt-tx"><h4>'+e(n.judul)+'</h4><small>'+(+p[2])+" "+B[+p[1]-1]+" "+p[0]+' &nbsp;|&nbsp; '+e(d.sumber||"infobekasi.co.id")+'</small></div></a>'}).join("");
-  }).catch(function(){el.innerHTML='<div class="meta" style="padding:16px">Berita belum bisa dimuat.</div>'});
+// Ubah link di sini bila situs punya halaman khusus tiap layanan
+var LINK={pulsa:"https://isipulsa.web.id/",token:"https://isipulsa.web.id/",data:"https://isipulsa.web.id/"};
+var CFG={
+ pulsa:{t:"Pulsa",lb:"2. Nomor HP",ph:"08xxxxxxxxxx",nom:[5000,10000,20000,25000,50000,100000]},
+ token:{t:"Token Listrik PLN",lb:"2. Nomor Meter / ID Pelanggan",ph:"11 atau 12 digit",nom:[20000,50000,100000,200000,500000,1000000]},
+ data:{t:"Paket Data",lb:"2. Nomor HP",ph:"08xxxxxxxxxx",nom:null}
+};
+var OP=[["Telkomsel",/^08(11|12|13|21|22|23|51|52|53)/],["Indosat",/^08(14|15|16|55|56|57|58)/],["XL",/^08(17|18|19|59|77|78)/],["Axis",/^08(31|32|33|38)/],["by.U",/^0851/],["Tri",/^08(95|96|97|98|99)/],["Smartfren",/^088/]];
+var svc=null,nom=null,$=function(i){return document.getElementById(i)};
+function rp(n){return "Rp "+n.toLocaleString("id-ID")}
+function norm(v){v=v.replace(/\D/g,"");if(v.indexOf("62")==0)v="0"+v.slice(2);return v}
+function op(n){for(var i=0;i<OP.length;i++)if(OP[i][1].test(n))return OP[i][0];return ""}
+function info(){
+ var c=CFG[svc],n=norm($("inNum").value),h=$("hint"),ok=false,o="";
+ if(svc=="token"){
+  var d=$("inNum").value.replace(/\D/g,"");n=d;
+  ok=(d.length==11||d.length==12);
+  h.className="pl-hint"+(ok?" ok":"");h.textContent=d?(ok?"✓ Format nomor benar ("+d.length+" digit)":"Nomor meter 11 digit, ID pelanggan 12 digit (sekarang "+d.length+")"):"Lihat di meteran atau struk token sebelumnya.";
+  o="PLN";
+ }else{
+  o=op(n);ok=/^08\d{8,12}$/.test(n)&&!!o;
+  h.className="pl-hint"+(ok?" ok":(n.length>=4&&!o?" err":""));
+  h.textContent=n?(ok?"✓ Operator terdeteksi: "+o:(n.length>=4&&!o?"Awalan nomor tidak dikenali":"Lanjutkan mengetik nomor…")):"Contoh: 0812xxxxxxxx";
+ }
+ var needNom=!!c.nom,ready=ok&&(!needNom||nom);
+ $("sum").hidden=!ready;
+ if(ready){
+  $("sSvc").textContent=c.t;$("sNumLb").textContent=svc=="token"?"No. Meter/ID":"Nomor";$("sNum").textContent=n;$("sOp").textContent=o;
+  $("sNomLb").textContent=needNom?"Nominal":"Paket";$("sNom").textContent=needNom?rp(nom):"Pilih di halaman berikutnya";
+  $("sNote").textContent=needNom?"Nomor dan nominal di atas belum terisi otomatis di situs. Salin nomor, lalu tempel dan pilih nominal yang sama di sana.":"Salin nomor, lalu tempel di situs dan pilih paket data yang diinginkan.";
+  $("btnGo").href=LINK[svc];$("btnCopy").dataset.v=n;
+ }
+}
+function pick(s){
+ svc=s;nom=null;var c=CFG[s];
+ [].forEach.call(document.querySelectorAll(".pl-opt"),function(b){b.classList.toggle("on",b.dataset.svc==s)});
+ $("stNum").hidden=false;$("lbNum").textContent=c.lb;$("inNum").placeholder=c.ph;$("inNum").value="";
+ $("stNom").hidden=!c.nom;
+ $("chips").innerHTML=c.nom?c.nom.map(function(v){return '<button type="button" class="pl-chip" data-n="'+v+'">'+rp(v)+'</button>'}).join(""):"";
+ info();$("inNum").focus({preventScroll:true});
+}
+$("plOpts").addEventListener("click",function(e){var b=e.target.closest(".pl-opt");if(b)pick(b.dataset.svc)});
+$("chips").addEventListener("click",function(e){var b=e.target.closest(".pl-chip");if(!b)return;nom=+b.dataset.n;
+ [].forEach.call(document.querySelectorAll(".pl-chip"),function(x){x.classList.toggle("on",x===b)});info()});
+$("inNum").addEventListener("input",info);
+$("btnCopy").addEventListener("click",function(){var v=this.dataset.v,b=this;
+ function done(){b.textContent="✓ Tersalin";setTimeout(function(){b.textContent="📋 Salin Nomor"},1800)}
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(v).then(done,fb)}else fb();
+ function fb(){var t=document.createElement("textarea");t.value=v;document.body.appendChild(t);t.select();try{document.execCommand("copy")}catch(e){}document.body.removeChild(t);done()}
+});
 })();
 </script>
 </body></html>
