@@ -321,6 +321,8 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 .pl-act{display:flex;gap:10px;flex-wrap:wrap}.pl-act .btn{flex:1 1 200px}
 .pl-note{margin-top:12px;font-size:12px;color:var(--muted);line-height:1.6}
 .btn-ghost{background:#fff;color:var(--ink);border:2px solid var(--line)}
+.pl-frame{margin-top:10px;border:2px solid var(--line);border-radius:18px;overflow:hidden;background:#fff}
+.pl-frame iframe{display:block;width:100%;height:78vh;min-height:560px;border:0;background:#fff}
 [hidden]{display:none!important}
 @media(max-width:520px){.pl-opts,.pl-chips{gap:8px}.pl-opt b{font-size:28px}}
 </style>
@@ -359,9 +361,13 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 
 <div class="pl-sum" id="sum" hidden>
 <dl><dt>Layanan</dt><dd id="sSvc"></dd><dt id="sNumLb">Nomor</dt><dd id="sNum"></dd><dt>Operator</dt><dd id="sOp"></dd><dt id="sNomLb">Nominal</dt><dd id="sNom"></dd></dl>
-<div class="pl-act"><a class="btn btn-gold" id="btnGo" target="_blank" rel="noopener">Lanjut Bayar ↗</a><button type="button" class="btn btn-ghost" id="btnCopy">📋 Salin Nomor</button></div>
+<div class="pl-act"><button type="button" class="btn btn-gold" id="btnCopy">📋 Salin Nomor</button><a class="btn btn-ghost" id="btnGo" target="_blank" rel="noopener">Buka di Tab Baru ↗</a></div>
 <div class="pl-note" id="sNote"></div>
 </div>
+
+<div class="pl-step" id="pay" hidden><h3>4. Pembayaran</h3>
+<div class="pl-frame"><iframe id="payFrame" title="Pembayaran isipulsa.web.id" allow="payment *; clipboard-write"></iframe></div>
+<div class="pl-note">Layar di atas adalah halaman isipulsa.web.id. Tempel nomor yang sudah disalin, pilih nominal, lalu bayar. <b>Jika layar kosong atau gagal tampil</b>, situs tidak mengizinkan ditampilkan di sini. Pakai tombol <b>Buka di Tab Baru</b>.</div></div>
 
 <div class="pl-note" style="margin-top:18px">ℹ️ Transaksi dan pembayaran diproses di <b>isipulsa.web.id</b>, layanan pihak ketiga di luar pengurus RT. Harga dan biaya mengikuti situs tersebut. Periksa kembali nomor sebelum membayar.</div>
 </div></div></section>
@@ -445,7 +451,7 @@ var CFG={
  data:{t:"Paket Data",lb:"2. Nomor HP",ph:"08xxxxxxxxxx",nom:null}
 };
 var OP=[["Telkomsel",/^08(11|12|13|21|22|23|51|52|53)/],["Indosat",/^08(14|15|16|55|56|57|58)/],["XL",/^08(17|18|19|59|77|78)/],["Axis",/^08(31|32|33|38)/],["by.U",/^0851/],["Tri",/^08(95|96|97|98|99)/],["Smartfren",/^088/]];
-var svc=null,nom=null,$=function(i){return document.getElementById(i)};
+var svc=null,nom=null,loaded="",$=function(i){return document.getElementById(i)};
 function rp(n){return "Rp "+n.toLocaleString("id-ID")}
 function norm(v){v=v.replace(/\D/g,"");if(v.indexOf("62")==0)v="0"+v.slice(2);return v}
 function op(n){for(var i=0;i<OP.length;i++)if(OP[i][1].test(n))return OP[i][0];return ""}
@@ -462,12 +468,14 @@ function info(){
   h.textContent=n?(ok?"✓ Operator terdeteksi: "+o:(n.length>=4&&!o?"Awalan nomor tidak dikenali":"Lanjutkan mengetik nomor…")):"Contoh: 0812xxxxxxxx";
  }
  var needNom=!!c.nom,ready=ok&&(!needNom||nom);
- $("sum").hidden=!ready;
+ $("sum").hidden=!ready;$("pay").hidden=!ready;
  if(ready){
   $("sSvc").textContent=c.t;$("sNumLb").textContent=svc=="token"?"No. Meter/ID":"Nomor";$("sNum").textContent=n;$("sOp").textContent=o;
   $("sNomLb").textContent=needNom?"Nominal":"Paket";$("sNom").textContent=needNom?rp(nom):"Pilih di halaman berikutnya";
-  $("sNote").textContent=needNom?"Nomor dan nominal di atas belum terisi otomatis di situs. Salin nomor, lalu tempel dan pilih nominal yang sama di sana.":"Salin nomor, lalu tempel di situs dan pilih paket data yang diinginkan.";
+  $("sNote").textContent=needNom?"Nomor dan nominal di atas belum terisi otomatis di situs. Salin nomor, lalu tempel dan pilih nominal yang sama di layar pembayaran di bawah.":"Salin nomor, lalu tempel di layar pembayaran di bawah dan pilih paket data yang diinginkan.";
   $("btnGo").href=LINK[svc];$("btnCopy").dataset.v=n;
+  if(loaded!==LINK[svc]){loaded=LINK[svc];$("payFrame").src=loaded;
+   setTimeout(function(){$("sum").scrollIntoView({behavior:"smooth",block:"start"})},80)}
  }
 }
 function pick(s){
