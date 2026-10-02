@@ -1,4 +1,6 @@
-# RT 08 / RW 021 Villa Indah Pulo Timaha — Portal Warga
+# PANDU — Portal Administrasi Nyata Delapan Dua Satu
+
+RT 08 / RW 021 Villa Indah Pulo Timaha
 
 Setiap file HTML bisa dibuka langsung tanpa folder CSS/JS terpisah — semua stylesheet dan ilustrasi hero sudah ditanam langsung ke file HTML. Satu-satunya file pendukung adalah `config.js`, tempat semua nomor WhatsApp/telepon dan data kas diatur.
 
