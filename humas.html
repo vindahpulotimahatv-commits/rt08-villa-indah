@@ -220,6 +220,23 @@ var defaultJmlBulan_ = 1;  // jumlah bulan awal di form (diisi dari daftar tungg
 /* ---------- util ---------- */
 function esc_(s){ return String(s||"").replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
 function fmtRp_(n){ return "Rp " + Math.round(n||0).toLocaleString("id-ID"); }
+/* Saldo titipan warga = total kelebihan bayar bulan-bulan lalu dikurangi yang sudah terpakai. */
+function saldoRumah_(rk){
+  var s = 0;
+  Object.keys(penarikanSemua || {}).forEach(function(b){
+    var e = (penarikanSemua[b] || {})[rk];
+    if (e && (e.status === "lunas_cash" || e.status === "transfer_pending" || e.status === "lunas_transfer")) s += (parseFloat(e.kelebihan) || 0) - (parseFloat(e.saldoDipakai) || 0);
+  });
+  return Math.max(0, s);
+}
+/* Uang fisik/transfer yang benar-benar masuk untuk 1 catatan (data lama: sama dengan iuran). */
+function uangEntry_(e){ return (e && e.uangMasuk != null) ? (parseFloat(e.uangMasuk) || 0) : (parseFloat(e && e.jumlah) || 0); }
+function catatSaldo_(p){
+  var t = "";
+  if (p && p.saldoDipakai > 0) t += " Saldo titipan " + fmtRp_(p.saldoDipakai) + " dipakai untuk iuran bulan ini.";
+  if (p && p.kelebihan > 0) t += " Kelebihan pembayaran " + fmtRp_(p.kelebihan) + " kami catat sebagai saldo iuran bulan depan.";
+  return t;
+}
 
 /* Pesan gagal yang mudah dimengerti (bukan sekadar "Gagal"). */
 function pesanGagal_(err, aksi){
@@ -533,6 +550,7 @@ function bukaTunggakan_(key){
 function statusInfo_(entry){
   if (!entry) return { cls: "belum", text: "⚪ Belum Ditarik" };
   if (entry.status === "lunas_cash") {
+    if (entry.setoranId === "saldo") return { cls: "lunas", text: "✅ Lunas (dari saldo titipan)" };
     var s = entry.setoranId ? setoranData[entry.setoranId] : null;
     if (s && s.status === "diterima") return { cls: "lunas", text: "✅ Lunas (Cash · Disetor)" };
     if (s) return { cls: "proses", text: "💵 Lunas (Cash · Menunggu Setor Diterima)" };
@@ -556,7 +574,7 @@ function renderRingkasan_(){
     var e = penarikanData[r.key];
     var st = statusInfo_(e).cls;
     if (st === "lunas") lunas++; else belum++;
-    if (e && e.status === "lunas_cash" && !e.setoranId) cashDiTangan += parseFloat(e.jumlah) || 0;
+    if (e && e.status === "lunas_cash" && !e.setoranId) cashDiTangan += uangEntry_(e);
   });
   document.getElementById("ringkasan").innerHTML =
     '<div class="sg-item"><span>Total Rumah</span><strong>' + all.length + '</strong></div>' +
@@ -620,7 +638,7 @@ async function bangunExcelSetoran_(id, batch){
   var rukem = RT_CONFIG.iuranTambahanKK || 7500;
   var rows = Object.keys(batch.rumahKeys || {}).map(function(k){
     var e = bln[k] || {};
-    return { rumah: e.rumah || k, nama: e.nama || "-", tambahan: !!e.tambahanKK, jumlah: parseFloat(e.jumlah) || 0, tgl: e.createdAt, kwt: e.kodeKwitansi || "" };
+    return { rumah: e.rumah || k, nama: e.nama || "-", tambahan: !!e.tambahanKK, jumlah: uangEntry_(e), tgl: e.createdAt, kwt: e.kodeKwitansi || "" };
   }).sort(function(a, b){ return a.rumah.localeCompare(b.rumah, "id", { numeric: true }); });
 
   var HDR = 10, first = HDR + 1, last = HDR + rows.length;
@@ -713,7 +731,7 @@ function ajukanSetoran_(){
   var keys = [], total = 0;
   Object.keys(penarikanData).forEach(function(k){
     var e = penarikanData[k];
-    if (e && e.status === "lunas_cash" && !e.setoranId) { keys.push(k); total += parseFloat(e.jumlah) || 0; }
+    if (e && e.status === "lunas_cash" && !e.setoranId) { keys.push(k); total += uangEntry_(e); }
   });
   if (keys.length === 0) { showToast("Tidak ada uang cash yang perlu disetor."); return; }
   /* Pembayaran beberapa bulan sekaligus: uangnya diserahkan bersamaan, jadi bulan-bulan lain dalam paket
@@ -732,7 +750,7 @@ function ajukanSetoran_(){
       var m = bulanLain[i], data = sn.val() || {}, ks = [], t = 0;
       Object.keys(sib[m]).forEach(function(k){
         var e = data[k];
-        if (e && e.status === "lunas_cash" && !e.setoranId && e.paketId === sib[m][k]) { ks.push(k); t += parseFloat(e.jumlah) || 0; }
+        if (e && e.status === "lunas_cash" && !e.setoranId && e.paketId === sib[m][k]) { ks.push(k); t += uangEntry_(e); }
       });
       if (ks.length) batches.push({ bulan: m, keys: ks, total: t });
     });
@@ -773,6 +791,7 @@ function openModal_(r){
       [1,2,3,4,5,6].map(function(n){ return '<option value="' + n + '">' + (n === 1 ? '1 bulan (bulan ini saja)' : n + ' bulan sekaligus (bayar di muka)') + '</option>'; }).join("") + '</select>' +
       '<div class="status-now" id="mdPaketInfo" style="display:none;margin-top:6px"></div></div>' +
     '<div class="mtotal"><span id="mdTotalLabel">Total Tagihan Bulan Ini</span><strong id="mdTotal">' + fmtRp_(RT_CONFIG.iuranBulanan) + '</strong></div>' +
+    '<div class="mfield" id="mdTerimaWrap" style="display:none"><label>Uang yang diterima (Rp) — isi lebih besar bila warga membayar lebih, sisanya jadi saldo bulan depan</label><input type="number" id="mdDiterima" inputmode="numeric" min="0" step="1000"><div class="status-now" id="mdSaldoInfo" style="margin-top:6px"></div></div>' +
     '<div class="mfield"><label>Nomor WhatsApp Warga (opsional — kalau kosong, kwitansi sementara ke Bendahara &amp; reminder ke Pak RT)</label><input type="tel" id="mdTelp" placeholder="08xxxxxxxxxx" value="' + esc_(telpAwal) + '"></div>' +
     '<div class="mfield"><label>Cara Pembayaran</label><select id="mdMetode">' +
       '<option value="cash"' + (metodeAwal === "cash" ? " selected" : "") + '>💵 Cash (Tunai)</option>' +
@@ -804,9 +823,30 @@ function openModal_(r){
     var info = document.getElementById("mdPaketInfo");
     if (n > 1) { info.style.display = "block"; info.textContent = "📦 " + periodeLabel_(bulanKey, n) + " · " + fmtRp_(perBulan) + " × " + n + " bulan. Tiap bulan tercatat lunas sendiri-sendiri; satu kwitansi untuk semuanya."; }
     else info.style.display = "none";
+    hitungTerima_();
   }
   tambahanEl.addEventListener("change", recompute);
   jmlBulanEl.addEventListener("change", recompute);
+
+  /* Uang diterima & saldo titipan (hanya untuk catatan 1 bulan yang belum dibayar). */
+  var diterimaEl = document.getElementById("mdDiterima"), diterimaManual_ = false;
+  var bisaSaldo_ = !(existing.status && existing.status !== "belum");
+  function hitungTerima_(){
+    var wrap = document.getElementById("mdTerimaWrap");
+    var m = document.getElementById("mdMetode") ? document.getElementById("mdMetode").value : "cash";
+    var tampil = bisaSaldo_ && jmlBulanAktif_() === 1 && m !== "lainnya";
+    wrap.style.display = tampil ? "grid" : "none";
+    if (!tampil) return;
+    var tag = RT_CONFIG.iuranBulanan + (tambahanEl.checked ? RT_CONFIG.iuranTambahanKK : 0);
+    var saldo = saldoRumah_(r.key), pakai = Math.min(saldo, tag), perlu = tag - pakai;
+    if (!diterimaManual_) diterimaEl.value = String(perlu);
+    var dt = parseFloat(diterimaEl.value) || 0, info = "Iuran bulan ini " + fmtRp_(tag);
+    if (saldo > 0) info += " · Saldo titipan " + fmtRp_(saldo) + " dipakai " + fmtRp_(pakai) + " → uang yang perlu diterima " + fmtRp_(perlu);
+    if (dt > perlu) info += " · ✅ Kelebihan " + fmtRp_(dt - perlu) + " disimpan jadi saldo bulan depan";
+    else if (dt < perlu) info += " · ⚠️ Uang diterima kurang " + fmtRp_(perlu - dt);
+    document.getElementById("mdSaldoInfo").textContent = info;
+  }
+  diterimaEl.addEventListener("input", function(){ diterimaManual_ = true; hitungTerima_(); });
 
   var metodeEl = document.getElementById("mdMetode");
   var catatanWrap = document.getElementById("mdCatatanWrap");
@@ -898,10 +938,23 @@ function simpanTransaksi_(){
   var jumlah = (RT_CONFIG.iuranBulanan || 60000) + (tambahan ? (RT_CONFIG.iuranTambahanKK || 7500) : 0);
   var status = metode === "cash" ? "lunas_cash" : (metode === "transfer" ? "transfer_pending" : "belum");
   var existing = penarikanData[currentRumah.key] || {};
+  var uangMasuk_ = null, kelebihan_ = 0, saldoDipakai_ = 0, saldoSaja_ = false;
+  var elTerima_ = document.getElementById("mdDiterima"), wrapTerima_ = document.getElementById("mdTerimaWrap");
+  if (metode !== "lainnya" && elTerima_ && wrapTerima_ && wrapTerima_.style.display !== "none") {
+    saldoDipakai_ = Math.min(saldoRumah_(currentRumah.key), jumlah);
+    var perlu_ = jumlah - saldoDipakai_;
+    var dt_ = parseFloat(elTerima_.value); if (isNaN(dt_)) dt_ = perlu_;
+    if (dt_ < perlu_) { showToast("Uang diterima kurang. Seharusnya minimal " + fmtRp_(perlu_) + "."); return; }
+    if (metode === "transfer" && dt_ <= 0) { showToast("Isi jumlah uang yang ditransfer."); return; }
+    kelebihan_ = dt_ - perlu_; uangMasuk_ = dt_;
+    saldoSaja_ = (metode === "cash" && dt_ === 0);
+    if (kelebihan_ > 0 && !confirm("Warga membayar " + fmtRp_(dt_) + ", iuran " + fmtRp_(perlu_) + ".\nKelebihan " + fmtRp_(kelebihan_) + " akan disimpan sebagai saldo iuran bulan depan. Lanjutkan?")) return;
+  }
   var payload = {
     blok: currentRumah.blok, no: currentRumah.no, rumah: currentRumah.rumah, nama: currentRumah.nama || "",
     tambahanKK: tambahan, jumlah: jumlah, metode: metode, catatan: catatan, status: status,
-    petugas: petugasNama, teleponWarga: telp, setoranId: existing.setoranId || null,
+    petugas: petugasNama, teleponWarga: telp, setoranId: saldoSaja_ ? "saldo" : (existing.setoranId || null),
+    uangMasuk: uangMasuk_, kelebihan: kelebihan_ || null, saldoDipakai: saldoDipakai_ || null,
     adaBukti: metode === "transfer" ? true : null,
     createdAt: existing.createdAt || firebase.database.ServerValue.TIMESTAMP,
     updatedAt: firebase.database.ServerValue.TIMESTAMP
@@ -1031,7 +1084,7 @@ function hapusCatatan_(){
     if (sisa.length === 0) updates["humasSetoran/" + e.setoranId] = null;
     else {
       updates["humasSetoran/" + e.setoranId + "/rumahKeys/" + key] = null;
-      updates["humasSetoran/" + e.setoranId + "/jumlah"] = Math.max(0, (parseFloat(batch.jumlah) || 0) - (parseFloat(e.jumlah) || 0));
+      updates["humasSetoran/" + e.setoranId + "/jumlah"] = Math.max(0, (parseFloat(batch.jumlah) || 0) - uangEntry_(e));
     }
   }
   db.ref().update(updates).then(function(){ showToast("Catatan dihapus."); closeModal_(); })
@@ -1043,7 +1096,7 @@ function hapusCatatan_(){
 function pesanKeBendahara_(payload){
   var adminUrl = new URL("admin.html", location.href).href;
   return salam_() + " Pak/Bu Bendahara. Humas (" + petugasNama + ") menerima pembayaran *transfer* iuran bulanan dari " +
-    (payload.nama || "-") + " (" + payload.rumah + ") bulan " + (payload.periodeLabel || bulanLabel_(bulanKey)) + " sebesar *" + fmtRp_(payload.jumlah) + "*." +
+    (payload.nama || "-") + " (" + payload.rumah + ") bulan " + (payload.periodeLabel || bulanLabel_(bulanKey)) + " sebesar *" + fmtRp_(payload.uangMasuk != null ? payload.uangMasuk : payload.jumlah) + "*." + catatSaldo_(payload) +
     "\n\nMohon dicek di mutasi rekening, lalu dikonfirmasi di halaman Admin (tab Iuran Bulanan):\n" + adminUrl +
     "\n\nSetelah dikonfirmasi, mohon kwitansi dikirim ke warga dari halaman yang sama. Terima kasih 🙏";
 }
@@ -1164,10 +1217,10 @@ function modeAPK_(){ return !!(window.RTAndroid && typeof window.RTAndroid.share
 function teksKwitansi_(payload, hasil, tujuan){
   return tujuan.label === "Warga"
     ? (salam_() + " Bpk/Ibu " + (payload.nama || "") + ", pembayaran *iuran bulanan RT 08* (" + payload.rumah + ") bulan " + (payload.periodeLabel || bulanLabel_(bulanKey)) +
-       " sebesar *" + fmtRp_(payload.jumlah) + "* (Tunai) sudah kami terima. Kwitansi PDF kami lampirkan. Terima kasih atas partisipasinya 🙏 (Kode: " + hasil.kode + ")")
+       " sebesar *" + fmtRp_(payload.jumlah) + "* (Tunai) sudah kami terima. Kwitansi PDF kami lampirkan. Terima kasih atas partisipasinya 🙏" + catatSaldo_(payload) + " (Kode: " + hasil.kode + ")")
     : (salam_() + " Pak/Bu Bendahara, berikut kwitansi iuran bulanan a.n. " + (payload.nama || "-") + " (" + payload.rumah + "), bulan " +
        (payload.periodeLabel || bulanLabel_(bulanKey)) + " sebesar " + fmtRp_(payload.jumlah) + ". Nomor WA warga ini belum ada di data, jadi untuk sementara " +
-       "dikirim ke Bendahara. (Kode: " + hasil.kode + ")");
+       "dikirim ke Bendahara." + catatSaldo_(payload) + " (Kode: " + hasil.kode + ")");
 }
 async function kirimKwitansi_(){
   if (!hasilKwitansi) return;
