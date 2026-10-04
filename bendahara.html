@@ -310,6 +310,20 @@ textarea{min-height:76px;resize:vertical}
 
   <!-- ===== PANEL IURAN BULANAN (dari halaman Humas — humas.html) ===== -->
   <div class="panel" id="panel-iuran">
+    <div class="form-card" id="cardLangsung" style="margin-bottom:18px">
+      <h3>💳 Catat Transfer Langsung ke Bendahara</h3>
+      <p class="sub">Untuk warga yang transfer langsung ke rekening Bendahara tanpa lewat Humas. Setelah dicatat, status langsung Lunas (Transfer) dan otomatis masuk Kas RT. Pastikan uangnya sudah ada di mutasi rekening.</p>
+      <input type="text" id="lgRumah" list="lgRumahList" placeholder="Ketik blok/nomor rumah, contoh: E2 46" autocomplete="off">
+      <datalist id="lgRumahList"></datalist>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <label style="flex:1;min-width:150px;font-size:12px;font-weight:800">Bulan mulai<input type="month" id="lgBulan"></label>
+        <label style="flex:1;min-width:120px;font-size:12px;font-weight:800">Jumlah bulan<input type="number" id="lgJml" min="1" max="12" value="1"></label>
+      </div>
+      <label style="display:flex;gap:8px;align-items:center;margin:8px 0;font-size:13px;font-weight:800"><input type="checkbox" id="lgKK" style="width:auto"> Ada KK tambahan di rumah ini</label>
+      <input type="text" id="lgCatatan" placeholder="Catatan (opsional)">
+      <p class="sub" id="lgTotal" style="font-weight:900;color:var(--green)"></p>
+      <button type="button" class="btn btn-gold" id="lgSimpan">Simpan sebagai Lunas (Transfer)</button>
+    </div>
     <details class="list-card" id="cardTunggakan" style="margin-bottom:18px">
       <summary class="list-title" id="judulTunggakan" style="cursor:pointer">⚠️ Tunggakan — memuat...</summary>
       <p class="sub" style="padding:0 14px;margin:0 0 6px;color:var(--muted);font-size:12px">Rumah yang belum bayar untuk bulan-bulan yang sudah lewat (bulan berjalan tidak dihitung). Transfer yang masih menunggu konfirmasi dianggap sudah bayar. Pencatatan pembayaran dilakukan Humas di <b>humas.html</b>.</p>
@@ -1552,6 +1566,57 @@ function initDashboard_(){
     .catch(function(err){ btn.disabled = false; btn.textContent = "✅ Terima Setoran"; showToast(err && err.message && err.message.charAt(0) === "!" ? err.message.slice(1) : pesanGagal_(err, "Penerimaan setoran")); });
   });
 
+
+  /* ---- TRANSFER LANGSUNG KE BENDAHARA (tanpa lewat Humas) ---- */
+  (function(){
+    function nk_(x){ return String(x||"").toLowerCase().replace(/[\s\/\-\.]+/g,""); }
+    var rumahList_ = (typeof WARGA_DATA !== "undefined" ? WARGA_DATA : []).map(function(w){
+      return { key: nk_(w.blok + " " + w.no), rumah: w.blok + " No." + w.no, blok: w.blok, no: w.no, nama: w.nama };
+    });
+    document.getElementById("lgRumahList").innerHTML = rumahList_.map(function(r){ return '<option value="' + esc_(r.blok + " " + r.no) + '">' + esc_(r.nama) + '</option>'; }).join("");
+    document.getElementById("lgBulan").value = tglWIB_().slice(0,7);
+    function cari_(v){ var k = nk_(v); return rumahList_.filter(function(r){ return r.key === k; })[0] || null; }
+    function perBulan_(){ return (RT_CONFIG.iuranBulanan || 60000) + (document.getElementById("lgKK").checked ? (RT_CONFIG.iuranTambahanKK || 7500) : 0); }
+    function hitung_(){
+      var n = Math.max(1, Math.min(12, parseInt(document.getElementById("lgJml").value, 10) || 1));
+      document.getElementById("lgTotal").textContent = "Total: " + fmtRp_(perBulan_() * n) + (n > 1 ? " (" + n + " bulan)" : "");
+    }
+    ["lgKK","lgJml"].forEach(function(id){ document.getElementById(id).addEventListener("input", hitung_); document.getElementById(id).addEventListener("change", hitung_); });
+    document.getElementById("lgRumah").addEventListener("change", function(){ var r = cari_(this.value); if (r) { for (var b in penarikanSemua_) { var e = (penarikanSemua_[b] || {})[r.key]; if (e && e.tambahanKK) { document.getElementById("lgKK").checked = true; } } hitung_(); } });
+    hitung_();
+    document.getElementById("lgSimpan").addEventListener("click", function(){
+      var r = cari_(document.getElementById("lgRumah").value);
+      if (!r) { showToast("Rumah tidak ditemukan. Pilih dari daftar, contoh: E2 46."); return; }
+      var b0 = document.getElementById("lgBulan").value;
+      if (!/^\d{4}-\d{2}$/.test(b0)) { showToast("Pilih bulan dulu."); return; }
+      var n = Math.max(1, Math.min(12, parseInt(document.getElementById("lgJml").value, 10) || 1));
+      var kk = document.getElementById("lgKK").checked, jml = perBulan_(), catatan = document.getElementById("lgCatatan").value.trim();
+      var bulan = [], y = parseInt(b0.slice(0,4),10), m = parseInt(b0.slice(5),10);
+      for (var i = 0; i < n; i++) { bulan.push(y + "-" + ("0" + m).slice(-2)); m++; if (m > 12) { m = 1; y++; } }
+      var sudah = bulan.filter(function(b){ var e = (penarikanSemua_[b] || {})[r.key]; return e && (e.status === "lunas_cash" || e.status === "lunas_transfer" || e.status === "transfer_pending"); });
+      if (sudah.length) { showToast("Sudah tercatat lunas/menunggu untuk: " + sudah.map(fmtBulanID_).join(", ") + ". Periksa dulu agar tidak dobel."); return; }
+      if (!confirm("Catat transfer langsung?\n\n" + r.rumah + " — " + r.nama + "\nBulan: " + bulan.map(fmtBulanID_).join(", ") + "\nTotal: " + fmtRp_(jml * n) + "\n\nPastikan uang SUDAH ada di mutasi rekening. Otomatis tercatat sebagai Pemasukan di Kas RT.")) return;
+      var btn = this; btn.disabled = true;
+      var email = (firebase.auth().currentUser && firebase.auth().currentUser.email) || "", TS = firebase.database.ServerValue.TIMESTAMP, upd = {};
+      bulan.forEach(function(b){
+        upd["penarikan/" + b + "/" + r.key] = {
+          blok: r.blok, no: r.no, rumah: r.rumah, nama: r.nama || "", tambahanKK: kk, jumlah: jml, metode: "transfer",
+          catatan: catatan || "Transfer langsung ke Bendahara", status: "lunas_transfer",
+          petugas: (RT_CONFIG.namaBendahara || "Bendahara") + " (langsung)", langsungBendahara: true,
+          createdAt: TS, updatedAt: TS, confirmedAt: TS
+        };
+        upd["keuangan/iuran_transfer_" + b + "_" + r.key] = {
+          tanggal: tglWIB_(), jenis: "masuk", keterangan: "Iuran Bulanan (Transfer langsung) - " + r.rumah + " - " + fmtBulanID_(b),
+          kategori: "Iuran Bulanan", jumlah: jml, source: "penarikan/" + b + "/" + r.key, createdAt: TS, createdBy: email
+        };
+      });
+      db.ref().update(upd).then(function(){
+        showToast("Tersimpan: " + r.rumah + " lunas (" + n + " bulan) dan masuk Kas RT. Kirim kwitansi dari daftar 🧾 di bawah.");
+        document.getElementById("lgRumah").value = ""; document.getElementById("lgCatatan").value = ""; document.getElementById("lgKK").checked = false; document.getElementById("lgJml").value = 1; hitung_();
+      }).catch(function(err){ showToast(pesanGagal_(err, "Pencatatan transfer langsung")); })
+        .then(function(){ btn.disabled = false; });
+    });
+  })();
 
   /* ---- PUBLIKASI RINGKASAN KE TRANSPARANSI ---- */
   db.ref("ringkasanKeuangan/meta").on("value", function(snap){
