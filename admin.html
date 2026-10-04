@@ -523,6 +523,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
   if (!firebaseReady_()) { gateErr.textContent = "Firebase belum dikonfigurasi."; gateErr.style.display = "block"; return; }
   if (!firebase.apps.length) firebase.initializeApp(RT_CONFIG.firebaseConfig);
+  db = firebase.database();
   var auth = firebase.auth();
   auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function(){});
 
