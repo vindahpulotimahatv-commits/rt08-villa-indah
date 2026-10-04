@@ -644,26 +644,19 @@ function showToast(msg){
     setTimeout(function(){ URL.revokeObjectURL(url); },30000);
   }
 
+  /* Kirim surat: SELALU langsung ke chat WhatsApp nomor pengurus (Sekretaris/Ketua/Bendahara
+     sesuai jenis surat) — tidak lagi lewat lembar bagikan yang memaksa memilih kontak. */
   async function kirim(){
     var J=RTSurat.JENIS[key], nomor=nomorWA(J);
     if(!nomor){ showToast("Nomor WhatsApp pengurus belum diatur admin di config.js."); return; }
-    // 1) Aplikasi Android Warga (terbaru): buka chat pengurus + PDF terlampir
-    if(window.RTAndroid && typeof window.RTAndroid.sharePdf==="function"){
-      try{ if(window.RTAndroid.sharePdf(b64(hasil.bytes),hasil.namaFile,nomor,hasil.pesan)) return; }catch(e){ console.warn(e); }
+    // 1) Aplikasi Android Warga (versi baru): simpan PDF ke Downloads + buka chat nomor pengurus
+    if(window.RTAndroid && typeof window.RTAndroid.bukaChatDenganPdf==="function"){
+      try{ if(window.RTAndroid.bukaChatDenganPdf(b64(hasil.bytes),hasil.namaFile,nomor,hasil.pesan)) return; }catch(e){ console.warn(e); }
     }
-    // 2) Browser HP (Chrome/Safari): lembar bagikan dengan PDF terlampir → pilih WhatsApp → pilih pengurus
-    try{
-      var file=new File([hasil.bytes],hasil.namaFile,{type:"application/pdf"});
-      if(navigator.canShare && navigator.canShare({files:[file]})){
-        await navigator.share({files:[file],text:hasil.pesan});
-        showToast("Pilih WhatsApp lalu kontak "+pengurus(J)+" untuk mengirim.");
-        return;
-      }
-    }catch(e){ if(e && e.name==="AbortError") return; console.warn(e); }
-    // 3) Cadangan: unduh PDF + buka chat WhatsApp pengurus, lampirkan manual
+    // 2) Browser / aplikasi lama: unduh PDF + buka chat WhatsApp pengurus (langsung ke nomornya)
     unduh();
     rtOpenWa(nomor, hasil.pesan+"\n\n(PDF sudah diunduh — mohon dilampirkan di chat ini.)");
-    showToast("PDF diunduh. Di WhatsApp, tekan 📎 lalu lampirkan file PDF tadi.");
+    showToast("Chat "+pengurus(J)+" terbuka. Tekan 📎 lalu lampirkan PDF yang sudah diunduh.");
   }
 })();
 </script>

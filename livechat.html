@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="id"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#123a6b"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="assets/icon-192.png"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="RT08 Villa Indah"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#123a6b"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="icon-192.png"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="RT08 Villa Indah"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Live Chat | PANDU</title><style>
 .chat-shell{background:#fff;border:1px solid var(--line);border-radius:26px;box-shadow:0 10px 30px rgba(10,25,56,.06);overflow:hidden;max-width:760px;margin:0 auto}
 .chat-setup{padding:18px 20px;background:linear-gradient(135deg,#f3f6fc,#eef1f9);border-bottom:1px solid var(--line);display:grid;gap:10px}
@@ -425,8 +425,26 @@ document.addEventListener("DOMContentLoaded", function(){
     document.getElementById("chatSend").disabled = true;
     return;
   }
+  if(typeof firebase === "undefined" || !firebase.database){
+    emptyNote.textContent = "Live Chat gagal dimuat (koneksi ke Firebase terblokir / internet bermasalah). Coba muat ulang halaman.";
+    return;
+  }
   if(!firebase.apps.length) firebase.initializeApp(cfg);
   var db = firebase.database();
+  function tampilError_(teks){
+    msgsBox.innerHTML = '<div class="chat-empty">⚠️ ' + esc_(teks) + '</div>';
+  }
+  function pesanError_(err){
+    var kode = err && err.code ? err.code : "";
+    if(/permission/i.test(kode) || /permission/i.test(String(err && err.message))){
+      return "Live Chat ditolak server (permission denied). Admin: publikasikan isi firebase-rules.json di Firebase Console → Realtime Database → Rules (bagian \"obrolan\").";
+    }
+    return "Live Chat tidak bisa terhubung. Periksa internet lalu muat ulang halaman." + (kode ? " (" + kode + ")" : "");
+  }
+  /* indikator koneksi: bila 8 detik tidak tersambung, beri tahu warga */
+  var terhubung_ = false;
+  db.ref(".info/connected").on("value", function(s){ terhubung_ = !!s.val(); });
+  setTimeout(function(){ if(!terhubung_) tampilError_("Belum tersambung ke server Live Chat. Periksa internet, lalu muat ulang halaman."); }, 8000);
 
   /* ---- identitas pengunjung (tersimpan di HP, tanpa login) ---- */
   function getVisitorId(){
@@ -474,15 +492,15 @@ document.addEventListener("DOMContentLoaded", function(){
     items.sort(function(a,b){ return (a.waktu||0) - (b.waktu||0); });
     renderPesan_(items);
     // warga sedang buka halaman ini = otomatis "terbaca"
-    chatRef.child("info/unreadWarga").set(0);
-  });
+    chatRef.child("info/unreadWarga").set(0).catch(function(){});
+  }, function(err){ console.error(err); tampilError_(pesanError_(err)); });
 
   /* ---- kirim pesan warga ---- */
   function kirimPesan(teks){
     teks = String(teks || "").trim();
     if(!teks) return;
     var idn = (inpNama.value.trim() || savedNama) ? simpanIdentitasSilent_() : simpanIdentitas();
-    chatRef.child("pesan").push({ sender:"warga", teks: teks, waktu: firebase.database.ServerValue.TIMESTAMP });
+    chatRef.child("pesan").push({ sender:"warga", teks: teks, waktu: firebase.database.ServerValue.TIMESTAMP }).catch(function(err){ console.error(err); tampilError_(pesanError_(err)); });
     chatRef.child("info").update({
       nama: idn.nama, rumah: idn.rumah, lastMsg: teks, lastSender: "warga",
       lastAt: firebase.database.ServerValue.TIMESTAMP
