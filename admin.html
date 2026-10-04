@@ -712,6 +712,12 @@ function initDashboard_(){
           (it.unread > 0 ? '<div class="lc-badge-un">' + it.unread + '</div>' : '') + '</div>' +
           '</div>';
       }).join("");
+    }, function(err){
+      console.error("Live Chat:", err);
+      var perm = /permission/i.test((err && err.code) || "") || /permission/i.test(String(err && err.message));
+      lcList.innerHTML = '<div class="empty-note">⚠️ ' + (perm
+        ? 'Akses ke data obrolan DITOLAK server (permission denied). Buka Firebase Console → Realtime Database → Rules, tempel isi firebase-rules.json (bagian "obrolan"), lalu klik Publish.'
+        : 'Gagal memuat obrolan. Periksa internet lalu muat ulang halaman.') + '</div>';
     });
 
     function bukaThread_(vid, nama, rumah){
