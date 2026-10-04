@@ -380,7 +380,7 @@ function loadKeuangan_(){
   }
   if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(cfg);
   const db = firebase.database();
-  db.ref("keuangan").on("value", snap => {
+  db.ref("ringkasanKeuangan/items").on("value", snap => {
     const val = snap.val() || {};
     const items = Object.keys(val).map(k => Object.assign({ id:k }, val[k]));
     items.sort((a,b) => (a.tanggal||"").localeCompare(b.tanggal||"") || (a.createdAt||0)-(b.createdAt||0));

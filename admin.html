@@ -403,6 +403,19 @@ textarea{min-height:76px;resize:vertical}
   </div>
 
   <!-- ===== PANEL KEUANGAN ===== -->
+  <div class="panel" id="panel-bgate">
+    <div class="form-card" style="max-width:460px;margin:0 auto;text-align:center">
+      <div style="font-size:42px">💰</div>
+      <h3>Khusus Bendahara</h3>
+      <p class="sub">Menu Keuangan dan Iuran Bulanan hanya bisa dibuka dengan akun Bendahara. Pengurus lain tidak punya akses.</p>
+      <input type="email" id="bEmail" placeholder="Email Bendahara" autocomplete="username">
+      <input type="password" id="bPass" placeholder="Password Bendahara" autocomplete="current-password">
+      <p class="err" id="bErr" style="display:none;color:#c74444;font-weight:800;font-size:13px"></p>
+      <button class="btn btn-gold" id="bBtnMasuk" type="button">Masuk Bendahara</button>
+      <p style="margin-top:12px"><a href="#" id="bLupa" style="font-size:13px;font-weight:800">Lupa password?</a></p>
+    </div>
+  </div>
+
   <div class="panel" id="panel-keuangan">
     <div class="form-card" id="testModeCard" style="border:2px solid #ecd8a0;background:#fffdf5">
       <h3>🧪 Mode Uji Coba</h3>
@@ -485,6 +498,22 @@ textarea{min-height:76px;resize:vertical}
 
 <div class="toast" id="toast"></div>
 
+<div id="bBar" style="display:none;position:fixed;left:14px;bottom:14px;z-index:150;background:#0b2144;color:#fff;border-radius:14px;padding:8px 10px;font-size:12px;font-weight:800;box-shadow:var(--shadow-lg);gap:6px;align-items:center;flex-wrap:wrap;max-width:calc(100% - 28px)">
+  <span id="bWho">🔓 Bendahara</span>
+  <button type="button" class="btn btn-gold btn-sm" id="bBtnPublish" style="display:none">📢 Publikasikan ke Transparansi</button>
+  <button type="button" class="btn btn-sm" id="bBtnGanti">🔑 Ganti Password</button>
+  <button type="button" class="btn btn-sm" id="bBtnKunci">🔒 Kunci</button>
+</div>
+<div id="bPwOverlay" style="display:none;position:fixed;inset:0;background:rgba(5,15,36,.6);z-index:300;align-items:center;justify-content:center;padding:16px">
+  <div class="form-card" style="max-width:380px;width:100%;margin:0">
+    <h3>Ganti Password Bendahara</h3>
+    <input type="password" id="bPwLama" placeholder="Password lama" autocomplete="current-password">
+    <input type="password" id="bPwBaru" placeholder="Password baru (min. 6 karakter)" autocomplete="new-password">
+    <input type="password" id="bPwBaru2" placeholder="Ulangi password baru" autocomplete="new-password">
+    <p id="bPwErr" style="display:none;color:#c74444;font-weight:800;font-size:13px"></p>
+    <div style="display:flex;gap:8px;margin-top:10px"><button type="button" class="btn btn-gold" id="bPwSimpan">Simpan</button><button type="button" class="btn" id="bPwBatal">Batal</button></div>
+  </div>
+</div>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
@@ -496,6 +525,7 @@ textarea{min-height:76px;resize:vertical}
 <script src="surat-pdf.js"></script>
 <script>
 var db = null;
+var bApp = null, bAuth = null, bDb = null, bUnlocked_ = false, bInitFn_ = null;
 var BULAN_ID = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
 
 function firebaseReady_(){
@@ -633,14 +663,78 @@ document.addEventListener("DOMContentLoaded", function(){
   });
   ["gateEmail","gatePass"].forEach(function(id){ document.getElementById(id).addEventListener("keydown", function(e){ if (e.key === "Enter") document.getElementById("btnMasuk").click(); }); });
 
-  /* ---------------- TABS ---------------- */
+  /* ---------------- TABS (Keuangan & Iuran = khusus Bendahara) ---------------- */
+  function bShowBar_(tab){
+    var on = bUnlocked_ && (tab === "keuangan" || tab === "iuran");
+    document.getElementById("bBar").style.display = on ? "flex" : "none";
+    document.getElementById("bBtnPublish").style.display = (on && tab === "keuangan") ? "inline-flex" : "none";
+  }
+  function openTab_(tab){
+    document.querySelectorAll(".tab-btn").forEach(function(b){ b.classList.toggle("active", b.dataset.tab === tab); });
+    document.querySelectorAll(".panel").forEach(function(p){ p.classList.remove("active"); });
+    var locked = (tab === "keuangan" || tab === "iuran") && !bUnlocked_;
+    document.getElementById("panel-" + (locked ? "bgate" : tab)).classList.add("active");
+    window.bNextTab_ = locked ? tab : null;
+    bShowBar_(locked ? "" : tab);
+  }
   document.querySelectorAll(".tab-btn").forEach(function(btn){
-    btn.addEventListener("click", function(){
-      document.querySelectorAll(".tab-btn").forEach(function(b){ b.classList.remove("active"); });
-      document.querySelectorAll(".panel").forEach(function(p){ p.classList.remove("active"); });
-      btn.classList.add("active");
-      document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
-    });
+    btn.addEventListener("click", function(){ openTab_(btn.dataset.tab); });
+  });
+
+  /* ---------------- LOGIN BENDAHARA (akun terpisah, tidak menggeser login Pengurus) ---------------- */
+  var bErr = document.getElementById("bErr");
+  function bMsg_(el, t){ el.textContent = t; el.style.display = t ? "block" : "none"; }
+  bApp = firebase.apps.filter(function(a){ return a.name === "bendahara"; })[0] || firebase.initializeApp(RT_CONFIG.firebaseConfig, "bendahara");
+  bAuth = bApp.auth(); bDb = bApp.database();
+  bAuth.setPersistence(firebase.auth.Auth.Persistence.NONE).catch(function(){});
+  function bKunci_(){ bUnlocked_ = false; bAuth.signOut().catch(function(){}); openTab_("laporan"); }
+  document.getElementById("bBtnKunci").addEventListener("click", bKunci_);
+  document.getElementById("bBtnMasuk").addEventListener("click", function(){
+    var email = document.getElementById("bEmail").value.trim(), pass = document.getElementById("bPass").value;
+    if (!email || !pass) { bMsg_(bErr, "Email dan password wajib diisi."); return; }
+    var btn = this; btn.disabled = true; btn.textContent = "Memeriksa...";
+    bAuth.signInWithEmailAndPassword(email, pass).then(function(r){
+      if (!RT_CONFIG.bendaharaUid || r.user.uid !== RT_CONFIG.bendaharaUid) {
+        return bAuth.signOut().then(function(){ throw new Error("not-bendahara"); });
+      }
+      bUnlocked_ = true; bMsg_(bErr, "");
+      document.getElementById("bPass").value = "";
+      document.getElementById("bWho").textContent = "🔓 " + r.user.email;
+      if (bInitFn_) bInitFn_();
+      openTab_(window.bNextTab_ || "keuangan");
+      if (!localStorage.getItem("bPwGanti_" + r.user.uid)) showToast("Jika masih memakai password awal, segera ganti lewat tombol 🔑 Ganti Password.");
+    }).catch(function(err){
+      bMsg_(bErr, err && err.message === "not-bendahara" ? "Akun ini bukan akun Bendahara."
+        : (/invalid-credential|wrong-password|user-not-found/i.test(String(err && err.code)) ? "Email atau password salah." : "Login ditolak. Coba lagi."));
+    }).then(function(){ btn.disabled = false; btn.textContent = "Masuk Bendahara"; });
+  });
+  ["bEmail","bPass"].forEach(function(id){ document.getElementById(id).addEventListener("keydown", function(e){ if (e.key === "Enter") document.getElementById("bBtnMasuk").click(); }); });
+  document.getElementById("bLupa").addEventListener("click", function(e){
+    e.preventDefault();
+    var email = document.getElementById("bEmail").value.trim();
+    if (!email) { bMsg_(bErr, "Isi email Bendahara dulu, lalu klik Lupa password."); return; }
+    bAuth.sendPasswordResetEmail(email).then(function(){ bMsg_(bErr, ""); showToast("Jika email terdaftar, link reset password sudah dikirim."); })
+      .catch(function(){ showToast("Gagal mengirim email reset."); });
+  });
+
+  /* ---- Ganti password Bendahara ---- */
+  var pwOv = document.getElementById("bPwOverlay"), pwErr = document.getElementById("bPwErr");
+  document.getElementById("bBtnGanti").addEventListener("click", function(){ ["bPwLama","bPwBaru","bPwBaru2"].forEach(function(i){ document.getElementById(i).value = ""; }); bMsg_(pwErr, ""); pwOv.style.display = "flex"; });
+  document.getElementById("bPwBatal").addEventListener("click", function(){ pwOv.style.display = "none"; });
+  document.getElementById("bPwSimpan").addEventListener("click", function(){
+    var lama = document.getElementById("bPwLama").value, baru = document.getElementById("bPwBaru").value, baru2 = document.getElementById("bPwBaru2").value;
+    var u = bAuth.currentUser;
+    if (!u) { bMsg_(pwErr, "Sesi habis. Masuk lagi."); return; }
+    if (!lama || !baru) { bMsg_(pwErr, "Lengkapi semua kolom."); return; }
+    if (baru.length < 6) { bMsg_(pwErr, "Password baru minimal 6 karakter."); return; }
+    if (baru !== baru2) { bMsg_(pwErr, "Ulangi password baru tidak sama."); return; }
+    if (baru === lama) { bMsg_(pwErr, "Password baru harus berbeda dari yang lama."); return; }
+    var btn = this; btn.disabled = true;
+    u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email, lama))
+      .then(function(){ return u.updatePassword(baru); })
+      .then(function(){ localStorage.setItem("bPwGanti_" + u.uid, "1"); pwOv.style.display = "none"; showToast("Password berhasil diganti."); })
+      .catch(function(err){ bMsg_(pwErr, /invalid-credential|wrong-password/i.test(String(err && err.code)) ? "Password lama salah." : "Gagal mengganti password."); })
+      .then(function(){ btn.disabled = false; });
   });
 });
 
@@ -665,11 +759,11 @@ function initDashboard_(){
     document.querySelectorAll(".iuran-test-reset").forEach(function(x){ x.style.display = testMode_ ? "inline-flex" : "none"; });
   }
   function loadTestMode_(){
-    return db.ref("appConfig/testMode").once("value").then(function(snap){
+    return bDb.ref("appConfig/testMode").once("value").then(function(snap){
       if (snap.exists()) testMode_ = snap.val() === true;
       else {
         testMode_ = RT_CONFIG.testModeDefault === true;
-        return db.ref("appConfig/testMode").set(testMode_);
+        return bDb.ref("appConfig/testMode").set(testMode_);
       }
     }).then(function(){ testModeReady_ = true; renderTestMode_(); });
   }
@@ -681,16 +775,18 @@ function initDashboard_(){
   if (!firebase.apps.length) firebase.initializeApp(RT_CONFIG.firebaseConfig);
   db = firebase.database();
 
+  function startTestMode_(){
   loadTestMode_().catch(function(){ testModeReady_ = false; renderTestMode_(); showToast("Tidak bisa membaca status TEST MODE."); });
   document.getElementById("btnToggleTestMode").addEventListener("click", function(){
     if (!testModeReady_) return;
     var next = !testMode_;
     if (!confirm(next ? "Nyalakan TEST MODE? Transaksi keuangan boleh dihapus untuk simulasi." : "Matikan TEST MODE? Setelah ini transaksi keuangan tidak bisa dihapus.")) return;
     var b = this; b.disabled = true;
-    db.ref("appConfig/testMode").set(next).then(function(){
+    bDb.ref("appConfig/testMode").set(next).then(function(){
       testMode_ = next; renderTestMode_(); showToast(next ? "TEST MODE ON." : "TEST MODE OFF.");
     }).catch(function(){ renderTestMode_(); showToast("Gagal mengubah TEST MODE."); });
   });
+  }
 
   var today = tglWIB_();
   document.getElementById("agTanggal").value = today;
@@ -1098,6 +1194,11 @@ function initDashboard_(){
     }).catch(function(){ btn.disabled = false; btn.textContent = "✅ Terima"; showToast("Gagal menerima. Coba lagi."); });
   });
 
+  /* ===== KEUANGAN & IURAN: dijalankan setelah Bendahara login ===== */
+  function initBendahara_(){
+  var db = bDb;
+  var bInited_ = false;
+  startTestMode_();
   /* ---- KEUANGAN ---- */
   document.getElementById("kTanggal").value = today;
   document.getElementById("formKeuangan").addEventListener("submit", function(e){
@@ -1120,7 +1221,7 @@ function initDashboard_(){
     db.ref("keuangan").push({
       tanggal: tanggal, jenis: jenis, keterangan: keterangan, kategori: kategori, jumlah: jumlah,
       createdAt: firebase.database.ServerValue.TIMESTAMP,
-      createdBy: (firebase.auth().currentUser && firebase.auth().currentUser.email) || ""
+      createdBy: (bAuth.currentUser && bAuth.currentUser.email) || ""
     }).then(function(){
       showToast("Transaksi tersimpan dan otomatis masuk ke Laporan Keuangan.");
       document.getElementById("formKeuangan").reset();
@@ -1346,7 +1447,7 @@ function initDashboard_(){
     return peta[j && j.reason] || ("Gagal kirim (" + ((j && j.reason) || "tidak diketahui") + ").");
   }
   async function kirimWAFile_(target, pesan, bytes, namaFile, mime){
-    var user = firebase.auth().currentUser;
+    var user = bAuth.currentUser;
     if (!user) throw new Error("Sesi login habis. Masuk lagi.");
     var token = await user.getIdToken();
     var res;
@@ -1932,7 +2033,7 @@ function initDashboard_(){
           keterangan: "Iuran Bulanan (Transfer) - " + x.e.rumah + " - " + fmtBulanID_(x.b) + (x.e.paketN > 1 ? " (bayar di muka " + x.e.paketKe + "/" + x.e.paketN + ")" : ""),
           kategori: "Iuran Bulanan", jumlah: x.e.jumlah, source: "penarikan/" + x.b + "/" + x.r,
           createdAt: firebase.database.ServerValue.TIMESTAMP,
-          createdBy: (firebase.auth().currentUser && firebase.auth().currentUser.email) || ""
+          createdBy: (bAuth.currentUser && bAuth.currentUser.email) || ""
         };
       });
       db.ref().update(upd).then(function(){
@@ -2060,7 +2161,7 @@ function initDashboard_(){
         keterangan: "Setoran Iuran Bulanan (Cash) - " + it.petugas + " - " + fmtBulanID_(it.bulanKey),
         kategori: "Iuran Bulanan", jumlah: it.jumlah, source: "humasSetoran/" + id,
         createdAt: firebase.database.ServerValue.TIMESTAMP,
-        createdBy: (firebase.auth().currentUser && firebase.auth().currentUser.email) || ""
+        createdBy: (bAuth.currentUser && bAuth.currentUser.email) || ""
       };
       return db.ref().update(upd);
     }).then(function(){
@@ -2071,6 +2172,26 @@ function initDashboard_(){
     .catch(function(err){ btn.disabled = false; btn.textContent = "✅ Terima Setoran"; showToast(err && err.message && err.message.charAt(0) === "!" ? err.message.slice(1) : pesanGagal_(err, "Penerimaan setoran")); });
   });
 
+
+  /* ---- PUBLIKASI RINGKASAN KE HALAMAN TRANSPARANSI (hanya Bendahara) ---- */
+  document.getElementById("bBtnPublish").addEventListener("click", function(){
+    var items = {}, n = 0;
+    (keuanganSemua_ || []).forEach(function(it){
+      items[it.id] = { tanggal: it.tanggal, jenis: it.jenis, keterangan: it.keterangan, kategori: it.kategori || "", jumlah: it.jumlah, createdAt: it.createdAt || 0 };
+      n++;
+    });
+    if (!n) { showToast("Belum ada transaksi untuk dipublikasikan."); return; }
+    if (!confirm("Publikasikan " + n + " transaksi ke halaman Transparansi (terlihat semua warga)?\n\nPeriksa dulu kolom keterangan tidak memuat data pribadi.")) return;
+    var b = this; b.disabled = true;
+    bDb.ref("ringkasanKeuangan").set({ items: items, meta: { publishedAt: firebase.database.ServerValue.TIMESTAMP, publishedBy: (bAuth.currentUser && bAuth.currentUser.email) || "" } })
+      .then(function(){ showToast("Berhasil dipublikasikan ke Transparansi."); })
+      .catch(function(err){ showToast(pesanGagal_(err, "Publikasi")); })
+      .then(function(){ b.disabled = false; });
+  });
+  }
+  bInitFn_ = function(){ if (!bInited_done_) { bInited_done_ = true; initBendahara_(); } };
+  var bInited_done_ = false;
+
   /* ---- DELETE (delegasi klik untuk semua daftar) ---- */
   document.getElementById("dashboard").addEventListener("click", function(e){
     var btn = e.target.closest(".entry-del") || e.target.closest(".thumb-del");
@@ -2079,7 +2200,7 @@ function initDashboard_(){
     var node = btn.getAttribute("data-node");
     if (node === "keuangan" && !testMode_) { showToast("TEST MODE OFF: transaksi keuangan terkunci."); return; }
     function hapusSekarang_(){
-      db.ref(node + "/" + id).remove().then(function(){
+      (node === "keuangan" ? bDb : db).ref(node + "/" + id).remove().then(function(){
         showToast("Data dihapus.");
       }).catch(function(err){ showToast(pesanGagal_(err, "Penghapusan")); });
     }
@@ -2088,7 +2209,7 @@ function initDashboard_(){
       hapusSekarang_();
       return;
     }
-    db.ref("keuangan/" + id).once("value").then(function(snap){
+    bDb.ref("keuangan/" + id).once("value").then(function(snap){
       var v = snap.val() || {};
       var dariIuran = v.source ? "\n\n⚠️ Transaksi ini dibuat OTOMATIS dari Iuran Bulanan (" + (String(v.source).indexOf("humasSetoran") === 0 ? "setoran cash" : "transfer") + ").\nJika dihapus, kas berkurang tetapi catatan iuran rumah tetap berstatus LUNAS/DITERIMA dan tidak bisa diterima ulang. Hanya lakukan ini untuk membersihkan data simulasi." : "";
       if (!confirm("Hapus transaksi simulasi ini?\n\n" + (v.jenis === "masuk" ? "Pemasukan " : "Pengeluaran ") + fmtRp_(v.jumlah) + " — " + (v.keterangan || "") + dariIuran + "\n\nTindakan tidak bisa dibatalkan.")) return;

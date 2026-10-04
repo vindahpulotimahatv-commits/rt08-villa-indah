@@ -20,6 +20,7 @@ const RT_CONFIG = {
   firebaseAuthRequired: true,
   // UID akun Firebase yang berhak mengakses panel masing-masing.
   adminUid: "DOHOhpaimmTY2oB1WxbNQg0BLIG2",
+  bendaharaUid: "S1wZXXYJixTlw0VCQyvDf2eVXv23",
   humasUid: "1VnzbcWA8edwPLFNfASNnUK9bn22",
 
   // Mode uji coba. Nilai ini hanya dipakai sebagai default saat Firebase belum punya appConfig/testMode.
