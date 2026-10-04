@@ -955,6 +955,7 @@ function simpanTransaksi_(){
     tambahanKK: tambahan, jumlah: jumlah, metode: metode, catatan: catatan, status: status,
     petugas: petugasNama, teleponWarga: telp, setoranId: saldoSaja_ ? "saldo" : (existing.setoranId || null),
     uangMasuk: uangMasuk_, kelebihan: kelebihan_ || null, saldoDipakai: saldoDipakai_ || null,
+    saldoSetelah: (uangMasuk_ != null) ? Math.max(0, saldoRumah_(currentRumah.key) - saldoDipakai_ + kelebihan_) : null,
     adaBukti: metode === "transfer" ? true : null,
     createdAt: existing.createdAt || firebase.database.ServerValue.TIMESTAMP,
     updatedAt: firebase.database.ServerValue.TIMESTAMP
@@ -1168,6 +1169,11 @@ function buatKwitansi_(payload){
     rincian: "Iuran Bulanan" + (payload.paketN > 1 ? " × " + payload.paketN + " bulan" : "") + (payload.tambahanKK ? " + Iuran RUKEM (tambahan KK)" : ""),
     jumlah: fmtRp_(payload.jumlah), metode: "Tunai (Cash)", petugas: payload.petugas
   };
+  if (payload.uangMasuk != null && (payload.kelebihan > 0 || payload.saldoDipakai > 0)) {
+    dataKwitansi.diterima = fmtRp_(payload.uangMasuk);
+    if (payload.saldoDipakai > 0) dataKwitansi.saldoPakai = fmtRp_(payload.saldoDipakai);
+    if (payload.saldoSetelah > 0) dataKwitansi.saldoSisa = fmtRp_(payload.saldoSetelah);
+  }
   var hasil;
   try { hasil = RTSurat.buat("kwitansiIuran", dataKwitansi, RT_CONFIG, null, new Date(), "KW-" + bulanKey.slice(2, 4) + bulanKey.slice(5, 7) + "-" + String(payload.blok || "").toUpperCase() + "-" + String(payload.no || "").toUpperCase()); }
   catch (e) { console.error(e); showToast("Tersimpan, tapi gagal membuat PDF kwitansi."); closeModal_(); return; }

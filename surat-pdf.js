@@ -498,6 +498,9 @@
         { id: "bulan", label: "Untuk Bulan" },
         { id: "rincian", label: "Rincian" },
         { id: "jumlah", label: "Jumlah Dibayar" },
+        { id: "diterima", label: "Uang Diterima" },
+        { id: "saldoPakai", label: "Saldo Dipakai" },
+        { id: "saldoSisa", label: "Sisa Saldo Bulan Depan" },
         { id: "metode", label: "Cara Pembayaran" },
         { id: "petugas", label: "Petugas Penarik" }
       ],
@@ -521,17 +524,31 @@
         L.y += 26;
         var y0 = L.y;
         doc.rect(x0, y0, W, 66, { fill: [0.93, 0.96, 1], stroke: [0.78, 0.85, 0.95], lw: 0.8 });
-        doc.text(x0 + 18, y0 + 22, "Jumlah Dibayar", "R", 10.5, { gray: 0.35 });
-        doc.text(x0 + 18, y0 + 52, norm(d.jumlah), "B", 26, { rgb: navy });
+        /* d.diterima (opsional): uang yang benar-benar diterima, bila beda dari iuran bulan ini (ada kelebihan / saldo titipan). */
+        var adaSaldo = !!d.diterima;
+        doc.text(x0 + 18, y0 + 22, adaSaldo ? "Uang Diterima" : "Jumlah Dibayar", "R", 10.5, { gray: 0.35 });
+        doc.text(x0 + 18, y0 + 52, norm(adaSaldo ? d.diterima : d.jumlah), "B", 26, { rgb: navy });
         L.y = y0 + 66 + 18;
-        L.rows([
+        var baris = [
           ["Diterima dari", d.nama],
           ["Alamat", alamatRumah(d, c)],
           ["Untuk bulan", d.bulan],
-          ["Rincian", d.rincian || "Iuran Bulanan"],
-          ["Cara bayar", d.metode],
-          ["Petugas penarik", d.petugas]
-        ], { labelW: 105, size: 11, indent: 4 });
+          ["Rincian", d.rincian || "Iuran Bulanan"]
+        ];
+        if (adaSaldo) {
+          baris.push(["Iuran bulan ini", d.jumlah]);
+          if (d.saldoPakai) baris.push(["Saldo dipakai", d.saldoPakai + " (titipan bulan lalu)"]);
+        }
+        baris.push(["Cara bayar", d.metode], ["Petugas penarik", d.petugas]);
+        L.rows(baris, { labelW: 105, size: 11, indent: 4 });
+        if (adaSaldo && d.saldoSisa) {
+          L.space(8);
+          var yb = L.y;
+          doc.rect(x0, yb, W, 44, { fill: [0.92, 0.98, 0.94], stroke: hijau, lw: 0.9 });
+          doc.text(x0 + 14, yb + 18, "Sisa saldo untuk bulan depan", "R", 10.5, { gray: 0.35 });
+          doc.text(x0 + 14, yb + 36, norm(d.saldoSisa), "B", 16, { rgb: hijau });
+          L.y = yb + 44;
+        }
         L.space(14);
         doc.line(x0, L.y, x0 + W, L.y, 0.5, 0.8);
         L.y += 12;
