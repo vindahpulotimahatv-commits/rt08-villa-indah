@@ -362,7 +362,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <div class="form-grid"><div class="field full"><button class="btn btn-gold" type="submit" id="btnKirimLapor">Kirim Laporan</button></div>
   <div class="field full" id="laporFollowup" style="display:none">
     <div class="followup-box">
-      <p>✅ Laporan sudah terkirim ke <b>Pak RT</b>. Karena kategorinya <b>Keamanan</b>, teruskan juga ke petugas keamanan:</p>
+      <p>✅ Laporan sudah terkirim ke <b>Sekretaris RT</b>. Karena kategorinya <b>Keamanan</b>, teruskan juga ke petugas keamanan:</p>
       <button type="button" class="btn btn-brand" id="btnKirimKeamanan">🛡️ Kirim juga ke Keamanan (Pak Jati)</button>
     </div>
   </div>
@@ -485,11 +485,11 @@ document.addEventListener("DOMContentLoaded",()=>{
         });
       }
 
-      // Laporan SELALU dikirim ke Pak RT (Ketua) terlebih dulu.
-      const nomorKetua = RT_CONFIG.waKetua;
+      // Laporan SELALU dikirim langsung ke chat Sekretaris (nomor otomatis dari config.js → waSekretaris).
+      const nomorKetua = RT_CONFIG.waSekretaris || RT_CONFIG.waKetua;
       const linkKetua = rtWaLink(nomorKetua, pesan);
       if(!linkKetua){
-        showToast("Nomor WhatsApp Ketua RT belum diatur admin di config.js.");
+        showToast("Nomor WhatsApp Sekretaris belum diatur admin di config.js.");
         return;
       }
       window.open(linkKetua, "_blank", "noopener");
@@ -512,10 +512,10 @@ document.addEventListener("DOMContentLoaded",()=>{
             showToast("Nomor WhatsApp Keamanan belum diatur admin di config.js.");
           }
         };
-        showToast("Laporan terkirim ke Pak RT. Lanjut kirim ke Keamanan di bawah ini.");
+        showToast("Laporan dibuka ke WhatsApp Sekretaris. Lanjut kirim ke Keamanan di bawah ini.");
       } else {
         document.getElementById("laporFollowup").style.display = "none";
-        showToast("WhatsApp terbuka — silakan tekan kirim untuk melaporkan ke Pak RT.");
+        showToast("WhatsApp Sekretaris terbuka — silakan tekan kirim.");
       }
     });
   }
