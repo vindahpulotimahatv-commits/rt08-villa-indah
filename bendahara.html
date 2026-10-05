@@ -339,9 +339,15 @@ textarea{min-height:76px;resize:vertical}
 
   <!-- ===== PANEL IURAN BULANAN (dari halaman Humas — humas.html) ===== -->
   <div class="panel" id="panel-iuran">
+    <div class="list-card" id="cardLapor" style="margin-bottom:18px">
+      <div class="list-title">📥 Laporan Transfer dari Warga <span id="laporBadge"></span></div>
+      <p class="sub" style="padding:0 14px;margin:0 0 6px;color:var(--muted);font-size:12px">Dikirim warga lewat menu <b>Bayar Iuran</b> di aplikasi setelah transfer ke rekening Bendahara. Lihat bukti &amp; cek mutasi rekening dulu, lalu tekan <b>Isi ke Form</b> dan simpan di kartu <b>Catat Transfer Langsung</b> di bawah (otomatis lunas &amp; masuk Kas RT). Tekan <b>Tolak</b> bila uang belum/tidak masuk.</p>
+      <div id="listLapor"><div class="empty-note">Memuat data...</div></div>
+    </div>
     <div class="form-card" id="cardLangsung" style="margin-bottom:18px">
       <h3>💳 Catat Transfer Langsung ke Bendahara</h3>
       <p class="sub">Untuk warga yang transfer langsung ke rekening Bendahara tanpa lewat Humas. Setelah dicatat, status langsung Lunas (Transfer) dan otomatis masuk Kas RT. Pastikan uangnya sudah ada di mutasi rekening.</p>
+      <div class="lg-picked ok" id="lgLaporInfo" style="display:none;margin-bottom:8px"></div>
       <div class="ac-wrap"><input type="text" id="lgRumah" placeholder="Ketik blok/nomor rumah atau nama, contoh: E2 46" autocomplete="off" autocapitalize="characters" spellcheck="false"><div class="ac-list" id="lgAc" hidden></div></div>
       <div class="lg-picked" id="lgPicked"></div>
       <div class="lg-row">
@@ -695,9 +701,9 @@ function initDashboard_(){
     if (!m) return k || "-";
     return BULAN_ID[parseInt(m[2], 10) - 1] + " " + m[1];
   }
-  var pendingTransferCount_ = 0, pendingSetoranCount_ = 0;
+  var pendingTransferCount_ = 0, pendingSetoranCount_ = 0, pendingLaporCount_ = 0;
   function updateIuranTabBadge_(){
-    var total = pendingTransferCount_ + pendingSetoranCount_;
+    var total = pendingTransferCount_ + pendingSetoranCount_ + pendingLaporCount_;
     document.getElementById("tabIuranBtn").innerHTML = "🧾 Iuran Bulanan" + (total ? '<span class="pill">' + total + '</span>' : "");
   }
 
@@ -1699,10 +1705,104 @@ function initDashboard_(){
       });
       db.ref().update(upd).then(function(){
         showToast("Tersimpan: " + r.rumah + " lunas (" + n + " bulan) dan masuk Kas RT. Kirim kwitansi dari daftar 🧾 di bawah.");
-        document.getElementById("lgRumah").value = ""; showPicked_(); document.getElementById("lgCatatan").value = ""; document.getElementById("lgKK").checked = false; document.getElementById("lgJml").value = 1; hitung_();
+        if (window.__laporSelesai_) window.__laporSelesai_(r.key, b0); document.getElementById("lgRumah").value = ""; showPicked_(); document.getElementById("lgCatatan").value = ""; document.getElementById("lgKK").checked = false; document.getElementById("lgJml").value = 1; hitung_();
       }).catch(function(err){ showToast(pesanGagal_(err, "Pencatatan transfer langsung")); })
         .then(function(){ btn.disabled = false; });
     });
+
+    /* ---- LAPORAN TRANSFER DARI WARGA (menu "Bayar Iuran" di aplikasi warga) ---- */
+    var laporData_ = {}, laporAktif_ = null, infoEl_ = document.getElementById("lgLaporInfo");
+    function geserBulan_(k, d){ var m = /^(\d{4})-(\d{2})$/.exec(k || ""); if (!m) return k; var idx = parseInt(m[1], 10) * 12 + parseInt(m[2], 10) - 1 + d; return Math.floor(idx / 12) + "-" + ("0" + ((idx % 12) + 1)).slice(-2); }
+    function laporBulanTeks_(it){ var n = it.jmlBulan || 1; return n > 1 ? fmtBulanID_(it.bulanKey) + " s/d " + fmtBulanID_(geserBulan_(it.bulanKey, n - 1)) + " (" + n + " bulan)" : fmtBulanID_(it.bulanKey); }
+    function laporTglTeks_(t){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t || ""); return m ? parseInt(m[3], 10) + " " + fmtBulanID_(m[1] + "-" + m[2]) : "-"; }
+    function laporSembunyiInfo_(){ laporAktif_ = null; infoEl_.style.display = "none"; infoEl_.innerHTML = ""; }
+    function renderLapor_(){
+      var menunggu = [], selesai = [];
+      Object.keys(laporData_).forEach(function(id){ var it = Object.assign({ id: id }, laporData_[id]); (it.status === "menunggu" ? menunggu : selesai).push(it); });
+      menunggu.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
+      selesai.sort(function(a, b){ return (b.diprosesAt || b.createdAt || 0) - (a.diprosesAt || a.createdAt || 0); });
+      pendingLaporCount_ = menunggu.length;
+      document.getElementById("laporBadge").innerHTML = menunggu.length ? '<span class="pill">' + menunggu.length + '</span>' : "";
+      updateIuranTabBadge_();
+      var box = document.getElementById("listLapor");
+      var html = menunggu.length ? menunggu.map(function(it){
+        var r = cari_(it.rumah), judul = r ? r.rumah + " — " + r.nama : it.rumah;
+        var selisih = it.jumlahSeharusnya != null && it.jumlah !== it.jumlahSeharusnya;
+        return '<div class="entry-row"><div class="entry-body"><h4>' + esc_(judul) + '</h4>' +
+          '<p>' + esc_(laporBulanTeks_(it)) + ' • <b>' + fmtRp_(it.jumlah) + '</b>' + (selisih ? ' • ⚠️ seharusnya ' + fmtRp_(it.jumlahSeharusnya) : '') +
+          (it.nama ? ' • Pengirim: ' + esc_(it.nama) : '') + ' • Transfer: ' + esc_(laporTglTeks_(it.tglTransfer)) + (it.tambahanKK ? ' • +KK' : '') + (it.catatan ? ' • “' + esc_(it.catatan) + '”' : '') + '</p></div>' +
+          '<div style="display:flex;gap:6px;flex-direction:column">' +
+          '<button class="btn btn-gold btn-sm lapor-btn" data-act="bukti" data-id="' + esc_(it.id) + '">🧾 Lihat Bukti</button>' +
+          '<button class="btn btn-brand btn-sm lapor-btn" data-act="isi" data-id="' + esc_(it.id) + '">✍️ Isi ke Form</button>' +
+          '<button class="btn btn-tolak btn-sm lapor-btn" data-act="tolak" data-id="' + esc_(it.id) + '">✖ Tolak</button></div></div>';
+      }).join("") : '<div class="empty-note">Belum ada laporan transfer baru dari warga.</div>';
+      if (selesai.length) {
+        html += '<details style="padding:6px 14px 12px"><summary style="cursor:pointer;font-size:12px;font-weight:800;color:var(--muted)">Sudah diproses (' + selesai.length + ') — tampil 10 terbaru</summary>' +
+          selesai.slice(0, 10).map(function(it){
+            var r = cari_(it.rumah), ok = it.status === "dicatat";
+            return '<div style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--line)">' + (ok ? "✅" : "✖") + ' ' + esc_(r ? r.rumah : it.rumah) + ' • ' + esc_(laporBulanTeks_(it)) + ' • ' + fmtRp_(it.jumlah) + ' • ' + (ok ? "dicatat lunas" : "ditolak" + (it.alasanTolak ? ": " + esc_(it.alasanTolak) : "")) + '</div>';
+          }).join("") + '</details>';
+      }
+      box.innerHTML = html;
+    }
+    db.ref("laporTransfer").on("value", function(snap){ laporData_ = snap.val() || {}; renderLapor_(); },
+      function(){ document.getElementById("listLapor").innerHTML = '<div class="empty-note">Gagal memuat laporan warga. Periksa aturan Firebase (node laporTransfer).</div>'; });
+    function lihatBuktiLapor_(id){
+      var it = laporData_[id] || {}, r = cari_(it.rumah);
+      var ov = document.createElement("div");
+      ov.style.cssText = "position:fixed;inset:0;background:rgba(6,14,32,.85);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:12px";
+      ov.innerHTML = '<div style="color:#fff;font-size:13px;text-align:center;font-weight:800">' + esc_(r ? r.rumah + " — " + r.nama : (it.rumah || "")) + '<br>' + fmtRp_(it.jumlah) + ' • ' + esc_(laporBulanTeks_(it)) + '</div>' +
+        '<div id="buktiLaporIsi" style="color:#fff;font-size:13px">Memuat bukti...</div><button class="btn btn-gold btn-sm" id="buktiLaporTutup" style="width:auto">✕ Tutup</button>';
+      document.body.appendChild(ov);
+      ov.addEventListener("click", function(ev){ if (ev.target === ov || ev.target.id === "buktiLaporTutup") ov.remove(); });
+      db.ref("laporTransferBukti/" + id + "/foto").once("value").then(function(snap){
+        var url = snap.val(), bx = ov.querySelector("#buktiLaporIsi");
+        if (!url) { bx.textContent = "Bukti tidak ditemukan."; return; }
+        bx.innerHTML = '<img src="' + url + '" alt="Bukti transfer" style="max-width:100%;max-height:68vh;border-radius:12px;background:#fff">';
+      }).catch(function(){ ov.querySelector("#buktiLaporIsi").textContent = "Gagal memuat bukti. Periksa aturan Firebase (node laporTransferBukti)."; });
+    }
+    document.getElementById("listLapor").addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".lapor-btn") : null; if (!b) return;
+      var id = b.getAttribute("data-id"), act = b.getAttribute("data-act"), it = laporData_[id];
+      if (!it) { showToast("Laporan tidak ditemukan. Halaman akan diperbarui."); return; }
+      if (act === "bukti") { lihatBuktiLapor_(id); return; }
+      if (act === "isi") {
+        var r = cari_(it.rumah); if (!r) { showToast("Rumah tidak dikenali di data warga: " + it.rumah); return; }
+        var n = it.jmlBulan || 1;
+        inpR_.value = r.blok + " " + r.no;
+        document.getElementById("lgBulan").value = it.bulanKey;
+        document.getElementById("lgJml").value = n;
+        document.getElementById("lgKK").checked = !!it.tambahanKK;
+        document.getElementById("lgCatatan").value = "Lapor warga via aplikasi" + (it.catatan ? " — " + it.catatan : "");
+        document.getElementById("lgUang").value = (n === 1 && it.jumlahSeharusnya != null && it.jumlah !== it.jumlahSeharusnya) ? it.jumlah : "";
+        showPicked_(); hitung_();
+        laporAktif_ = id;
+        infoEl_.innerHTML = '📥 Mengisi dari laporan warga: ' + esc_(r.rumah) + ' — transfer ' + fmtRp_(it.jumlah) + ' (' + esc_(laporTglTeks_(it.tglTransfer)) + '). Cek mutasi rekening dulu. <a href="#" id="lgLaporBatal" style="font-weight:900;margin-left:6px">Batalkan</a>';
+        infoEl_.style.display = "block";
+        document.getElementById("lgLaporBatal").addEventListener("click", function(ev){ ev.preventDefault(); laporSembunyiInfo_(); });
+        document.getElementById("cardLangsung").scrollIntoView({ behavior: "smooth", block: "start" });
+        showToast("Form terisi dari laporan warga. Cek mutasi rekening, lalu tekan Simpan sebagai Lunas.");
+        return;
+      }
+      if (act === "tolak") {
+        var rr = cari_(it.rumah);
+        var alasan = prompt("Tolak laporan " + (rr ? rr.rumah : it.rumah) + " (" + fmtRp_(it.jumlah) + ")?\n\nAlasan (opsional, tercatat di riwayat):", "Belum masuk mutasi rekening");
+        if (alasan === null) return;
+        var u = { status: "ditolak", diprosesAt: firebase.database.ServerValue.TIMESTAMP };
+        if (alasan.trim()) u.alasanTolak = alasan.trim().slice(0, 200);
+        db.ref("laporTransfer/" + id).update(u).then(function(){ if (laporAktif_ === id) laporSembunyiInfo_(); showToast("Laporan ditolak. Hubungi warga lewat WhatsApp bila perlu."); })
+          .catch(function(err){ showToast(pesanGagal_(err, "Penolakan laporan")); });
+      }
+    });
+    /* Dipanggil setelah "Simpan sebagai Lunas" berhasil: tandai laporan warga yang tadi diisi ke form sebagai dicatat. */
+    window.__laporSelesai_ = function(rKey, b0){
+      if (!laporAktif_) return;
+      var id = laporAktif_, it = laporData_[id], r = it && cari_(it.rumah);
+      laporSembunyiInfo_();
+      if (!it || !r || r.key !== rKey || it.bulanKey !== b0) return;
+      db.ref("laporTransfer/" + id).update({ status: "dicatat", diprosesAt: firebase.database.ServerValue.TIMESTAMP })
+        .catch(function(){ showToast("Lunas tersimpan, tapi status laporan warga gagal diperbarui. Periksa aturan Firebase (laporTransfer)."); });
+    };
   })();
 
   /* ---- PUBLIKASI RINGKASAN KE TRANSPARANSI ---- */
