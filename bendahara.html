@@ -220,6 +220,35 @@ textarea{min-height:76px;resize:vertical}
 .btn-tolak{background:#fdeaea;color:var(--red)}
 @media(max-width:480px){.finance-summary{grid-template-columns:1fr}}
 @media(min-width:1024px){#panel-keuangan.active{display:block}#panel-keuangan.active .form-card{grid-row:auto;position:static;margin-bottom:18px}}
+
+/* ===== FIX TAMPILAN: form Transfer Langsung & daftar Iuran (HP + PC) ===== */
+#panel-iuran .form-card,#panel-iuran .list-card{min-width:0;max-width:100%;overflow:visible}
+#cardLangsung input{min-width:0;max-width:100%;font-size:16px;margin-bottom:10px}
+#cardLangsung input[type=month]{-webkit-appearance:none;appearance:none;min-height:46px;text-align:left}
+#cardLangsung input[type=checkbox]{width:20px;height:20px;margin:0;flex:none}
+#cardLangsung label{display:block;min-width:0}
+#cardLangsung .lg-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+#cardLangsung .lg-row label{margin:0}
+#cardLangsung .lg-kk{display:flex;gap:10px;align-items:center;margin:4px 0 12px;font-size:13px;font-weight:800}
+.ac-wrap{position:relative}
+.ac-list{position:absolute;left:0;right:0;top:calc(100% - 8px);z-index:30;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 34px rgba(10,25,56,.22);max-height:260px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.ac-list[hidden]{display:none}
+.ac-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;font-size:14px}
+.ac-item:last-child{border-bottom:0}
+.ac-item:hover,.ac-item:active{background:var(--mint)}
+.ac-item b{white-space:nowrap;color:var(--green)}
+.ac-item span{color:var(--muted);font-size:12.5px;text-align:right;overflow-wrap:anywhere}
+.lg-picked{font-size:12.5px;font-weight:800;color:var(--red);margin:-4px 0 10px;min-height:0}
+.lg-picked.ok{color:#1c8a4e}
+.lg-picked:empty{display:none}
+/* tombol di dalam baris daftar tidak boleh selebar penuh (penyebab teks tergencet) */
+.entry-row .btn{width:auto;flex:none}
+#panel-iuran .entry-row{flex-wrap:wrap}
+#panel-iuran .entry-row .entry-body{flex:1 1 220px;min-width:0;overflow-wrap:anywhere}
+@media(max-width:600px){
+  #panel-iuran .entry-row .entry-body{flex:1 1 100%}
+  #panel-iuran .entry-row .btn{flex:1 1 calc(50% - 6px)}
+}
 </style>
 </head><body>
 <header class="topbar"><div class="container topbar-inner">
@@ -313,15 +342,15 @@ textarea{min-height:76px;resize:vertical}
     <div class="form-card" id="cardLangsung" style="margin-bottom:18px">
       <h3>💳 Catat Transfer Langsung ke Bendahara</h3>
       <p class="sub">Untuk warga yang transfer langsung ke rekening Bendahara tanpa lewat Humas. Setelah dicatat, status langsung Lunas (Transfer) dan otomatis masuk Kas RT. Pastikan uangnya sudah ada di mutasi rekening.</p>
-      <input type="text" id="lgRumah" list="lgRumahList" placeholder="Ketik blok/nomor rumah, contoh: E2 46" autocomplete="off">
-      <datalist id="lgRumahList"></datalist>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <label style="flex:1;min-width:150px;font-size:12px;font-weight:800">Bulan mulai<input type="month" id="lgBulan"></label>
-        <label style="flex:1;min-width:120px;font-size:12px;font-weight:800">Jumlah bulan<input type="number" id="lgJml" min="1" max="12" value="1"></label>
+      <div class="ac-wrap"><input type="text" id="lgRumah" placeholder="Ketik blok/nomor rumah atau nama, contoh: E2 46" autocomplete="off" autocapitalize="characters" spellcheck="false"><div class="ac-list" id="lgAc" hidden></div></div>
+      <div class="lg-picked" id="lgPicked"></div>
+      <div class="lg-row">
+        <label>Bulan mulai<input type="month" id="lgBulan"></label>
+        <label>Jumlah bulan<input type="number" id="lgJml" min="1" max="12" value="1" inputmode="numeric"></label>
       </div>
-      <label style="display:flex;gap:8px;align-items:center;margin:8px 0;font-size:13px;font-weight:800"><input type="checkbox" id="lgKK" style="width:auto"> Ada KK tambahan di rumah ini</label>
+      <label class="lg-kk"><input type="checkbox" id="lgKK"> Ada KK tambahan di rumah ini</label>
       <input type="text" id="lgCatatan" placeholder="Catatan (opsional)">
-      <label style="display:block;font-size:12px;font-weight:800;margin:6px 0">Uang yang ditransfer (Rp) — isi lebih besar bila warga bayar lebih (hanya untuk 1 bulan); sisanya jadi saldo bulan depan<input type="number" id="lgUang" inputmode="numeric" min="0" step="1000" placeholder="kosongkan jika pas"></label>
+      <label style="display:block;font-size:12px;font-weight:800;margin:6px 0 10px">Uang yang ditransfer (Rp) — isi lebih besar bila warga bayar lebih (hanya untuk 1 bulan); sisanya jadi saldo bulan depan<input type="number" id="lgUang" inputmode="numeric" min="0" step="1000" placeholder="kosongkan jika pas"></label>
       <p class="sub" id="lgTotal" style="font-weight:900;color:var(--green)"></p>
       <button type="button" class="btn btn-gold" id="lgSimpan">Simpan sebagai Lunas (Transfer)</button>
     </div>
@@ -1593,9 +1622,34 @@ function initDashboard_(){
     var rumahList_ = (typeof WARGA_DATA !== "undefined" ? WARGA_DATA : []).map(function(w){
       return { key: nk_(w.blok + " " + w.no), rumah: w.blok + " No." + w.no, blok: w.blok, no: w.no, nama: w.nama };
     });
-    document.getElementById("lgRumahList").innerHTML = rumahList_.map(function(r){ return '<option value="' + esc_(r.blok + " " + r.no) + '">' + esc_(r.nama) + '</option>'; }).join("");
     document.getElementById("lgBulan").value = tglWIB_().slice(0,7);
     function cari_(v){ var k = nk_(v); return rumahList_.filter(function(r){ return r.key === k; })[0] || null; }
+    /* Saran nomor rumah otomatis: muncul saat mengetik (cocok blok, nomor, atau nama) */
+    var acBox_ = document.getElementById("lgAc"), inpR_ = document.getElementById("lgRumah"), pickedEl_ = document.getElementById("lgPicked");
+    function showPicked_(){
+      var r = cari_(inpR_.value);
+      pickedEl_.className = "lg-picked" + (r ? " ok" : "");
+      pickedEl_.textContent = r ? "✅ " + r.rumah + " — " + r.nama : (inpR_.value.trim() ? "Belum cocok — pilih dari daftar saran" : "");
+    }
+    function acRender_(){
+      var raw = String(inpR_.value || "").trim(), q = nk_(raw), qn = raw.toLowerCase();
+      if (!q) { acBox_.hidden = true; acBox_.innerHTML = ""; return; }
+      var hasil = rumahList_.filter(function(r){ return r.key.indexOf(q) > -1 || String(r.nama).toLowerCase().indexOf(qn) > -1; });
+      hasil.sort(function(x, y){ return (x.key.indexOf(q) === 0 ? 0 : 1) - (y.key.indexOf(q) === 0 ? 0 : 1); });
+      hasil = hasil.slice(0, 40);
+      if (!hasil.length) { acBox_.innerHTML = '<div class="ac-item"><span>Tidak ada rumah yang cocok</span></div>'; acBox_.hidden = false; return; }
+      acBox_.innerHTML = hasil.map(function(r){ return '<div class="ac-item" data-v="' + esc_(r.blok + " " + r.no) + '"><b>' + esc_(r.blok + " No." + r.no) + '</b><span>' + esc_(r.nama) + '</span></div>'; }).join("");
+      acBox_.hidden = false;
+    }
+    acBox_.addEventListener("mousedown", function(e){ e.preventDefault(); });
+    acBox_.addEventListener("click", function(e){
+      var it = e.target.closest ? e.target.closest(".ac-item[data-v]") : null; if (!it) return;
+      inpR_.value = it.getAttribute("data-v"); acBox_.hidden = true; inpR_.blur();
+      showPicked_(); inpR_.dispatchEvent(new Event("change"));
+    });
+    inpR_.addEventListener("input", function(){ acRender_(); showPicked_(); });
+    inpR_.addEventListener("focus", acRender_);
+    document.addEventListener("click", function(e){ if (!e.target.closest || !e.target.closest(".ac-wrap")) acBox_.hidden = true; });
     function perBulan_(){ return (RT_CONFIG.iuranBulanan || 60000) + (document.getElementById("lgKK").checked ? (RT_CONFIG.iuranTambahanKK || 7500) : 0); }
     function hitung_(){
       var n = Math.max(1, Math.min(12, parseInt(document.getElementById("lgJml").value, 10) || 1));
@@ -1645,7 +1699,7 @@ function initDashboard_(){
       });
       db.ref().update(upd).then(function(){
         showToast("Tersimpan: " + r.rumah + " lunas (" + n + " bulan) dan masuk Kas RT. Kirim kwitansi dari daftar 🧾 di bawah.");
-        document.getElementById("lgRumah").value = ""; document.getElementById("lgCatatan").value = ""; document.getElementById("lgKK").checked = false; document.getElementById("lgJml").value = 1; hitung_();
+        document.getElementById("lgRumah").value = ""; showPicked_(); document.getElementById("lgCatatan").value = ""; document.getElementById("lgKK").checked = false; document.getElementById("lgJml").value = 1; hitung_();
       }).catch(function(err){ showToast(pesanGagal_(err, "Pencatatan transfer langsung")); })
         .then(function(){ btn.disabled = false; });
     });
