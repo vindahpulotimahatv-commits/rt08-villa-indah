@@ -108,6 +108,23 @@ button{font:inherit}
 .mclose{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;border:none;background:#f2f5fb;color:var(--muted);font-weight:900;cursor:pointer}
 .kwitansi-file{margin:0 0 4px;font-size:12px;color:var(--muted);text-align:center}
 @media(max-width:420px){.summary-grid{grid-template-columns:1fr 1fr}.summary-grid .sg-item:last-child{grid-column:1/-1}}
+
+/* ===== FIX TAMPILAN HP: cegah zoom otomatis iPhone + saran rumah otomatis ===== */
+html,body{overflow-x:hidden}
+@media(max-width:700px){input,select,textarea{font-size:16px!important}}
+.bulan-bar input{min-width:0;max-width:60%}
+.search-wrap{position:sticky;top:76px;z-index:40;scroll-margin-top:80px;margin-bottom:12px}
+.search-wrap .search-box{margin-bottom:0}
+.ac-list{position:absolute;left:0;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 34px rgba(10,25,56,.28);max-height:min(300px,38vh);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.ac-list[hidden]{display:none}
+.ac-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;font-size:14px}
+.ac-item:last-child{border-bottom:0}
+.ac-item:active{background:var(--mint)}
+.ac-item b{white-space:nowrap;color:var(--green)}
+.ac-item span{color:var(--muted);font-size:12.5px;text-align:right;overflow-wrap:anywhere}
+.ac-item em{font-style:normal;font-size:10px;font-weight:900;padding:3px 8px;border-radius:999px;background:#eef1f9;color:var(--muted);white-space:nowrap}
+.ac-item em.lunas{background:#e3f6ec;color:#1c8a4e}
+.rumah-row>div:first-child{min-width:0;overflow-wrap:anywhere}
 </style>
 </head><body>
 <header class="topbar"><div class="container topbar-inner">
@@ -148,7 +165,7 @@ button{font:inherit}
     <button class="btn btn-gold btn-sm" id="btnSetor" style="width:auto">📤 Setor</button>
   </div>
 
-  <input type="text" class="search-box" id="cariRumah" placeholder="🔍 Cari Blok/No rumah atau nama warga...">
+  <div class="search-wrap" id="searchWrap"><input type="text" class="search-box" id="cariRumah" placeholder="🔍 Ketik blok/no rumah atau nama warga..." autocomplete="off" autocapitalize="characters" spellcheck="false"><div class="ac-list" id="acRumah" hidden></div></div>
 
   <details class="list-card" id="cardTunggakan">
     <summary class="list-title" id="judulTunggakan" style="cursor:pointer">⚠️ Tunggakan — memuat...</summary>
@@ -610,6 +627,36 @@ function renderList_(){
     });
   });
 }
+
+/* ---------- SARAN RUMAH OTOMATIS (ketik -> pilih -> langsung buka form catat) ---------- */
+(function(){
+  var inp = document.getElementById("cariRumah"), box = document.getElementById("acRumah"), wrap = document.getElementById("searchWrap");
+  if (!inp || !box) return;
+  function render(){
+    var raw = String(inp.value || "").trim(), q = normKey_(raw), qn = raw.toLowerCase();
+    if (!q) { box.hidden = true; box.innerHTML = ""; return; }
+    var hasil = daftarRumahGabung_().filter(function(r){ return normKey_(r.label).indexOf(q) !== -1 || String(r.nama || "").toLowerCase().indexOf(qn) !== -1; });
+    hasil.sort(function(x, y){ return (normKey_(x.label).indexOf(q) === 0 ? 0 : 1) - (normKey_(y.label).indexOf(q) === 0 ? 0 : 1); });
+    hasil = hasil.slice(0, 40);
+    if (!hasil.length) { box.innerHTML = '<div class="ac-item"><span>Tidak ada rumah yang cocok</span></div>'; box.hidden = false; return; }
+    box.innerHTML = hasil.map(function(r){
+      var info = statusInfo_(penarikanData[r.key]);
+      return '<div class="ac-item" data-key="' + esc_(r.key) + '"><b>' + esc_(r.label) + '</b><span>' + esc_(r.nama || "-") + '</span><em class="' + (info.cls === "lunas" ? "lunas" : "") + '">' + info.text + '</em></div>';
+    }).join("");
+    box.hidden = false;
+  }
+  inp.addEventListener("input", render);
+  inp.addEventListener("focus", function(){ render(); setTimeout(function(){ try { wrap.scrollIntoView({ block: "start", behavior: "smooth" }); } catch (e) {} }, 300); });
+  box.addEventListener("mousedown", function(e){ e.preventDefault(); });
+  box.addEventListener("click", function(e){
+    var it = e.target.closest ? e.target.closest(".ac-item[data-key]") : null; if (!it) return;
+    var key = it.getAttribute("data-key");
+    var r = daftarRumahGabung_().filter(function(x){ return x.key === key; })[0];
+    box.hidden = true; inp.blur();
+    if (r) openModal_(r);
+  });
+  document.addEventListener("click", function(e){ if (!e.target.closest || !e.target.closest("#searchWrap")) box.hidden = true; });
+})();
 function renderRiwayatSetoran_(){
   var items = Object.keys(setoranData).map(function(k){ return Object.assign({ id: k }, setoranData[k]); })
     .filter(function(it){ return it.petugas === petugasNama; })
