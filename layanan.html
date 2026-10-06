@@ -649,7 +649,12 @@ function showToast(msg){
   async function kirim(){
     var J=RTSurat.JENIS[key], nomor=nomorWA(J);
     if(!nomor){ showToast("Nomor WhatsApp pengurus belum diatur admin di config.js."); return; }
-    // 1) Aplikasi Android Warga (versi baru): simpan PDF ke Downloads + buka chat nomor pengurus
+    // 1) Aplikasi Android: sama seperti Bendahara/Humas — WhatsApp terbuka dengan PDF SUDAH TERLAMPIR
+    //    dan mengarah ke nomor pengurus; warga tinggal menekan Kirim.
+    if(window.RTAndroid && typeof window.RTAndroid.sharePdf==="function"){
+      try{ if(window.RTAndroid.sharePdf(b64(hasil.bytes),hasil.namaFile,nomor,hasil.pesan)) return; }catch(e){ console.warn(e); }
+    }
+    // 1b) Cadangan di aplikasi: simpan PDF ke Download + buka chat nomor pengurus
     if(window.RTAndroid && typeof window.RTAndroid.bukaChatDenganPdf==="function"){
       try{ if(window.RTAndroid.bukaChatDenganPdf(b64(hasil.bytes),hasil.namaFile,nomor,hasil.pesan)) return; }catch(e){ console.warn(e); }
     }
