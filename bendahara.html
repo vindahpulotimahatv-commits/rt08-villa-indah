@@ -519,7 +519,16 @@ document.addEventListener("DOMContentLoaded", function(){
     return !!(user && RT_CONFIG.bendaharaUid && user.uid === RT_CONFIG.bendaharaUid);
   }
 
+
+  /* Serahkan sesi login ke aplikasi Android supaya notifikasi real-time bisa membaca data yang dilindungi */
+  function kirimSesiAndroid_(u){
+    try {
+      if (u && window.RTAndroid && RTAndroid.simpanSesi) RTAndroid.simpanSesi(u.refreshToken || "", (RT_CONFIG.firebaseConfig && RT_CONFIG.firebaseConfig.apiKey) || "", u.email || "");
+      else if (!u && window.RTAndroid && RTAndroid.hapusSesi) RTAndroid.hapusSesi();
+    } catch (e) {}
+  }
   auth.onAuthStateChanged(function(user){
+    kirimSesiAndroid_(user);
     if (user && isAdminUser_(user)) { unlock(); }
     else if (user) {
       auth.signOut();

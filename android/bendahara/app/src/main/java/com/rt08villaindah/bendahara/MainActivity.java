@@ -1,6 +1,26 @@
 package com.rt08villaindah.bendahara;
 
 import android.Manifest;
+import android.app.Dialog;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.os.PowerManager;
+import android.os.Vibrator;
+import android.provider.Settings;
+import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
 import android.content.ClipData;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -35,6 +55,7 @@ import androidx.work.WorkManager;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.ArrayDeque;
 import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
@@ -65,9 +86,17 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Bila dibuka dari notifikasi saat layar mati/terkunci: nyalakan layar & tampil di atas kunci layar
+        if (getIntent() != null && getIntent().hasExtra("popup_judul")) {
+            if (Build.VERSION.SDK_INT >= 27) { setShowWhenLocked(true); setTurnScreenOn(true); }
+            else getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+        }
+
         NotificationHelper.createChannel(this);
         askNotificationPermission();
-        // Bendahara: tanpa notifikasi laporan/pengumuman (itu untuk Humas)
+        schedulePeriodicCheck();     // cadangan tiap 15 menit
+        RealtimeService.start(this); // utama: real-time lewat koneksi streaming
+        mintaIzinHemat_();
 
         webView = findViewById(R.id.webview);
         progressBar = findViewById(R.id.progress);
@@ -141,6 +170,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         webView.loadUrl(resolveStartUrl(getIntent()));
+        tampilkanPopupDariIntent_(getIntent());
     }
 
     /* Jembatan JavaScript -> Android: dipanggil situs (bendahara.html) sebagai
@@ -149,6 +179,18 @@ public class MainActivity extends AppCompatActivity {
        pengguna tinggal menekan tombol Kirim. Mengembalikan false bila gagal (situs lalu
        memakai cara cadangan). */
     private class RTAndroidBridge {
+        /* Dipanggil halaman web setelah login: menyerahkan refresh token agar notifikasi real-time bisa membaca data terlindungi. */
+        @JavascriptInterface
+        public void simpanSesi(String refreshToken, String apiKey, String email) {
+            FirebaseSession.simpan(getApplicationContext(), refreshToken, apiKey, email);
+            RealtimeService.start(getApplicationContext());
+        }
+
+        @JavascriptInterface
+        public void hapusSesi() {
+            FirebaseSession.hapus(getApplicationContext());
+        }
+
         @JavascriptInterface
         public boolean sharePdf(String base64, String namaFile, String nomor, String pesan) {
             try {
@@ -257,7 +299,157 @@ public class MainActivity extends AppCompatActivity {
         super.onNewIntent(intent);
         setIntent(intent);
         webView.loadUrl(resolveStartUrl(intent));
+        tampilkanPopupDariIntent_(intent);
     }
+
+    /* =================== POPUP BESAR PEMBERITAHUAN =================== */
+    private static MainActivity aktif = null;
+    private final ArrayDeque<String[]> antrianPopup = new ArrayDeque<>();
+    private Dialog popupAktif = null;
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        aktif = this;
+        RealtimeService.start(this); // pastikan layanan real-time hidup
+    }
+
+    @Override
+    protected void onPause() {
+        if (aktif == this) aktif = null;
+        super.onPause();
+    }
+
+    /** Dipanggil NotificationHelper: true bila aplikasi sedang terbuka (popup tampil di layar). */
+    static boolean tampilkanPopupJikaAktif(final String judul, final String isi, final String page) {
+        final MainActivity a = aktif;
+        if (a == null || a.isFinishing()) return false;
+        a.runOnUiThread(new Runnable() { @Override public void run() { a.tampilPopupBesar(judul, isi, page); } });
+        return true;
+    }
+
+    private void tampilkanPopupDariIntent_(Intent intent) {
+        if (intent == null || !intent.hasExtra("popup_judul")) return;
+        String j = intent.getStringExtra("popup_judul"), i = intent.getStringExtra("popup_isi");
+        intent.removeExtra("popup_judul"); intent.removeExtra("popup_isi");
+        tampilPopupBesar(j, i, null);
+    }
+
+    private int dp_(int v) { return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v, getResources().getDisplayMetrics()); }
+
+    private void tampilPopupBesar(String judul, String isi, String page) {
+        antrianPopup.add(new String[]{ judul == null ? "" : judul, isi == null ? "" : isi, page });
+        if (popupAktif == null) tampilPopupBerikut_();
+    }
+
+    private void tampilPopupBerikut_() {
+        final String[] p = antrianPopup.poll();
+        if (p == null || isFinishing()) { popupAktif = null; return; }
+
+        try {
+            Ringtone r = RingtoneManager.getRingtone(this, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION));
+            if (r != null) r.play();
+            Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+            if (v != null) v.vibrate(new long[]{0, 350, 150, 350, 150, 500}, -1);
+        } catch (Exception ignore) {}
+
+        final Dialog d = new Dialog(this);
+        d.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        d.setCancelable(false);
+
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp_(22), dp_(26), dp_(22), dp_(20));
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(Color.WHITE); bg.setCornerRadius(dp_(28)); bg.setStroke(dp_(3), 0xFFD5A62B);
+        card.setBackground(bg);
+
+        TextView ikon = new TextView(this);
+        ikon.setText("🔔"); ikon.setTextSize(TypedValue.COMPLEX_UNIT_SP, 56); ikon.setGravity(Gravity.CENTER);
+        card.addView(ikon, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        TextView tj = new TextView(this);
+        tj.setText(p[0]); tj.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24); tj.setTextColor(0xFF12213F);
+        tj.setTypeface(null, android.graphics.Typeface.BOLD); tj.setGravity(Gravity.CENTER);
+        tj.setPadding(0, dp_(8), 0, dp_(10));
+        card.addView(tj);
+
+        if (!p[1].isEmpty()) {
+            ScrollView sv = new ScrollView(this);
+            TextView ti = new TextView(this);
+            String isi = p[1].length() > 1500 ? p[1].substring(0, 1500) + "…" : p[1];
+            ti.setText(isi); ti.setTextSize(TypedValue.COMPLEX_UNIT_SP, 19); ti.setTextColor(0xFF33405C);
+            ti.setLineSpacing(0, 1.2f); ti.setGravity(Gravity.CENTER_HORIZONTAL);
+            sv.addView(ti);
+            if (isi.length() > 450) card.addView(sv, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)); // teks panjang: area gulir
+            else card.addView(sv, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        }
+
+        if (p[2] != null) {
+            Button buka = new Button(this);
+            buka.setText("BUKA SEKARANG"); buka.setTextSize(TypedValue.COMPLEX_UNIT_SP, 19); buka.setTextColor(0xFF231E11);
+            buka.setTypeface(null, android.graphics.Typeface.BOLD); buka.setAllCaps(false);
+            GradientDrawable gb = new GradientDrawable(); gb.setColor(0xFFD5A62B); gb.setCornerRadius(dp_(18)); buka.setBackground(gb);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp_(60));
+            lp.topMargin = dp_(18);
+            card.addView(buka, lp);
+            buka.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    d.dismiss();
+                    webView.loadUrl("https://vindahpulotimahatv-commits.github.io/rt08-villa-indah/" + p[2]);
+                }
+            });
+        }
+
+        Button tutup = new Button(this);
+        tutup.setText(p[2] != null ? "TUTUP" : "OK, MENGERTI"); tutup.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
+        tutup.setTextColor(p[2] != null ? 0xFF59657F : 0xFF231E11); tutup.setAllCaps(false);
+        tutup.setTypeface(null, android.graphics.Typeface.BOLD);
+        GradientDrawable gt = new GradientDrawable(); gt.setColor(p[2] != null ? 0xFFEEF1F9 : 0xFFD5A62B); gt.setCornerRadius(dp_(18)); tutup.setBackground(gt);
+        LinearLayout.LayoutParams lp2 = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp_(p[2] != null ? 52 : 60));
+        lp2.topMargin = dp_(p[2] != null ? 10 : 18);
+        card.addView(tutup, lp2);
+        tutup.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { d.dismiss(); } });
+
+        if (!antrianPopup.isEmpty()) {
+            TextView sisa = new TextView(this);
+            sisa.setText("Masih ada " + antrianPopup.size() + " pemberitahuan lagi"); sisa.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            sisa.setTextColor(0xFF8A6A10); sisa.setGravity(Gravity.CENTER); sisa.setPadding(0, dp_(10), 0, 0);
+            card.addView(sisa);
+        }
+
+        d.setContentView(card);
+        d.setOnDismissListener(new android.content.DialogInterface.OnDismissListener() {
+            @Override public void onDismiss(android.content.DialogInterface di) { popupAktif = null; tampilPopupBerikut_(); }
+        });
+        popupAktif = d;
+        d.show();
+        Window w = d.getWindow();
+        if (w != null) {
+            w.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+            int lebar = (int) (getResources().getDisplayMetrics().widthPixels * 0.94f);
+            int tinggi = (int) (getResources().getDisplayMetrics().heightPixels * 0.80f);
+            boolean panjang = p[1].length() > 450;
+            w.setLayout(lebar, panjang ? tinggi : WindowManager.LayoutParams.WRAP_CONTENT);
+            w.setDimAmount(0.75f);
+        }
+    }
+
+    /* Minta sekali: izinkan aplikasi berjalan tanpa dihemat baterai agar pemberitahuan tetap seketika saat layar mati. */
+    private void mintaIzinHemat_() {
+        try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return;
+            SharedPreferences sp = getSharedPreferences("rt08_ui", MODE_PRIVATE);
+            if (sp.getBoolean("hemat_ditanya", false)) return;
+            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
+                sp.edit().putBoolean("hemat_ditanya", true).apply();
+                Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + getPackageName()));
+                startActivity(i);
+            }
+        } catch (Exception ignore) {}
+    }
+
 
     private String resolveStartUrl(Intent intent) {
         String base = "https://vindahpulotimahatv-commits.github.io/rt08-villa-indah/";
