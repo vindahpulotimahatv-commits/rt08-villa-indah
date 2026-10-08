@@ -8,6 +8,10 @@
 (function (root) {
   var STATUS_LUNAS = { lunas_cash: 1, lunas_transfer: 1 };
   var BLN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  /* WARGA_DATA & RT_CONFIG dideklarasi dengan "const" di script lain, sehingga TIDAK menjadi window.WARGA_DATA / window.RT_CONFIG.
+     Harus dibaca lewat nama global langsung (bukan root.xxx). */
+  function dataWarga() { return (typeof WARGA_DATA !== "undefined" && WARGA_DATA) ? WARGA_DATA : []; }
+  function konfig() { return (typeof RT_CONFIG !== "undefined" && RT_CONFIG) ? RT_CONFIG : {}; }
   var st = { wadah: null, opsi: null, filter: "semua", dibuat: false };
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -28,7 +32,7 @@
 
   function daftarBulan(data) {
     var now = wib(), kunciData = Object.keys(data || {}).filter(function (k) { return /^\d{4}-\d{2}$/.test(k); }).sort();
-    var cfg = root.RT_CONFIG && root.RT_CONFIG.bulanMulaiIuran;
+    var cfg = konfig().bulanMulaiIuran;
     var mulai = (cfg && /^\d{4}-\d{2}$/.test(cfg)) ? cfg : (kunciData[0] || now);
     var batas = tambah(now, -11);
     if (mulai < batas) mulai = batas;
@@ -39,8 +43,8 @@
 
   /* Bangun ringkasan status tiap rumah. */
   function bangun(data) {
-    var db = daftarBulan(data), iuran = (root.RT_CONFIG && root.RT_CONFIG.iuranBulanan) || 60000, kk = (root.RT_CONFIG && root.RT_CONFIG.iuranTambahanKK) || 7500;
-    var list = (typeof root.WARGA_DATA !== "undefined" ? root.WARGA_DATA : []).map(function (w) {
+    var db = daftarBulan(data), iuran = konfig().iuranBulanan || 60000, kk = konfig().iuranTambahanKK || 7500;
+    var list = dataWarga().map(function (w) {
       var key = kunci(w.blok, w.no), per = [], tunggak = [], tambahan = false, kodeAkhir = "", menunggu = 0;
       db.bulan.forEach(function (b) {
         var e = ((data || {})[b] || {})[key];
