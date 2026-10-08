@@ -105,14 +105,13 @@ const RT_CONFIG = {
   // lalu buka Project settings > General > scroll ke "Your apps" > tambah app Web (</>) > salin
   // objek firebaseConfig yang muncul ke sini apa adanya (termasuk databaseURL).
   firebaseConfig: {
-    // ISI dari Firebase RT 10 yang baru (lihat PANDUAN-FIREBASE.md)
-    apiKey: "",
-    authDomain: "",
-    databaseURL: "",
-    projectId: "",
-    storageBucket: "",
-    messagingSenderId: "",
-    appId: ""
+    apiKey: "AIzaSyC1HuL3AAG8w3zBNYM3eJu4aI3onLcCTk8",
+    authDomain: "rt10-villa-indah.firebaseapp.com",
+    databaseURL: "https://rt10-villa-indah-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "rt10-villa-indah",
+    storageBucket: "rt10-villa-indah.firebasestorage.app",
+    messagingSenderId: "1036648852390",
+    appId: "1:1036648852390:web:b7ff67d1ea33a6551b3d67"
   },
 
   // Daftar nomor rumah resmi (diambil dari Data Induk RT), dipakai sebagai
