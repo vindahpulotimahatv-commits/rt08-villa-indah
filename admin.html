@@ -401,6 +401,7 @@ textarea{min-height:76px;resize:vertical}
       <p class="sub">Tampilan hanya-lihat. Pengurus tidak bisa mengubah data keuangan; pencatatan dilakukan Bendahara di halaman Bendahara.</p>
       <div id="pbKartu" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px"></div>
       <p class="sub" id="pbPub" style="margin-top:10px"></p></div>
+    <div class="list-card"><div class="list-title">🔎 Cari Status Iuran Warga</div><div style="padding:0 14px 14px"><p class="sub" style="margin:0 0 8px;color:var(--muted);font-size:12px">Ketik blok/nomor rumah, nama, atau nomor invoice untuk langsung melihat status 12 bulan terakhir. Hanya terlihat setelah login.</p><div id="cariIuranWadah"></div></div></div>
     <div class="list-card"><div class="list-title">Rekap per bulan</div><div style="overflow-x:auto"><table class="pb-tbl"><thead><tr><th>Bulan</th><th>Masuk</th><th>Keluar</th><th>Saldo</th></tr></thead><tbody id="pbRekap"><tr><td colspan="4">Memuat...</td></tr></tbody></table></div></div>
     <div class="list-card"><div class="list-title">Iuran bulanan (dari penarikan Humas)</div><div style="overflow-x:auto"><table class="pb-tbl"><thead><tr><th>Bulan</th><th>Lunas</th><th>Terkumpul</th><th>Menunggu transfer</th></tr></thead><tbody id="pbIuran"><tr><td colspan="4">Memuat...</td></tr></tbody></table></div></div>
     <div class="list-card"><div class="list-title">Setoran cash Humas</div><div style="overflow-x:auto"><table class="pb-tbl"><thead><tr><th>Tanggal</th><th>Petugas</th><th>Jumlah</th><th>Status</th></tr></thead><tbody id="pbSetoran"><tr><td colspan="4">Memuat...</td></tr></tbody></table></div></div>
@@ -453,6 +454,7 @@ textarea{min-height:76px;resize:vertical}
 <script src="warga-data.js"></script>
 <script src="warga-kontak.js"></script>
 <script src="surat-pdf.js"></script>
+<script src="iuran-cari.js"></script>
 <script>
 var db = null;
 var BULAN_ID = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
@@ -1050,8 +1052,11 @@ function initDashboard_(){
       document.getElementById("pbTx").innerHTML = it.length ? it.slice(-50).reverse().map(function(x){ return "<tr>" + td_(fmtTanggal_(x.tanggal)) + td_(esc_(x.keterangan||"-")) + td_(x.jenis==="masuk" ? fmtRp_(x.jumlah) : "-") + td_(x.jenis==="keluar" ? fmtRp_(x.jumlah) : "-") + "</tr>"; }).join("") : '<tr><td colspan="4">Belum ada transaksi.</td></tr>';
     }, function(){ gagal_("pbRekap",4); gagal_("pbTx",4); document.getElementById("pbKartu").innerHTML = ""; });
     db.ref("ringkasanKeuangan/meta").on("value", function(snap){ var m = snap.val(); document.getElementById("pbPub").textContent = m && m.publishedAt ? "Terakhir dipublikasikan ke warga: " + new Date(m.publishedAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) : "Belum ada ringkasan yang dipublikasikan ke warga."; }, function(){});
+    var penarikanCari_ = {};
+    if (window.RTIuranCari) RTIuranCari.pasang(document.getElementById("cariIuranWadah"), { getData: function(){ return penarikanCari_; } });
     db.ref("penarikan").on("value", function(snap){
       var v = snap.val() || {};
+      penarikanCari_ = v; if (window.RTIuranCari) RTIuranCari.render();
       var rows = Object.keys(v).sort().reverse().map(function(bk){
         var lunas = 0, total = 0, tunggu = 0;
         Object.keys(v[bk]||{}).forEach(function(rk){ var e = v[bk][rk]; if (!e) return; if (e.status === "lunas_cash" || e.status === "lunas_transfer") { lunas++; total += parseFloat(e.jumlah)||0; } else if (e.status === "transfer_pending") tunggu++; });

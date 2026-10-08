@@ -315,7 +315,7 @@ textarea{min-height:76px;resize:vertical}
     </div>
     <div class="form-card" id="publishCard">
       <h3>📢 Publikasi ke Transparansi</h3>
-      <p class="sub">Warga hanya melihat ringkasan yang Anda publikasikan. Klik lagi setiap ada transaksi baru. Periksa dulu kolom keterangan tidak memuat data pribadi.</p>
+      <p class="sub">Warga hanya melihat ringkasan yang Anda publikasikan. Klik lagi setiap ada transaksi baru. Untuk iuran, warga hanya melihat <b>nomor invoice</b> (nomor rumah &amp; nama otomatis tidak ditampilkan). Periksa dulu keterangan transaksi lain tidak memuat data pribadi.</p>
       <button type="button" class="btn btn-gold" id="bBtnPublish">Publikasikan ke Transparansi</button>
       <p class="sub" id="bPubInfo" style="margin-top:8px"></p>
     </div>
@@ -365,6 +365,13 @@ textarea{min-height:76px;resize:vertical}
 
   <!-- ===== PANEL IURAN BULANAN (dari halaman Humas — humas.html) ===== -->
   <div class="panel" id="panel-iuran">
+    <div class="list-card" id="cardCariIuran" style="margin-bottom:18px;grid-column:1/-1">
+      <div class="list-title">🔎 Cari Status Iuran Warga</div>
+      <div style="padding:0 14px 14px">
+        <p class="sub" style="margin:0 0 8px;color:var(--muted);font-size:12px">Ketik blok/nomor rumah, nama, atau nomor invoice untuk langsung melihat status 12 bulan terakhir. Hanya terlihat setelah login.</p>
+        <div id="cariIuranWadah"></div>
+      </div>
+    </div>
     <div class="list-card" id="cardLapor" style="margin-bottom:18px">
       <div class="list-title">📥 Laporan Transfer dari Warga <span id="laporBadge"></span></div>
       <p class="sub" style="padding:0 14px;margin:0 0 6px;color:var(--muted);font-size:12px">Dikirim warga lewat menu <b>Bayar Iuran</b> di aplikasi setelah transfer ke rekening Bendahara. Lihat bukti &amp; cek mutasi rekening dulu, lalu tekan <b>Isi ke Form</b> dan simpan di kartu <b>Catat Transfer Langsung</b> di bawah (otomatis lunas &amp; masuk Kas RT). Tekan <b>Tolak</b> bila uang belum/tidak masuk.</p>
@@ -441,6 +448,7 @@ textarea{min-height:76px;resize:vertical}
 <script src="warga-data.js"></script>
 <script src="warga-kontak.js"></script>
 <script src="surat-pdf.js"></script>
+<script src="iuran-cari.js"></script>
 <script>
 var db = null;
 var BULAN_ID = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
@@ -766,6 +774,22 @@ function initDashboard_(){
     return o;
   }
   function uangEntry_(e){ return (e && e.uangMasuk != null) ? (parseFloat(e.uangMasuk) || 0) : (parseFloat(e && e.jumlah) || 0); }
+  /* ---- NOMOR INVOICE (tanpa nomor rumah) ---- */
+  function semuaKodeInvoice_(){
+    var o = [];
+    Object.keys(penarikanSemua_ || {}).forEach(function(bk){ var bln = penarikanSemua_[bk] || {}; Object.keys(bln).forEach(function(rk){ if (bln[rk] && bln[rk].kodeKwitansi) o.push(bln[rk].kodeKwitansi); }); });
+    return o;
+  }
+  /* Pakai kode yang sudah ada (kirim ulang = nomor sama); kalau belum ada, buat kode acak baru. */
+function linkCekInvoice_(kode){ var l = (typeof RTSurat !== "undefined") ? RTSurat.linkInvoice(RT_CONFIG, kode) : ""; return l ? "\n\nCek iuran Anda sudah tercatat di Transparansi RT:\n" + l : ""; }
+  function kodeInvoiceUntuk_(b, it){ return (it && it.kodeKwitansi) || RTSurat.kodeInvoice(b, semuaKodeInvoice_()); }
+  /* Paket bayar di muka: semua bulan dalam paket memakai nomor invoice yang sama. */
+  function simpanKodeInvoicePaket_(b, r, kode){
+    var upd = {};
+    anggotaPaket_(b, r).forEach(function(x){ upd["penarikan/" + x.b + "/" + x.r + "/kodeKwitansi"] = kode; });
+    upd["penarikan/" + b + "/" + r + "/kodeKwitansi"] = kode;
+    return db.ref().update(upd);
+  }
   var setoranSemua_ = {};     // { setoranId: batch }
   var BULAN_LONG_ = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
   function bulanLong_(k){ var m = /^(\d{4})-(\d{2})$/.exec(k || ""); return m ? BULAN_LONG_[parseInt(m[2], 10) - 1] + " " + m[1] : (k || "-"); }
@@ -844,7 +868,7 @@ function initDashboard_(){
     var box = document.getElementById("listTransferOk");
     if (ok.length === 0) { box.innerHTML = '<div class="empty-note">Belum ada transfer terkonfirmasi.</div>'; return; }
     box.innerHTML = ok.map(function(it){
-      var tag = it.kodeKwitansi ? '<span class="entry-badge kegiatan">Kwitansi ' + esc_(it.kodeKwitansi) + '</span>' : '';
+      var tag = it.kodeKwitansi ? '<span class="entry-badge kegiatan">Invoice ' + esc_(it.kodeKwitansi) + '</span>' : '';
       if (gatewayAktif_()) {
         if (it.kwitansiWA === "terkirim") tag += ' <span class="entry-badge kegiatan">✅ WA terkirim</span>';
         else if (it.kwitansiWA === "gagal") tag += ' <span class="entry-badge" style="background:#fde8e8;color:#b42318">⚠️ WA gagal' + (it.kwitansiWAError ? ': ' + esc_(it.kwitansiWAError) : '') + '</span>';
@@ -873,16 +897,16 @@ function initDashboard_(){
         nama: it.nama || "-", blok: it.rumah, bulan: it.periodeLabel || bulanLong_(b),
         rincian: "Iuran Bulanan" + (it.paketN > 1 ? " × " + it.paketN + " bulan" : "") + (it.tambahanKK ? " + Iuran RUKEM (tambahan KK)" : ""),
         jumlah: fmtRp_(it.paketTotal || it.jumlah), metode: "Transfer Bank (" + bank + ")", petugas: it.petugas || "-"
-      }, ekstraKwitansi_(it)), RT_CONFIG, null, new Date(), "KW-" + b.slice(2, 4) + b.slice(5, 7) + "-" + String(it.blok || "").toUpperCase() + "-" + String(it.no || "").toUpperCase());
+      }, ekstraKwitansi_(it)), RT_CONFIG, null, new Date(), kodeInvoiceUntuk_(b, it));
     } catch (e) { console.error(e); showToast("Gagal membuat PDF kwitansi."); return; }
-    db.ref("penarikan/" + b + "/" + r).update({ kodeKwitansi: hasil.kode, kwitansiAt: firebase.database.ServerValue.TIMESTAMP });
+    simpanKodeInvoicePaket_(b, r, hasil.kode).then(function(){ return db.ref("penarikan/" + b + "/" + r).update({ kwitansiAt: firebase.database.ServerValue.TIMESTAMP }); }).catch(function(e){ console.error(e); });
     function nomorWA_(n){ var d = String(n || "").replace(/[^0-9]/g, ""); if (!d) return ""; if (d.indexOf("620") === 0) return "62" + d.slice(3); if (d.indexOf("62") === 0) return d; if (d.charAt(0) === "0") return "62" + d.slice(1); return "62" + d; }
     var nomor = nomorWA_(it.teleponWarga || (typeof WARGA_KONTAK !== "undefined" ? WARGA_KONTAK[r] : "") || "");
     if (!nomor) {
       try { var snap = await db.ref("wargaKontak/" + r + "/telepon").once("value"); nomor = nomorWA_(snap.val()); } catch (e) {}
     }
     var pesan = salam_() + " Bpk/Ibu " + (it.nama || "") + ", pembayaran *iuran bulanan RT 08* (" + (it.periodeLabel || bulanLong_(b)) + ") sebesar " + fmtRp_(it.paketTotal || it.jumlah) +
-      " via transfer sudah kami terima dan dikonfirmasi Bendahara. Berikut kwitansinya. Terima kasih atas partisipasinya 🙏 (Kode: " + hasil.kode + ")";
+      " via transfer sudah kami terima dan dikonfirmasi Bendahara. Berikut kwitansinya. Terima kasih atas partisipasinya 🙏 (No. Invoice: " + hasil.kode + ")" + linkCekInvoice_(hasil.kode);
     /* Aplikasi Android: buka chat WA warga dengan PDF sudah TERLAMPIR (tinggal tekan Kirim). */
     if (nomor && window.RTAndroid && typeof window.RTAndroid.sharePdf === "function") {
       try { if (window.RTAndroid.sharePdf(bytesKeB64_(hasil.bytes), hasil.namaFile, nomor, pesan)) { showToast("WhatsApp warga dibuka dengan PDF terlampir. Tekan Kirim."); return; } } catch (e) { console.warn(e); }
@@ -956,7 +980,7 @@ function initDashboard_(){
       nama: it.nama || "-", blok: it.rumah, bulan: it.periodeLabel || bulanLong_(b),
       rincian: "Iuran Bulanan" + (it.paketN > 1 ? " × " + it.paketN + " bulan" : "") + (it.tambahanKK ? " + Iuran RUKEM (tambahan KK)" : ""),
       jumlah: fmtRp_(it.paketTotal || it.jumlah), metode: cash ? "Tunai (Cash)" : "Transfer Bank (" + bank + ")", petugas: it.petugas || "-"
-    }, ekstraKwitansi_(it)), RT_CONFIG, null, new Date(), "KW-" + b.slice(2, 4) + b.slice(5, 7) + "-" + String(it.blok || "").toUpperCase() + "-" + String(it.no || "").toUpperCase());
+    }, ekstraKwitansi_(it)), RT_CONFIG, null, new Date(), kodeInvoiceUntuk_(b, it));
   }
   async function nomorWargaWA_(r, it){
     var n = nomorWAValid_(it.teleponWarga || (typeof WARGA_KONTAK !== "undefined" ? WARGA_KONTAK[r] : "") || "");
@@ -982,9 +1006,10 @@ function initDashboard_(){
       var cash = it.metode === "cash" || it.status === "lunas_cash";
       var pesan = salam_() + " Bpk/Ibu " + (it.nama || "") + ", pembayaran *iuran bulanan RT 08* (" + it.rumah + ") bulan " + (it.periodeLabel || bulanLong_(b)) + " sebesar *" + fmtRp_(it.paketTotal || it.jumlah) + "* " +
         (cash ? "(Tunai) sudah kami terima dan dicatat Bendahara." : "via transfer sudah kami terima dan dikonfirmasi Bendahara.") +
-        " Kwitansi PDF terlampir. Terima kasih atas partisipasinya 🙏 (Kode: " + hasil.kode + ")";
+        " Kwitansi PDF terlampir. Terima kasih atas partisipasinya 🙏 (No. Invoice: " + hasil.kode + ")" + linkCekInvoice_(hasil.kode);
       await kirimWAFile_(nomor, pesan, hasil.bytes, hasil.namaFile, "application/pdf");
       await ref.update({ kwitansiWA: "terkirim", kwitansiWAAt: TS, kwitansiWAError: null, kodeKwitansi: hasil.kode, kwitansiAt: TS });
+      try { await simpanKodeInvoicePaket_(b, r, hasil.kode); } catch (e3) { console.error(e3); }
       return "terkirim";
     } catch (err) {
       console.error("Kirim kwitansi otomatis gagal:", err);
@@ -1425,10 +1450,12 @@ function initDashboard_(){
     showToast("Excel diunduh. Lampirkan manual ke WhatsApp (atau isi waGateway di config.js agar terkirim otomatis).");
   });
 
+  if (window.RTIuranCari) RTIuranCari.pasang(document.getElementById("cariIuranWadah"), { getData: function(){ return penarikanSemua_; } });
   db.ref("penarikan").on("value", function(snap){
     penarikanSemua_ = snap.val() || {};
     renderTransferOk_();
     renderTunggakanAdm_();
+    if (window.RTIuranCari) RTIuranCari.render();
     var items = [];
     Object.keys(penarikanSemua_).forEach(function(bk){
       var bln = penarikanSemua_[bk] || {};
@@ -1845,18 +1872,48 @@ function initDashboard_(){
   })();
 
   /* ---- PUBLIKASI RINGKASAN KE TRANSPARANSI ---- */
+  /* Versi aman untuk warga: buang nomor rumah/nama dari keterangan iuran, ganti dengan nomor invoice. */
+  function kodeTampil_(k){ return (typeof RTSurat !== "undefined" && RTSurat.kodeLama(k)) ? String(k).slice(0, 8) + "•••" : k; }
+  function invoiceEntry_(b, r){
+    var e = (penarikanSemua_[b] || {})[r];
+    if (!e) return null;
+    var kode = e.kodeKwitansi;
+    if (!kode) { var ang = anggotaPaket_(b, r); for (var i = 0; i < ang.length && !kode; i++) kode = ang[i].e.kodeKwitansi; }
+    return kode ? { k: kodeTampil_(kode), j: uangEntry_(e) } : null;
+  }
+  function versiPublik_(it){
+    var src = String(it.source || ""), m, inv = [], iuran = it.kategori === "Iuran Bulanan";
+    if ((m = /^penarikan\/(\d{4}-\d{2})\/(.+)$/.exec(src))) {
+      var x = invoiceEntry_(m[1], m[2]); if (x) inv.push(x);
+      return { keterangan: "Iuran Bulanan (Transfer) - " + fmtBulanID_(m[1]), inv: inv, iuran: true };
+    }
+    if ((m = /^humasSetoran\/(.+)$/.exec(src))) {
+      var st = setoranSemua_[m[1]];
+      if (st) Object.keys(st.rumahKeys || {}).forEach(function(rk){ var y = invoiceEntry_(st.bulanKey, rk); if (y) inv.push(y); });
+      inv.sort(function(a, b){ return a.k < b.k ? -1 : 1; });
+      return { keterangan: "Setoran Iuran Bulanan (Cash) - " + (st ? st.petugas + " - " + fmtBulanID_(st.bulanKey) : "Humas"), inv: inv, iuran: true };
+    }
+    /* Iuran tanpa sumber yang bisa dilacak: jangan terbitkan keterangan aslinya (bisa memuat nomor rumah). */
+    if (iuran) return { keterangan: "Iuran Bulanan", inv: inv, iuran: true };
+    return { keterangan: it.keterangan, inv: inv, iuran: false };
+  }
   db.ref("ringkasanKeuangan/meta").on("value", function(snap){
     var m = snap.val(), el = document.getElementById("bPubInfo");
     el.textContent = m && m.publishedAt ? "Terakhir dipublikasikan: " + new Date(m.publishedAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) : "Belum pernah dipublikasikan.";
   }, function(){});
   document.getElementById("bBtnPublish").addEventListener("click", function(){
     var items = {}, n = 0;
+    var tanpaInvoice = 0;
     (keuanganSemua_ || []).forEach(function(it){
-      items[it.id] = { tanggal: it.tanggal, jenis: it.jenis, keterangan: it.keterangan, kategori: it.kategori || "", jumlah: it.jumlah, createdAt: it.createdAt || 0 };
+      var pub = versiPublik_(it);
+      if (pub.iuran && !pub.inv.length) tanpaInvoice++;
+      var o = { tanggal: it.tanggal, jenis: it.jenis, keterangan: pub.keterangan, kategori: it.kategori || "", jumlah: it.jumlah, createdAt: it.createdAt || 0 };
+      if (pub.inv.length) o.invoice = pub.inv;   /* [{k: nomor invoice, j: jumlah}] — TANPA nomor rumah */
+      items[it.id] = o;
       n++;
     });
     if (!n) { showToast("Belum ada transaksi untuk dipublikasikan."); return; }
-    if (!confirm("Publikasikan " + n + " transaksi ke halaman Transparansi (terlihat semua warga)?")) return;
+    if (!confirm("Publikasikan " + n + " transaksi ke halaman Transparansi (terlihat semua warga)?\n\nUntuk iuran, warga hanya melihat NOMOR INVOICE — nomor rumah & nama tidak ditampilkan." + (tanpaInvoice ? "\n\n" + tanpaInvoice + " transaksi iuran belum punya nomor invoice (kwitansi belum dikirim). Nomornya muncul setelah kwitansi dikirim dan Anda publikasikan ulang." : ""))) return;
     var btn = this; btn.disabled = true;
     db.ref("ringkasanKeuangan").set({ items: items, meta: { publishedAt: firebase.database.ServerValue.TIMESTAMP, publishedBy: (firebase.auth().currentUser && firebase.auth().currentUser.email) || "" } })
       .then(function(){ showToast("Berhasil dipublikasikan ke Transparansi."); })

@@ -19,6 +19,9 @@ const RT_CONFIG = {
   // JANGAN simpan password atau secret di file ini karena file ini dikirim ke browser.
   firebaseAuthRequired: true,
   // UID akun Firebase yang berhak mengakses panel masing-masing.
+  // Alamat situs (tanpa garis miring di akhir). Dipakai untuk tautan "Cek iuran Anda" di WhatsApp & PDF kwitansi.
+  urlSitus: "https://vindahpulotimahatv-commits.github.io/rt08-villa-indah",
+
   adminUid: "DOHOhpaimmTY2oB1WxbNQg0BLIG2",
   bendaharaUid: "S1wZXXYJixTlw0VCQyvDf2eVXv23",
   humasUid: "1VnzbcWA8edwPLFNfASNnUK9bn22",

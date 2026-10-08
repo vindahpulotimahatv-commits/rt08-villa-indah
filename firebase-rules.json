@@ -70,8 +70,12 @@
         ".validate": "newData.isBoolean()"
       }
     },
-    "keuangan": {
+    "ringkasanKeuangan": {
       ".read": true,
+      ".write": "auth != null && (auth.uid == 'DOHOhpaimmTY2oB1WxbNQg0BLIG2' || auth.uid == 'S1wZXXYJixTlw0VCQyvDf2eVXv23')"
+    },
+    "keuangan": {
+      ".read": "auth != null && (auth.uid == 'DOHOhpaimmTY2oB1WxbNQg0BLIG2' || auth.uid == 'S1wZXXYJixTlw0VCQyvDf2eVXv23' || auth.uid == '1VnzbcWA8edwPLFNfASNnUK9bn22')",
       "$id": {
         ".write": "auth != null && auth.uid == 'DOHOhpaimmTY2oB1WxbNQg0BLIG2' && (!data.exists() || (data.exists() && root.child('appConfig/testMode').val() == true))",
         ".validate": "newData.hasChildren(['tanggal','jenis','keterangan','jumlah']) && newData.child('tanggal').isString() && newData.child('jenis').isString() && (newData.child('jenis').val() == 'masuk' || newData.child('jenis').val() == 'keluar') && newData.child('keterangan').isString() && newData.child('jumlah').isNumber() && newData.child('jumlah').val() > 0 && newData.child('jumlah').val() <= 1000000000"

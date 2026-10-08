@@ -307,6 +307,19 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,500;0,600;0,700;0,800;1,600&display=swap">
 <link rel="stylesheet" href="assets/siaga.css?v=8">
+<style>
+.inv-box{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px}
+.inv-box p{margin:0 0 10px;color:var(--muted);font-size:13px;line-height:1.6}
+.inv-row{display:flex;gap:8px}.inv-row .btn{flex:0 0 auto;padding:0 18px;border:0;cursor:pointer;font:inherit;font-weight:900}
+.inv-box input{flex:1;min-width:0;width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font:inherit;font-weight:800;letter-spacing:.5px;text-transform:uppercase}
+.inv-box input:focus{outline:none;border-color:var(--green)}
+.inv-hasil{margin-top:10px;font-size:13px;line-height:1.6}
+.inv-ok{background:#e8f6ee;border:1px solid #b7e1c8;color:#14532d;border-radius:12px;padding:10px 12px;margin-top:6px}
+.inv-no{background:#fff4d6;border:1px solid #f0d58a;color:#7a5a08;border-radius:12px;padding:10px 12px}
+.inv-chip{display:inline-block;background:#eef2fb;color:#1b3a73;border:1px solid #cfd9ef;border-radius:999px;padding:2px 9px;margin:3px 4px 0 0;font-size:11px;font-weight:800;letter-spacing:.3px;white-space:nowrap}
+.inv-chip.hit{background:#e8f6ee;border-color:#8fd0a9;color:#14532d}
+tr.inv-hit td{background:#f3fbf6}
+</style>
 </head><body>
 <header class="sg-header" id="sgHeader">
   <div class="sg-header__in">
@@ -333,6 +346,17 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
   <div class="finance-card"><span>Pengeluaran Bulan Ini</span><strong id="finKeluar">Rp —</strong></div>
 </div>
 <div style="height:30px"></div>
+<h2 class="section-subtitle">Cek Nomor Invoice Iuran</h2>
+<div class="inv-box">
+  <p>Setiap iuran yang diterima Bendahara mendapat <b>nomor invoice</b> yang dikirim ke WhatsApp warga lewat PDF kwitansi. Ketik nomornya di sini untuk memastikan iuran Anda sudah tercatat. Demi privasi, nomor rumah dan nama warga <b>tidak ditampilkan</b>.</p>
+  <div class="inv-row">
+    <input type="search" id="invCari" placeholder="Ketik nomor invoice, contoh: KW-2610-AB3CD" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="search" aria-label="Cari nomor invoice">
+    <button type="button" class="btn btn-brand" id="invBtn">🔍 Cari</button>
+  </div>
+  <div id="invHasil" class="inv-hasil" aria-live="polite"></div>
+</div>
+<div style="height:30px"></div>
+<div style="height:30px"></div>
 <h2 class="section-subtitle">Rekap Bulanan</h2>
 <div class="table-wrap"><table><thead><tr><th>Bulan</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo Akhir Bulan</th></tr></thead>
 <tbody id="tbodyRekap"><tr><td colspan="4">Memuat data...</td></tr></tbody></table></div>
@@ -341,7 +365,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th>Masuk</th><th>Keluar</th></tr></thead>
 <tbody id="tbodyTransaksi"><tr><td colspan="5">Memuat data...</td></tr></tbody></table></div>
 <div style="height:18px"></div>
-<div class="callout"><div><h3>Privasi warga tetap dijaga</h3><p>Daftar tunggakan individu tidak perlu tampil di halaman publik. Data pribadi sebaiknya hanya di area login.</p></div><a class="btn btn-brand" href="#" id="btnTanyaBendahara">Tanya Bendahara</a></div>
+<div class="callout"><div><h3>Privasi warga tetap dijaga</h3><p>Halaman ini hanya menampilkan nomor invoice. Nomor rumah, nama, dan status tunggakan hanya bisa dilihat Ketua/Admin, Bendahara, dan Humas setelah login.</p></div><a class="btn btn-brand" href="#" id="btnTanyaBendahara">Tanya Bendahara</a></div>
 </div></section>
 </main>
 <footer class="sg-footer">
@@ -382,6 +406,37 @@ function fmtTglT_(iso){
   if(!iso) return "-";
   const p = iso.split("-");
   return p[2] + "/" + p[1] + "/" + p[0];
+}
+let invData_ = [], invSiap_ = false;
+function cariInvoice_(){
+  const inp = document.getElementById("invCari"), box = document.getElementById("invHasil");
+  if (!inp || !box) return;
+  let q = inp.value.trim().toUpperCase().replace(/\s+/g, "");
+  document.querySelectorAll("#tbodyTransaksi tr.inv-hit").forEach(tr => tr.classList.remove("inv-hit"));
+  document.querySelectorAll("#tbodyTransaksi .inv-chip.hit").forEach(c => c.classList.remove("hit"));
+  if (!q) { box.innerHTML = ""; return; }
+  if (/^KW-\d{4}-[A-Z0-9]+-[A-Z0-9]+$/.test(q)) {
+    box.innerHTML = '<div class="inv-no">Nomor ini memakai format lama. Silakan tanyakan ke Bendahara lewat tombol <b>Tanya Bendahara</b> di bawah.</div>';
+    return;
+  }
+  if (!invSiap_) { box.innerHTML = '<div class="inv-no">Data sedang dimuat…</div>'; return; }
+  if (q.replace(/^KW-?/, "").replace(/-/g, "").length < 4) { box.innerHTML = '<div class="inv-no">Ketik minimal 4 karakter nomor invoice (contoh: KW-2610-AB3CD).</div>'; return; }
+  const cocokKode = k => { const K = String(k).toUpperCase(); return K === q || K.indexOf(q) >= 0; };
+  const cocok = invData_.filter(it => it.invoice.some(x => cocokKode(x.k)));
+  if (!cocok.length) {
+    box.innerHTML = '<div class="inv-no">Nomor <b>' + escT_(q) + '</b> belum ditemukan. Periksa penulisannya, atau mungkin belum dipublikasikan Bendahara — coba lagi nanti atau tanyakan ke Bendahara.</div>';
+    return;
+  }
+  box.innerHTML = cocok.slice(0, 5).map(it => {
+    const x = it.invoice.find(y => cocokKode(y.k));
+    return '<div class="inv-ok">✅ <b>' + escT_(x.k) + '</b> tercatat — ' + escT_(it.keterangan) + ' • tanggal ' + fmtTglT_(it.tanggal) + (x && x.j ? ' • ' + fmtRpT_(x.j) : '') + '</div>';
+  }).join("") + (cocok.length > 5 ? '<div class="inv-no" style="margin-top:6px">Ada ' + cocok.length + ' hasil — ketik nomor lebih lengkap.</div>' : "");
+  document.querySelectorAll("#tbodyTransaksi tr").forEach(tr => {
+    if ((tr.getAttribute("data-inv") || "").toUpperCase().indexOf(q) >= 0) {
+      tr.classList.add("inv-hit");
+      tr.querySelectorAll(".inv-chip").forEach(c => { if (c.getAttribute("data-k").toUpperCase().indexOf(q) >= 0) c.classList.add("hit"); });
+    }
+  });
 }
 function loadKeuangan_(){
   const cfg = (RT_CONFIG.firebaseConfig || {});
@@ -444,8 +499,14 @@ function loadKeuangan_(){
       const j = fmtRpT_(it.jumlah);
       const masukCell = it.jenis === "masuk" ? '<td class="amount in">' + j + '</td>' : '<td>-</td>';
       const keluarCell = it.jenis === "keluar" ? '<td class="amount out">' + j + '</td>' : '<td>-</td>';
-      return "<tr><td>" + fmtTglT_(it.tanggal) + "</td><td>" + escT_(it.keterangan) + "</td><td>" + escT_(it.kategori||"-") + "</td>" + masukCell + keluarCell + "</tr>";
+      const inv = Array.isArray(it.invoice) ? it.invoice : [];
+      const chips = inv.length ? '<div>' + inv.map(x => '<span class="inv-chip" data-k="' + escT_(x.k) + '">' + escT_(x.k) + '</span>').join("") + '</div>' : "";
+      return '<tr data-inv="' + escT_(inv.map(x => x.k).join(" ")) + '"><td>' + fmtTglT_(it.tanggal) + "</td><td>" + escT_(it.keterangan) + chips + "</td><td>" + escT_(it.kategori||"-") + "</td>" + masukCell + keluarCell + "</tr>";
     }).join("");
+    invSiap_ = true;
+    invData_ = items.filter(it => Array.isArray(it.invoice) && it.invoice.length);
+    cariInvoice_();
+    if (window.__invDariLink && invData_.length) { window.__invDariLink=false; const b=document.getElementById("invHasil"); if(b) b.scrollIntoView({behavior:"smooth",block:"center"}); }
   }, () => {
     tbodyRekap.innerHTML = '<tr><td colspan="4">Gagal memuat data. Periksa koneksi internet.</td></tr>';
     tbodyTx.innerHTML = '<tr><td colspan="5">Gagal memuat data. Periksa koneksi internet.</td></tr>';
@@ -458,6 +519,11 @@ document.addEventListener("DOMContentLoaded",()=>{
     else { g.href="kontak.html"; g.removeAttribute("target"); }
   }
   loadKeuangan_();
+  const ic=document.getElementById("invCari"); if(ic) ic.addEventListener("input", cariInvoice_);
+  const ib=document.getElementById("invBtn"); if(ib) ib.addEventListener("click", cariInvoice_);
+  if(ic) ic.addEventListener("keydown", e => { if(e.key==="Enter"){ e.preventDefault(); cariInvoice_(); ic.blur(); } });
+  const pInv=(new URLSearchParams(location.search).get("inv")||"").trim();
+  if(ic && pInv){ ic.value=pInv.toUpperCase(); window.__invDariLink=true; }
   const btnB=document.getElementById("btnTanyaBendahara");
   if(btnB){
     btnB.addEventListener("click", e=>{

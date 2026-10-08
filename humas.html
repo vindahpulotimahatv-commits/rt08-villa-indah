@@ -172,6 +172,14 @@ html,body{overflow-x:hidden}
 
   
 
+  <details class="list-card" id="cardCariIuran" style="margin-bottom:14px">
+    <summary class="list-title" style="cursor:pointer">🔎 Cek Status Iuran Warga</summary>
+    <div style="padding:0 14px 14px">
+      <p class="sub" style="margin:0 0 8px;color:var(--muted);font-size:12px">Ketik blok/nomor rumah, nama, atau nomor invoice untuk melihat status 12 bulan terakhir.</p>
+      <div id="cariIuranWadah"></div>
+    </div>
+  </details>
+
   <details class="list-card" id="cardTunggakan">
     <summary class="list-title" id="judulTunggakan" style="cursor:pointer">⚠️ Tunggakan — memuat...</summary>
     <div id="listTunggakan"><div class="empty-note">Memuat data...</div></div>
@@ -221,6 +229,7 @@ html,body{overflow-x:hidden}
 <script src="warga-data.js"></script>
 <script src="warga-kontak.js"></script>
 <script src="surat-pdf.js"></script>
+<script src="iuran-cari.js"></script>
 <script>
 (function(){
 "use strict";
@@ -465,9 +474,11 @@ function initDashboard_(){
     renderList_(); renderRingkasan_(); renderRiwayatSetoran_();
   }, function(){ document.getElementById("listSetoran").innerHTML = '<div class="empty-note">Gagal memuat data setoran.</div>'; });
 
+  if (window.RTIuranCari) RTIuranCari.pasang(document.getElementById("cariIuranWadah"), { getData: function(){ return penarikanSemua; } });
   db.ref("penarikan").on("value", function(snap){
     penarikanSemua = snap.val() || {};
     renderTunggakan_();
+    if (window.RTIuranCari) RTIuranCari.render();
   }, function(){ document.getElementById("listTunggakan").innerHTML = '<div class="empty-note">Gagal memuat data tunggakan.</div>'; });
   document.getElementById("listTunggakan").addEventListener("click", function(ev){
     var row = ev.target.closest(".rumah-row");
@@ -1223,6 +1234,15 @@ function kirimReminder_(payload, waPre){
   return false;
 }
 
+/* Nomor invoice tanpa nomor rumah. Bila rumah ini sudah punya nomor di bulan tsb (kirim ulang), nomor yang sama dipakai. */
+function kodeInvoiceHumas_(payload){
+  var ada = (penarikanData[currentRumah.key] || {}).kodeKwitansi;
+  if (ada) return ada;
+  var semua = [];
+  Object.keys(penarikanSemua || {}).forEach(function(b){ var bln = penarikanSemua[b] || {}; Object.keys(bln).forEach(function(rk){ if (bln[rk] && bln[rk].kodeKwitansi) semua.push(bln[rk].kodeKwitansi); }); });
+  return RTSurat.kodeInvoice(bulanKey, semua);
+}
+function linkCekInvoice_(kode){ var l = (typeof RTSurat !== "undefined") ? RTSurat.linkInvoice(RT_CONFIG, kode) : ""; return l ? "\n\nCek iuran Anda sudah tercatat di Transparansi RT:\n" + l : ""; }
 function buatKwitansi_(payload){
   if (typeof RTSurat === "undefined") { showToast("Gagal membuat PDF: surat-pdf.js belum termuat."); return; }
   var dataKwitansi = {
@@ -1236,7 +1256,7 @@ function buatKwitansi_(payload){
     if (payload.saldoSetelah > 0) dataKwitansi.saldoSisa = fmtRp_(payload.saldoSetelah);
   }
   var hasil;
-  try { hasil = RTSurat.buat("kwitansiIuran", dataKwitansi, RT_CONFIG, null, new Date(), "KW-" + bulanKey.slice(2, 4) + bulanKey.slice(5, 7) + "-" + String(payload.blok || "").toUpperCase() + "-" + String(payload.no || "").toUpperCase()); }
+  try { hasil = RTSurat.buat("kwitansiIuran", dataKwitansi, RT_CONFIG, null, new Date(), kodeInvoiceHumas_(payload)); }
   catch (e) { console.error(e); showToast("Tersimpan, tapi gagal membuat PDF kwitansi."); closeModal_(); return; }
   String(payload.paketBulan || bulanKey).split(",").forEach(function(m){ db.ref("penarikan/" + m + "/" + currentRumah.key + "/kodeKwitansi").set(hasil.kode); });
   hasilKwitansi = { hasil: hasil, payload: payload };
@@ -1284,10 +1304,10 @@ function modeAPK_(){ return !!(window.RTAndroid && typeof window.RTAndroid.share
 function teksKwitansi_(payload, hasil, tujuan){
   return tujuan.label === "Warga"
     ? (salam_() + " Bpk/Ibu " + (payload.nama || "") + ", pembayaran *iuran bulanan RT 08* (" + payload.rumah + ") bulan " + (payload.periodeLabel || bulanLabel_(bulanKey)) +
-       " sebesar *" + fmtRp_(payload.jumlah) + "* (Tunai) sudah kami terima. Kwitansi PDF kami lampirkan. Terima kasih atas partisipasinya 🙏" + catatSaldo_(payload) + " (Kode: " + hasil.kode + ")")
+       " sebesar *" + fmtRp_(payload.jumlah) + "* (Tunai) sudah kami terima. Kwitansi PDF kami lampirkan. Terima kasih atas partisipasinya 🙏" + catatSaldo_(payload) + " (No. Invoice: " + hasil.kode + ")" + linkCekInvoice_(hasil.kode))
     : (salam_() + " Pak/Bu Bendahara, berikut kwitansi iuran bulanan a.n. " + (payload.nama || "-") + " (" + payload.rumah + "), bulan " +
        (payload.periodeLabel || bulanLabel_(bulanKey)) + " sebesar " + fmtRp_(payload.jumlah) + ". Nomor WA warga ini belum ada di data, jadi untuk sementara " +
-       "dikirim ke Bendahara." + catatSaldo_(payload) + " (Kode: " + hasil.kode + ")");
+       "dikirim ke Bendahara." + catatSaldo_(payload) + " (No. Invoice: " + hasil.kode + ")" + linkCekInvoice_(hasil.kode));
 }
 async function kirimKwitansi_(){
   if (!hasilKwitansi) return;

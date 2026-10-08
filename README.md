@@ -62,6 +62,14 @@ Cara PDF sampai ke WhatsApp (WhatsApp tidak mengizinkan situs mengirim file otom
 2. **Browser HP (Chrome/Safari)** — muncul lembar bagikan dengan PDF terlampir → pilih WhatsApp → pilih kontak pengurus.
 3. **Cadangan (laptop/aplikasi lama)** — PDF terunduh dan chat WhatsApp pengurus terbuka; PDF dilampirkan manual.
 
+## Nomor Invoice, Transparansi & Pencarian Iuran
+
+- **Nomor invoice** (mis. `KW-2610-AB3CD`) dibuat acak dan **tidak memuat nomor rumah**. Nomor yang sama muncul di PDF kwitansi yang diterima warga lewat WhatsApp. Kirim ulang kwitansi memakai nomor yang sama; paket bayar di muka memakai satu nomor untuk semua bulannya.
+- **Halaman Transparansi (publik)** hanya menampilkan nomor invoice, tanpa nomor rumah atau nama. Warga bisa mengetik nomor invoice di kotak *Cek Nomor Invoice Iuran* untuk memastikan iuran mereka tercatat. Nomor invoice muncul setelah Bendahara menekan **Publikasikan ke Transparansi**.
+- **Yang bisa melihat nomor rumah**: Ketua/Admin, Bendahara, dan Humas (setelah login). Pasang aturan terbaru di `firebase-rules.json` (node `keuangan` dan `ringkasanKeuangan`).
+- **Cari Status Iuran Warga** (`iuran-cari.js`) ada di tab **Iuran** halaman Bendahara, tab **Pembukuan** halaman Admin, dan kartu **Cek Status Iuran Warga** di halaman Humas: cari lewat blok/nomor rumah, nama, atau nomor invoice, plus filter Belum bayar / Menunggak / Menunggu konfirmasi / Sudah lunas. File `iuran-cari.js` wajib ikut di-upload.
+- Nomor invoice lama (format `KW-YYMM-BLOK-NO`) disamarkan di halaman publik menjadi `KW-YYMM-•••`.
+
 ## Cara kerja fitur (tanpa server/backend)
 
 Karena situs ini murni statis (cocok untuk GitHub Pages), semua form dan tombol aksi (Lapor Lingkungan, Ajukan Surat, Hubungi UMKM, dll) bekerja dengan cara membuka chat WhatsApp berisi pesan otomatis ke nomor pengurus terkait — bukan mengirim ke database. Ini yang membuat portal bisa langsung dipakai warga tanpa perlu membangun server sendiri.

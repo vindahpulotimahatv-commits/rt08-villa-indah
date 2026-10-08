@@ -518,7 +518,7 @@
         L.y += 62;
         doc.line(x0, L.y, x0 + W, L.y, 0.8, 0.75);
         L.y += 12;
-        doc.text(x0, L.y + 9, "No. " + kode, "R", 9.5, { gray: 0.4 });
+        doc.text(x0, L.y + 9, "No. Invoice: " + kode, "R", 9.5, { gray: 0.4 });
         var tg = norm(c.tglHariIni);
         doc.text(x0 + W - textWidth(tg, "R", 9.5), L.y + 9, tg, "R", 9.5, { gray: 0.4 });
         L.y += 26;
@@ -552,6 +552,8 @@
         L.space(14);
         doc.line(x0, L.y, x0 + W, L.y, 0.5, 0.8);
         L.y += 12;
+        var lk = linkInvoice(c, kode);
+        if (lk) L.p("Cek iuran Anda sudah tercatat di Transparansi RT: " + lk.replace(/^https?:\/\//, ""), { size: 9.5, gray: 0.4 });
         L.p("Terima kasih, iuran Anda sudah kami terima. Kwitansi elektronik ini sah tanpa tanda tangan dan stempel - simpan sebagai bukti pembayaran.", { size: 9.5, gray: 0.4 });
       }
     },
@@ -590,7 +592,7 @@
     var rw = String(cfg.namaRW || "").replace(/\D+/g, "") || "021";
     var kompleks = cfg.namaKompleks || "Villa Indah Pulo Timaha";
     return {
-      rt: rt, rw: rw, kompleks: kompleks,
+      urlSitus: cfg.urlSitus || "", rt: rt, rw: rw, kompleks: kompleks,
       ketua: cfg.namaKetua || "Ketua RT",
       tempat: cfg.tempatSurat || kompleks,
       kopPemerintah: cfg.kopPemerintah || "PEMERINTAH KABUPATEN BEKASI",
@@ -682,7 +684,28 @@
     });
   }
 
-  var API = { JENIS: JENIS, buat: buat, validasi: validasi, muatLogo: muatLogo, _wrap: wrap, _tw: textWidth };
+  /* Nomor invoice/kwitansi iuran: KW-YYMM-XXXXX (5 karakter acak). SENGAJA tidak memuat blok/nomor rumah
+     supaya aman ditampilkan di halaman Transparansi. bulanKey = "YYYY-MM". "dipakai" (opsional) = daftar kode
+     yang sudah ada, untuk menghindari kembar. */
+  function kodeInvoice(bulanKey, dipakai) {
+    var abjad = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", m = /^(\d{4})-(\d{2})$/.exec(bulanKey || ""), kode, n = 0;
+    var yymm = m ? m[1].slice(2) + m[2] : (function (d) { return String(d.getFullYear()).slice(2) + ("0" + (d.getMonth() + 1)).slice(-2); })(new Date());
+    var pakai = {}; (dipakai || []).forEach(function (k) { pakai[k] = 1; });
+    do {
+      var acak = "";
+      for (var i = 0; i < 5; i++) acak += abjad.charAt(Math.floor(Math.random() * abjad.length));
+      kode = "KW-" + yymm + "-" + acak;
+    } while (pakai[kode] && ++n < 50);
+    return kode;
+  }
+  /* Kode lama berformat KW-YYMM-BLOK-NO (memuat nomor rumah). Dipakai untuk menyamarkan di tampilan publik. */
+  function linkInvoice(cfg, kode) {
+    var u = String((cfg && cfg.urlSitus) || "").replace(/\/+$/, "");
+    return u ? u + "/transparansi.html?inv=" + encodeURIComponent(kode) : "";
+  }
+  function kodeLama(k) { return /^KW-\d{4}-[A-Za-z0-9]+-[A-Za-z0-9]+$/.test(String(k || "")); }
+
+  var API = { JENIS: JENIS, buat: buat, validasi: validasi, muatLogo: muatLogo, kodeInvoice: kodeInvoice, linkInvoice: linkInvoice, kodeLama: kodeLama, _wrap: wrap, _tw: textWidth };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.RTSurat = API;
 })(typeof window !== "undefined" ? window : globalThis);
