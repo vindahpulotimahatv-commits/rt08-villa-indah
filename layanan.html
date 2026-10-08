@@ -676,10 +676,19 @@ function showToast(msg){
     if(window.RTAndroid && typeof window.RTAndroid.bukaChatDenganPdf==="function"){
       try{ if(window.RTAndroid.bukaChatDenganPdf(b64(hasil.bytes),hasil.namaFile,nomor,hasil.pesan)) return; }catch(e){ console.warn(e); }
     }
-    // 2) Browser / aplikasi lama: unduh PDF + buka chat WhatsApp pengurus (langsung ke nomornya)
+    // 2) Browser HP (Chrome/Safari): lembar bagikan dengan PDF SUDAH TERLAMPIR — pilih WhatsApp lalu kontak pengurus, tekan Kirim.
+    try{
+      var file=new File([hasil.bytes],hasil.namaFile,{type:"application/pdf"});
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],text:hasil.pesan});
+        showToast("Pilih WhatsApp lalu kontak "+pengurus(J)+", kemudian tekan Kirim.");
+        return;
+      }
+    }catch(e){ if(e && e.name==="AbortError") return; console.warn(e); }
+    // 3) Browser yang tidak bisa melampirkan file otomatis (mis. komputer): unduh PDF + buka chat pengurus. Pesan tanpa catatan tambahan.
     unduh();
-    rtOpenWa(nomor, hasil.pesan+"\n\n(PDF sudah diunduh — mohon dilampirkan di chat ini.)");
-    showToast("Chat "+pengurus(J)+" terbuka. Tekan 📎 lalu lampirkan PDF yang sudah diunduh.");
+    rtOpenWa(nomor, hasil.pesan);
+    showToast("PDF diunduh & chat "+pengurus(J)+" dibuka. Tekan 📎 lalu pilih PDF tersebut.");
   }
 })();
 </script>

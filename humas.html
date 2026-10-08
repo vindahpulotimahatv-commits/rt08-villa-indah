@@ -781,7 +781,7 @@ async function kirimExcelSetoran_(id, batch){
       return;
     }
     unduhExcelSetoran_(id, batch);
-    rtOpenWa(RT_CONFIG.waBendahara, pesan + "\n\n(File Excel sudah diunduh — mohon dilampirkan di chat ini.)", "Nomor WhatsApp Bendahara belum diatur di config.js.");
+    rtOpenWa(RT_CONFIG.waBendahara, pesan, "Nomor WhatsApp Bendahara belum diatur di config.js.");
   } catch (e) { if (e && e.name === "AbortError") return; console.error(e); showToast("Gagal menyiapkan Excel. Coba lagi."); }
 }
 function tampilLaporanSetoran_(id, batch){
@@ -1293,7 +1293,7 @@ function tampilHasilKwitansi_(){
   document.getElementById("btnChatKwitansi").addEventListener("click", function(){
     if (!tujuan.nomor) { showToast("Nomor WhatsApp belum tersedia."); return; }
     unduhBlob_(hasil.bytes, hasil.namaFile);
-    rtOpenWa(tujuan.nomor, teksKwitansi_(payload, hasil, tujuan) + "\n\n(PDF kwitansi sudah diunduh — tekan 📎 lalu lampirkan file tersebut di chat ini.)");
+    rtOpenWa(tujuan.nomor, teksKwitansi_(payload, hasil, tujuan));
     showToast("Chat WhatsApp dibuka. Lampirkan PDF lalu kirim.");
   });
   document.getElementById("btnUnduhKwitansi").addEventListener("click", function(){ unduhBlob_(hasil.bytes, hasil.namaFile); showToast("PDF diunduh."); });
@@ -1329,7 +1329,7 @@ async function kirimKwitansi_(){
     }
   } catch (e) { if (e && e.name === "AbortError") return; console.warn(e); }
   unduhBlob_(hasil.bytes, hasil.namaFile);
-  rtOpenWa(tujuan.nomor, pesan + "\n\n(PDF kwitansi sudah diunduh — tekan 📎 lalu lampirkan file tersebut di chat ini.)");
+  rtOpenWa(tujuan.nomor, pesan);
   showToast("Chat WhatsApp ke " + tujuan.label + " dibuka. Tinggal lampirkan PDF lalu kirim.");
 }
 })();

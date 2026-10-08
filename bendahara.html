@@ -923,7 +923,7 @@ function linkCekInvoice_(kode){ var l = (typeof RTSurat !== "undefined") ? RTSur
     /* Cadangan (PC): buka chat ke nomor itu, PDF diunduh untuk dilampirkan manual. */
     if (nomor) {
       unduhPdf_(hasil.bytes, hasil.namaFile);
-      rtOpenWa(nomor, pesan + "\n\n(PDF kwitansi sudah diunduh — tekan 📎 lalu lampirkan file tersebut di chat ini.)");
+      rtOpenWa(nomor, pesan);
       showToast("Chat WhatsApp ke warga dibuka. Tinggal lampirkan PDF lalu kirim.");
       return;
     }
