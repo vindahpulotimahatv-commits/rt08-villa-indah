@@ -1,0 +1,192 @@
+<!DOCTYPE html><html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0A1B32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="icon-192.png">
+<title>Hiburan | PANDU</title>
+<style>
+:root{--navy:#123a6b;--navy2:#081c38;--gold:#d5a62b;--ink:#12213f;--muted:#59657f;--line:#dbe2f0;--red:#c74444}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  background:linear-gradient(180deg,rgba(6,16,36,.78),rgba(8,20,44,.6) 40%,rgba(10,25,56,.9)),url("assets/bg-navy.jpg") center top/cover no-repeat fixed,#0a1b32;padding-bottom:90px}
+a{color:inherit;text-decoration:none}button,input{font:inherit}
+.wrap{width:min(900px,calc(100% - 28px));margin:auto}
+header{position:sticky;top:0;z-index:50;background:rgba(8,20,44,.94);backdrop-filter:blur(14px);border-bottom:1px solid rgba(213,166,43,.28)}
+.bar{display:flex;align-items:center;justify-content:space-between;min-height:58px;gap:10px;color:#fff}
+.bar b{font-size:17px}.bar small{display:block;color:var(--gold);font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:800}
+.back{border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:8px 14px;font-weight:800;font-size:13px;color:#fff}
+.tabs{display:flex;gap:8px;margin:18px 0 14px}
+.tab{flex:1;border:0;border-radius:14px;padding:13px;font-weight:900;font-size:14px;cursor:pointer;background:rgba(255,255,255,.12);color:#fff}
+.tab.on{background:linear-gradient(135deg,#e8c05a,#c49325);color:#0b2144}
+.card{background:#fff;border-radius:20px;padding:16px;box-shadow:0 14px 40px rgba(3,10,26,.3);margin-bottom:14px}
+h2{margin:0 0 4px;font-size:17px}.sub{margin:0 0 12px;color:var(--muted);font-size:12.5px;line-height:1.5}
+.note{font-size:11.5px;color:var(--muted);margin:10px 0 0;line-height:1.5}
+.player{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden}
+.player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.ph{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#cbd5e8;padding:18px;font-size:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn{border:1.5px solid var(--line);background:#fff;color:var(--navy);border-radius:12px;padding:9px 14px;font-weight:800;font-size:13px;cursor:pointer;display:inline-block}
+.btn.gold{background:linear-gradient(135deg,#e8c05a,#c49325);border-color:transparent;color:#0b2144}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.chn{border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:12px;text-align:left;cursor:pointer;font-weight:900;font-size:14px;color:var(--ink)}
+.chn small{display:block;font-weight:600;color:var(--muted);font-size:11px;margin-top:2px}
+.chn.on{border-color:var(--gold);background:#fff8e6}
+.q{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:15px;margin-bottom:10px}
+.q:focus{outline:none;border-color:var(--navy)}
+.st{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1.5px solid var(--line);border-radius:14px;padding:11px 12px;margin-bottom:8px;background:#fff}
+.st.on{border-color:var(--gold);background:#fff8e6}
+.st b{font-size:14px;display:block;word-break:break-word}.st small{color:var(--muted);font-size:11.5px}
+.play{flex:none;width:44px;height:44px;border-radius:50%;border:0;background:var(--navy);color:#fff;font-size:17px;cursor:pointer}
+.st.on .play{background:var(--gold);color:#0b2144}
+.nowbar{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#081c38;color:#fff;border-top:2px solid var(--gold);padding:10px 14px;display:none}
+.nowbar.show{display:block}
+.nowin{width:min(900px,100%);margin:auto;display:flex;align-items:center;gap:12px}
+.nowin .t{flex:1;min-width:0}.nowin .t small{color:var(--gold);font-size:10.5px;font-weight:800;letter-spacing:.5px}
+.nowin .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.nowin input[type=range]{width:90px}
+.msg{padding:14px;text-align:center;color:var(--muted);font-size:13px}
+.hide{display:none}
+</style></head><body>
+<header><div class="wrap bar"><div><b>Hiburan</b><small>Radio &amp; TV Nasional</small></div><a class="back" href="index.html">← Beranda</a></div></header>
+
+<main class="wrap">
+  <div class="tabs" role="tablist">
+    <button class="tab on" id="tabRadio" role="tab">📻 Radio</button>
+    <button class="tab" id="tabTv" role="tab">📺 TV Nasional</button>
+  </div>
+
+  <!-- RADIO -->
+  <section id="pRadio">
+    <div class="card">
+      <h2>Radio Indonesia</h2>
+      <p class="sub">Pilih stasiun lalu ketuk ▶. Radio tetap berbunyi saat kamu menggulir halaman. Memutar TV akan menghentikan radio, dan sebaliknya.</p>
+      <input class="q" id="rq" type="search" placeholder="Cari stasiun… contoh: RRI, Prambors, dangdut, berita" autocomplete="off">
+      <div id="rlist"><div class="msg">Memuat daftar radio…</div></div>
+      <p class="note">Daftar diambil dari direktori radio terbuka (radio-browser.info). Hanya stasiun dengan siaran aman (https) yang ditampilkan. Memakai kuota data seluler.</p>
+    </div>
+  </section>
+
+  <!-- TV -->
+  <section id="pTv" class="hide">
+    <div class="card">
+      <h2>TV Nasional (siaran langsung)</h2>
+      <p class="sub">Siaran langsung dari kanal YouTube resmi masing-masing stasiun. Memakai kuota data seluler.</p>
+      <div class="player" id="tvBox"><div class="ph">Pilih saluran di bawah untuk mulai menonton.</div></div>
+      <div class="row"><a class="btn gold hide" id="tvOpen" target="_blank" rel="noopener">Buka di YouTube ↗</a></div>
+      <p class="note">Jika layar hitam / "video tidak tersedia", stasiun itu sedang tidak siaran langsung atau tidak mengizinkan diputar di aplikasi lain. Ketuk <b>Buka di YouTube</b>.</p>
+    </div>
+    <div class="card"><div class="grid" id="tvList"></div></div>
+  </section>
+</main>
+
+<div class="nowbar" id="nowbar"><div class="nowin">
+  <button class="play" id="nbPlay" aria-label="Putar atau jeda">⏸</button>
+  <div class="t"><small>SEDANG DIPUTAR</small><b id="nbName">-</b></div>
+  <input type="range" id="nbVol" min="0" max="1" step="0.05" value="1" aria-label="Volume">
+  <button class="btn" id="nbStop" aria-label="Hentikan">✕</button>
+</div></div>
+
+<audio id="aud" preload="none"></audio>
+<script src="config.js"></script>
+<script>
+/* ---------- TV: kanal YouTube RESMI (channel ID sudah diverifikasi) ---------- */
+var TV_DEFAULT = [
+  { nama: "TVRI Nasional", ket: "Televisi publik", ch: "UCyIMsCzDRm8_y_6wM26_PWQ" },
+  { nama: "Kompas TV", ket: "Berita & hiburan", ch: "UC5BMIWZe9isJXLZZWPWvBlg" },
+  { nama: "Metro TV", ket: "Berita", ch: "UCzl0OrB3-ehunyotIQvK77A" },
+  { nama: "tvOne", ket: "Berita", ch: "UCER4rvDnRBPr_ncYW4UCZjg" }
+];
+/* Admin bisa menambah/mengganti lewat config.js:  RT_CONFIG.hiburanTV = [{nama,ket,ch}]  dan  RT_CONFIG.hiburanRadio = [{nama,ket,url}] */
+var CFG = (typeof RT_CONFIG !== "undefined" && RT_CONFIG) ? RT_CONFIG : {};
+var TV = (CFG.hiburanTV && CFG.hiburanTV.length) ? CFG.hiburanTV : TV_DEFAULT;
+var RADIO_PILIHAN = CFG.hiburanRadio || [];   /* stasiun pilihan admin (tampil paling atas) */
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+
+/* ---------- Tab ---------- */
+function tab(t){
+  $("tabRadio").classList.toggle("on", t === "radio"); $("tabTv").classList.toggle("on", t === "tv");
+  $("pRadio").classList.toggle("hide", t !== "radio"); $("pTv").classList.toggle("hide", t !== "tv");
+  if (t === "radio") stopTv(); /* satu suara saja */
+}
+$("tabRadio").onclick = function(){ tab("radio"); };
+$("tabTv").onclick = function(){ tab("tv"); };
+
+/* ---------- TV ---------- */
+$("tvList").innerHTML = TV.map(function(c, i){ return '<button class="chn" data-i="' + i + '">' + esc(c.nama) + '<small>' + esc(c.ket || "") + '</small></button>'; }).join("");
+$("tvList").addEventListener("click", function(e){
+  var b = e.target.closest(".chn"); if (!b) return;
+  var c = TV[+b.getAttribute("data-i")]; if (!c) return;
+  stopRadio(); /* hentikan radio saat TV diputar */
+  document.querySelectorAll(".chn").forEach(function(x){ x.classList.toggle("on", x === b); });
+  $("tvBox").innerHTML = '<iframe src="https://www.youtube.com/embed/live_stream?channel=' + encodeURIComponent(c.ch) + '&autoplay=1&playsinline=1&rel=0" title="' + esc(c.nama) + '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+  var o = $("tvOpen"); o.href = "https://www.youtube.com/channel/" + encodeURIComponent(c.ch) + "/live"; o.classList.remove("hide");
+});
+function stopTv(){ $("tvBox").innerHTML = '<div class="ph">Pilih saluran di bawah untuk mulai menonton.</div>'; $("tvOpen").classList.add("hide"); document.querySelectorAll(".chn.on").forEach(function(x){ x.classList.remove("on"); }); }
+
+/* ---------- Radio ---------- */
+var aud = $("aud"), stasiun = [], aktif = null;
+var SERVERS = ["https://de1.api.radio-browser.info", "https://nl1.api.radio-browser.info", "https://at1.api.radio-browser.info", "https://de2.api.radio-browser.info"];
+
+function ambilRadio(i){
+  if (i >= SERVERS.length) return Promise.reject(new Error("semua server gagal"));
+  var u = SERVERS[i] + "/json/stations/search?countrycode=ID&hidebroken=true&is_https=true&order=clickcount&reverse=true&limit=120";
+  var ctl = ("AbortController" in window) ? new AbortController() : null, t = setTimeout(function(){ if (ctl) ctl.abort(); }, 9000);
+  return fetch(u, ctl ? { signal: ctl.signal } : {}).then(function(r){ clearTimeout(t); if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+    .catch(function(){ clearTimeout(t); return ambilRadio(i + 1); });
+}
+function layak(s){
+  var u = s.url_resolved || s.url || "";
+  if (!/^https:\/\//i.test(u)) return false;
+  if (s.hls === 1 || /\.m3u8(\?|$)/i.test(u)) return false;            /* HLS tidak didukung audio biasa di Android WebView */
+  var c = String(s.codec || "").toUpperCase();
+  return !c || c === "MP3" || c === "AAC" || c === "AAC+" || c === "OGG" || c === "UNKNOWN";
+}
+function muatRadio(){
+  ambilRadio(0).then(function(arr){
+    var seen = {}, dir = (arr || []).filter(layak).map(function(s){
+      return { nama: (s.name || "").trim(), ket: [s.tags ? String(s.tags).split(",").slice(0, 2).join(", ") : "", s.state || ""].filter(Boolean).join(" · "), url: s.url_resolved || s.url };
+    }).filter(function(s){ if (!s.nama || seen[s.url]) return false; seen[s.url] = 1; return true; });
+    var pilihan = RADIO_PILIHAN.map(function(s){ return { nama: s.nama, ket: s.ket || "Pilihan pengurus", url: s.url, pilihan: true }; });
+    stasiun = pilihan.concat(dir.filter(function(s){ return !pilihan.some(function(p){ return p.url === s.url; }); }));
+    gambarRadio();
+  }).catch(function(){
+    stasiun = RADIO_PILIHAN.map(function(s){ return { nama: s.nama, ket: s.ket || "Pilihan pengurus", url: s.url, pilihan: true }; });
+    if (stasiun.length) gambarRadio();
+    else $("rlist").innerHTML = '<div class="msg">Daftar radio belum bisa dimuat. Periksa koneksi internet lalu <a href="" style="color:#123a6b;font-weight:800">muat ulang</a>.</div>';
+  });
+}
+function gambarRadio(){
+  var q = $("rq").value.trim().toLowerCase();
+  var hasil = stasiun.filter(function(s){ return !q || (s.nama + " " + s.ket).toLowerCase().indexOf(q) >= 0; }).slice(0, 60);
+  if (!hasil.length) { $("rlist").innerHTML = '<div class="msg">Stasiun tidak ditemukan.</div>'; return; }
+  $("rlist").innerHTML = hasil.map(function(s){
+    var idx = stasiun.indexOf(s), on = aktif && aktif.url === s.url;
+    return '<div class="st' + (on ? " on" : "") + '"><div style="min-width:0"><b>' + esc(s.nama) + '</b><small>' + esc(s.ket || "Radio") + '</small></div><button class="play" data-i="' + idx + '" aria-label="Putar ' + esc(s.nama) + '">' + (on && !aud.paused ? "⏸" : "▶") + '</button></div>';
+  }).join("");
+}
+$("rq").addEventListener("input", gambarRadio);
+$("rlist").addEventListener("click", function(e){
+  var b = e.target.closest(".play"); if (!b) return;
+  var s = stasiun[+b.getAttribute("data-i")]; if (!s) return;
+  if (aktif && aktif.url === s.url) { aud.paused ? aud.play() : aud.pause(); return; }
+  stopTv();
+  aktif = s; aud.src = s.url; $("nbName").textContent = s.nama; $("nowbar").classList.add("show");
+  var p = aud.play(); if (p && p.catch) p.catch(function(){ gagal(); });
+  gambarRadio();
+});
+function gagal(){
+  if (!aktif) return;
+  $("nbName").textContent = aktif.nama + " — gagal diputar, coba stasiun lain";
+  $("nbPlay").textContent = "▶";
+}
+function stopRadio(){ aud.pause(); aud.removeAttribute("src"); aud.load(); aktif = null; $("nowbar").classList.remove("show"); gambarRadio(); }
+aud.addEventListener("play", function(){ $("nbPlay").textContent = "⏸"; if (aktif) $("nbName").textContent = aktif.nama; gambarRadio(); });
+aud.addEventListener("pause", function(){ $("nbPlay").textContent = "▶"; gambarRadio(); });
+aud.addEventListener("error", gagal);
+$("nbPlay").onclick = function(){ if (!aktif) return; aud.paused ? aud.play().catch(gagal) : aud.pause(); };
+$("nbStop").onclick = stopRadio;
+$("nbVol").oninput = function(){ aud.volume = parseFloat(this.value); };
+
+muatRadio();
+</script>
+</body></html>
