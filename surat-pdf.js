@@ -433,6 +433,41 @@
       }
     },
 
+    suratMenetap: {
+      kode: "SM", judul: "Surat Keterangan Menetap", ikon: "🏡", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
+      fields: [
+        { id: "nama", label: "Nama Lengkap", req: 1, full: 1 },
+        { id: "nik", label: "NIK (16 digit)", type: "nik", req: 1 },
+        { id: "hp", label: "Nomor WhatsApp", type: "tel", ph: "08xxxxxxxxxx" },
+        { id: "tempatLahir", label: "Tempat Lahir", req: 1 },
+        { id: "tglLahir", label: "Tanggal Lahir", type: "date", req: 1 },
+        { id: "jk", label: "Jenis Kelamin", type: "select", opts: JK, req: 1 },
+        { id: "agama", label: "Agama", type: "select", opts: AGAMA },
+        { id: "status", label: "Status Perkawinan", type: "select", opts: KAWIN },
+        { id: "pekerjaan", label: "Pekerjaan" },
+        { id: "blok", label: "Blok / No. Rumah", type: "rumah", req: 1, full: 1 },
+        { id: "hunian", label: "Status hunian", type: "select", opts: ["Pemilik", "Sewa / Kontrak", "Menumpang / ikut keluarga"], req: 1 },
+        { id: "tglMulai", label: "Menetap di alamat ini sejak", type: "date", req: 1 },
+        { id: "keperluan", label: "Keperluan Surat", type: "textarea", req: 1, full: 1, ph: "Contoh: Persyaratan sekolah anak / pekerjaan / pengurusan administrasi bank..." },
+        { id: "tujuan", label: "Ditujukan kepada (opsional)", full: 1, ph: "Contoh: Nama sekolah / perusahaan / instansi" }
+      ],
+      render: function (L, d, c) {
+        judul(L, "SURAT KETERANGAN MENETAP"); nomorSurat(L, c); pembuka(L, c);
+        L.rows([
+          ["Nama", d.nama], ["NIK", d.nik],
+          ["Tempat/Tgl. Lahir", d.tempatLahir + (d.tglLahir ? ", " + tgl(d.tglLahir) : "")],
+          ["Jenis Kelamin", d.jk], ["Agama", d.agama], ["Status Perkawinan", d.status],
+          ["Pekerjaan", d.pekerjaan], ["Alamat", alamatRumah(d, c)]
+        ]);
+        L.space(6);
+        L.p("Adalah benar yang bersangkutan menetap dan bertempat tinggal di alamat tersebut di atas, wilayah RT " + c.rt + " / RW " + c.rw + " " + c.kompleks +
+            ", dengan status hunian " + String(d.hunian || "").toLowerCase() + ", sejak " + tgl(d.tglMulai) + " sampai dengan surat ini dibuat. " +
+            "Surat keterangan ini diberikan untuk keperluan sebagai berikut:", { justify: true, after: 4 });
+        L.rows([["Keperluan", d.keperluan], ["Ditujukan kepada", d.tujuan]]);
+        penutup(L); ttdRT(L, c, d);
+      }
+    },
+
     wargaBaru: {
       kode: "WB", judul: "Lapor Warga Baru", ikon: "🏠", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
       fields: [

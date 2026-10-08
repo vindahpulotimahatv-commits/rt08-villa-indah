@@ -45,36 +45,20 @@ h2{margin:0 0 4px;font-size:17px}.sub{margin:0 0 12px;color:var(--muted);font-si
 .msg{padding:14px;text-align:center;color:var(--muted);font-size:13px}
 .hide{display:none}
 </style></head><body>
-<header><div class="wrap bar"><div><b>Hiburan</b><small>Radio &amp; TV Nasional</small></div><a class="back" href="index.html">← Beranda</a></div></header>
+<header><div class="wrap bar"><div><b>Hiburan</b><small>Radio Indonesia</small></div><a class="back" href="index.html">← Beranda</a></div></header>
 
 <main class="wrap">
-  <div class="tabs" role="tablist">
-    <button class="tab on" id="tabRadio" role="tab">📻 Radio</button>
-    <button class="tab" id="tabTv" role="tab">📺 TV Nasional</button>
-  </div>
-
   <!-- RADIO -->
   <section id="pRadio">
     <div class="card">
       <h2>Radio Indonesia</h2>
-      <p class="sub">Pilih stasiun lalu ketuk ▶. Radio tetap berbunyi saat kamu menggulir halaman. Memutar TV akan menghentikan radio, dan sebaliknya.</p>
+      <p class="sub">Pilih stasiun lalu ketuk ▶. Radio tetap berbunyi saat kamu menggulir halaman.</p>
       <input class="q" id="rq" type="search" placeholder="Cari stasiun… contoh: RRI, Prambors, dangdut, berita" autocomplete="off">
       <div id="rlist"><div class="msg">Memuat daftar radio…</div></div>
       <p class="note">Daftar diambil dari direktori radio terbuka (radio-browser.info). Hanya stasiun dengan siaran aman (https) yang ditampilkan. Memakai kuota data seluler.</p>
     </div>
   </section>
 
-  <!-- TV -->
-  <section id="pTv" class="hide">
-    <div class="card">
-      <h2>TV Nasional (siaran langsung)</h2>
-      <p class="sub">Siaran langsung dari kanal YouTube resmi masing-masing stasiun. Memakai kuota data seluler.</p>
-      <div class="player" id="tvBox"><div class="ph">Pilih saluran di bawah untuk mulai menonton.</div></div>
-      <div class="row"><a class="btn gold hide" id="tvOpen" target="_blank" rel="noopener">Buka di YouTube ↗</a></div>
-      <p class="note">Jika layar hitam / "video tidak tersedia", stasiun itu sedang tidak siaran langsung atau tidak mengizinkan diputar di aplikasi lain. Ketuk <b>Buka di YouTube</b>.</p>
-    </div>
-    <div class="card"><div class="grid" id="tvList"></div></div>
-  </section>
 </main>
 
 <div class="nowbar" id="nowbar"><div class="nowin">
@@ -87,56 +71,12 @@ h2{margin:0 0 4px;font-size:17px}.sub{margin:0 0 12px;color:var(--muted);font-si
 <audio id="aud" preload="none"></audio>
 <script src="config.js"></script>
 <script>
-/* ---------- TV: kanal YouTube RESMI (channel ID sudah diverifikasi) ---------- */
-var TV_DEFAULT = [
-  { nama: "TVRI Nasional", ket: "Buka di YouTube ↗", ch: "UCyIMsCzDRm8_y_6wM26_PWQ", embed: false },
-  { nama: "Kompas TV", ket: "Putar di sini", ch: "UC5BMIWZe9isJXLZZWPWvBlg" },
-  { nama: "Metro TV", ket: "Buka di YouTube ↗", ch: "UCzl0OrB3-ehunyotIQvK77A", embed: false },
-  { nama: "tvOne", ket: "Buka di YouTube ↗", ch: "UCER4rvDnRBPr_ncYW4UCZjg", embed: false }
-];
-/* Admin bisa menambah/mengganti lewat config.js:  RT_CONFIG.hiburanTV = [{nama,ket,ch}]  dan  RT_CONFIG.hiburanRadio = [{nama,ket,url}] */
 var CFG = (typeof RT_CONFIG !== "undefined" && RT_CONFIG) ? RT_CONFIG : {};
-var TV = (CFG.hiburanTV && CFG.hiburanTV.length) ? CFG.hiburanTV : TV_DEFAULT;
-var RADIO_PILIHAN = CFG.hiburanRadio || [];   /* stasiun pilihan admin (tampil paling atas) */
+/* Admin bisa menambah stasiun pilihan lewat config.js:  RT_CONFIG.hiburanRadio = [{nama,ket,url}] (tampil paling atas) */
+var RADIO_PILIHAN = CFG.hiburanRadio || [];
 
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
-
-/* ---------- Tab ---------- */
-function tab(t){
-  $("tabRadio").classList.toggle("on", t === "radio"); $("tabTv").classList.toggle("on", t === "tv");
-  $("pRadio").classList.toggle("hide", t !== "radio"); $("pTv").classList.toggle("hide", t !== "tv");
-  if (t === "radio") stopTv(); /* satu suara saja */
-}
-$("tabRadio").onclick = function(){ tab("radio"); };
-$("tabTv").onclick = function(){ tab("tv"); };
-
-/* ---------- TV ---------- */
-$("tvList").innerHTML = TV.map(function(c, i){ return '<button class="chn" data-i="' + i + '">' + esc(c.nama) + '<small>' + esc(c.ket || "") + '</small></button>'; }).join("");
-$("tvList").addEventListener("click", function(e){
-  var b = e.target.closest(".chn"); if (!b) return;
-  var c = TV[+b.getAttribute("data-i")]; if (!c) return;
-  stopRadio(); /* hentikan radio saat TV diputar */
-  document.querySelectorAll(".chn").forEach(function(x){ x.classList.toggle("on", x === b); });
-  var linkYT = "https://www.youtube.com/channel/" + encodeURIComponent(c.ch) + "/live";
-  tvAktif = { nama: c.nama, link: linkYT };
-  var o = $("tvOpen"); o.href = linkYT; o.classList.remove("hide");
-  if (c.embed === false) { tvGagal(true); return; }   /* stasiun ini diketahui melarang ditanam */
-  $("tvBox").innerHTML = '<iframe id="tvFrame" src="https://www.youtube.com/embed/live_stream?channel=' + encodeURIComponent(c.ch) + '&autoplay=1&playsinline=1&rel=0&enablejsapi=1&origin=' + encodeURIComponent(location.origin) + '" title="' + esc(c.nama) + '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
-  var fr = $("tvFrame");
-  fr.addEventListener("load", function(){ try { fr.contentWindow.postMessage(JSON.stringify({ event: "listening", id: 1, channel: "widget" }), "*"); } catch (x) {} });
-});
-/* Deteksi "video tidak tersedia" (stasiun melarang ditanam / sedang tidak siaran) lalu tawarkan buka di YouTube */
-var tvAktif = null;
-function tvGagal(tahu){
-  $("tvBox").innerHTML = '<div class="ph"><div><b style="color:#fff;font-size:15px">' + esc(tvAktif.nama) + (tahu ? ' ditonton lewat YouTube' : ' tidak bisa diputar di sini') + '</b><br><span style="display:block;margin:6px 0 12px">' + (tahu ? 'Stasiun ini tidak mengizinkan siarannya ditanam di aplikasi lain.' : 'Stasiun sedang tidak siaran langsung atau tidak mengizinkan siarannya ditanam di aplikasi lain.') + '</span><a class="btn gold" href="' + esc(tvAktif.link) + '" target="_blank" rel="noopener">Tonton di YouTube ↗</a></div></div>';
-}
-window.addEventListener("message", function(e){
-  if (!/^https:\/\/www\.youtube(-nocookie)?\.com$/.test(e.origin) || !tvAktif) return;
-  var d; try { d = typeof e.data === "string" ? JSON.parse(e.data) : e.data; } catch (x) { return; }
-  if (d && d.event === "onError") tvGagal(false);
-});
-function stopTv(){ tvAktif = null; $("tvBox").innerHTML = '<div class="ph">Pilih saluran di bawah untuk mulai menonton.</div>'; $("tvOpen").classList.add("hide"); document.querySelectorAll(".chn.on").forEach(function(x){ x.classList.remove("on"); }); }
 
 /* ---------- Radio ---------- */
 var aud = $("aud"), stasiun = [], aktif = null;
@@ -184,7 +124,6 @@ $("rlist").addEventListener("click", function(e){
   var b = e.target.closest(".play"); if (!b) return;
   var s = stasiun[+b.getAttribute("data-i")]; if (!s) return;
   if (aktif && aktif.url === s.url) { aud.paused ? aud.play() : aud.pause(); return; }
-  stopTv();
   aktif = s; aud.src = s.url; $("nbName").textContent = s.nama; $("nowbar").classList.add("show");
   var p = aud.play(); if (p && p.catch) p.catch(function(){ gagal(); });
   gambarRadio();
