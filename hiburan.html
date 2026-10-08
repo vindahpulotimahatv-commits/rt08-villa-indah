@@ -89,10 +89,10 @@ h2{margin:0 0 4px;font-size:17px}.sub{margin:0 0 12px;color:var(--muted);font-si
 <script>
 /* ---------- TV: kanal YouTube RESMI (channel ID sudah diverifikasi) ---------- */
 var TV_DEFAULT = [
-  { nama: "TVRI Nasional", ket: "Televisi publik", ch: "UCyIMsCzDRm8_y_6wM26_PWQ" },
-  { nama: "Kompas TV", ket: "Berita & hiburan", ch: "UC5BMIWZe9isJXLZZWPWvBlg" },
-  { nama: "Metro TV", ket: "Berita", ch: "UCzl0OrB3-ehunyotIQvK77A" },
-  { nama: "tvOne", ket: "Berita", ch: "UCER4rvDnRBPr_ncYW4UCZjg" }
+  { nama: "TVRI Nasional", ket: "Buka di YouTube ↗", ch: "UCyIMsCzDRm8_y_6wM26_PWQ", embed: false },
+  { nama: "Kompas TV", ket: "Putar di sini", ch: "UC5BMIWZe9isJXLZZWPWvBlg" },
+  { nama: "Metro TV", ket: "Buka di YouTube ↗", ch: "UCzl0OrB3-ehunyotIQvK77A", embed: false },
+  { nama: "tvOne", ket: "Buka di YouTube ↗", ch: "UCER4rvDnRBPr_ncYW4UCZjg", embed: false }
 ];
 /* Admin bisa menambah/mengganti lewat config.js:  RT_CONFIG.hiburanTV = [{nama,ket,ch}]  dan  RT_CONFIG.hiburanRadio = [{nama,ket,url}] */
 var CFG = (typeof RT_CONFIG !== "undefined" && RT_CONFIG) ? RT_CONFIG : {};
@@ -118,10 +118,25 @@ $("tvList").addEventListener("click", function(e){
   var c = TV[+b.getAttribute("data-i")]; if (!c) return;
   stopRadio(); /* hentikan radio saat TV diputar */
   document.querySelectorAll(".chn").forEach(function(x){ x.classList.toggle("on", x === b); });
-  $("tvBox").innerHTML = '<iframe src="https://www.youtube.com/embed/live_stream?channel=' + encodeURIComponent(c.ch) + '&autoplay=1&playsinline=1&rel=0" title="' + esc(c.nama) + '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
-  var o = $("tvOpen"); o.href = "https://www.youtube.com/channel/" + encodeURIComponent(c.ch) + "/live"; o.classList.remove("hide");
+  var linkYT = "https://www.youtube.com/channel/" + encodeURIComponent(c.ch) + "/live";
+  tvAktif = { nama: c.nama, link: linkYT };
+  var o = $("tvOpen"); o.href = linkYT; o.classList.remove("hide");
+  if (c.embed === false) { tvGagal(true); return; }   /* stasiun ini diketahui melarang ditanam */
+  $("tvBox").innerHTML = '<iframe id="tvFrame" src="https://www.youtube.com/embed/live_stream?channel=' + encodeURIComponent(c.ch) + '&autoplay=1&playsinline=1&rel=0&enablejsapi=1&origin=' + encodeURIComponent(location.origin) + '" title="' + esc(c.nama) + '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+  var fr = $("tvFrame");
+  fr.addEventListener("load", function(){ try { fr.contentWindow.postMessage(JSON.stringify({ event: "listening", id: 1, channel: "widget" }), "*"); } catch (x) {} });
 });
-function stopTv(){ $("tvBox").innerHTML = '<div class="ph">Pilih saluran di bawah untuk mulai menonton.</div>'; $("tvOpen").classList.add("hide"); document.querySelectorAll(".chn.on").forEach(function(x){ x.classList.remove("on"); }); }
+/* Deteksi "video tidak tersedia" (stasiun melarang ditanam / sedang tidak siaran) lalu tawarkan buka di YouTube */
+var tvAktif = null;
+function tvGagal(tahu){
+  $("tvBox").innerHTML = '<div class="ph"><div><b style="color:#fff;font-size:15px">' + esc(tvAktif.nama) + (tahu ? ' ditonton lewat YouTube' : ' tidak bisa diputar di sini') + '</b><br><span style="display:block;margin:6px 0 12px">' + (tahu ? 'Stasiun ini tidak mengizinkan siarannya ditanam di aplikasi lain.' : 'Stasiun sedang tidak siaran langsung atau tidak mengizinkan siarannya ditanam di aplikasi lain.') + '</span><a class="btn gold" href="' + esc(tvAktif.link) + '" target="_blank" rel="noopener">Tonton di YouTube ↗</a></div></div>';
+}
+window.addEventListener("message", function(e){
+  if (!/^https:\/\/www\.youtube(-nocookie)?\.com$/.test(e.origin) || !tvAktif) return;
+  var d; try { d = typeof e.data === "string" ? JSON.parse(e.data) : e.data; } catch (x) { return; }
+  if (d && d.event === "onError") tvGagal(false);
+});
+function stopTv(){ tvAktif = null; $("tvBox").innerHTML = '<div class="ph">Pilih saluran di bawah untuk mulai menonton.</div>'; $("tvOpen").classList.add("hide"); document.querySelectorAll(".chn.on").forEach(function(x){ x.classList.remove("on"); }); }
 
 /* ---------- Radio ---------- */
 var aud = $("aud"), stasiun = [], aktif = null;
