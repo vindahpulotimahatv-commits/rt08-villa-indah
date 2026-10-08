@@ -118,8 +118,7 @@ var PAGES=[
  ["Kontak Penting","kontak.html","phone","kontak telepon whatsapp pengurus ketua sekretaris bendahara keamanan"],
  ["Live Chat","livechat.html","message-circle","chat tanya asisten admin"],
  ["Berita Terkini","berita.html","newspaper","berita bekasi"],
- ["Bayar Iuran","bayar.html","credit-card","iuran bayar transfer bulanan"],
- ["Daftar Hadir","daftar-hadir.html","calendar-check","hadir absen kehadiran"]
+ ["Bayar Iuran","bayar.html","credit-card","iuran bayar transfer bulanan"]
 ];
 function bindSearch(){
   var inp=document.getElementById("sgSearchInput"), out=document.getElementById("sgSearchList"); if(!inp||!out) return;
