@@ -1053,7 +1053,7 @@ function initDashboard_(){
     }, function(){ gagal_("pbRekap",4); gagal_("pbTx",4); document.getElementById("pbKartu").innerHTML = ""; });
     db.ref("ringkasanKeuangan/meta").on("value", function(snap){ var m = snap.val(); document.getElementById("pbPub").textContent = m && m.publishedAt ? "Terakhir dipublikasikan ke warga: " + new Date(m.publishedAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) : "Belum ada ringkasan yang dipublikasikan ke warga."; }, function(){});
     var penarikanCari_ = {};
-    if (window.RTIuranCari) RTIuranCari.pasang(document.getElementById("cariIuranWadah"), { getData: function(){ return penarikanCari_; } });
+    if (window.RTIuranCari) RTIuranCari.pasang(document.getElementById("cariIuranWadah"), { getData: function(){ return penarikanCari_; }, getKontak: function(){ return kontakFb_; } });
     db.ref("penarikan").on("value", function(snap){
       var v = snap.val() || {};
       penarikanCari_ = v; if (window.RTIuranCari) RTIuranCari.render();

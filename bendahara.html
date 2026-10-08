@@ -810,7 +810,7 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
     return y + "-" + ("0" + (m + 1)).slice(-2);
   }
   function hitungTunggakanAdm_(){
-    var sekarang = tglWIB_().slice(0, 7), terakhir = addBulanAdm_(sekarang, -1);
+    var sekarang = tglWIB_().slice(0, 7), terakhir = sekarang;   // menunggak terhitung tanggal 1 bulan iuran
     var kunci = Object.keys(penarikanSemua_).filter(function(k){ return /^\d{4}-\d{2}$/.test(k); }).sort();
     var mulai = (RT_CONFIG.bulanMulaiIuran && /^\d{4}-\d{2}$/.test(RT_CONFIG.bulanMulaiIuran)) ? RT_CONFIG.bulanMulaiIuran : kunci[0];
     if (!mulai) return [];
@@ -829,7 +829,7 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
         if (e && e.tambahanKK) tambahan = true;
         if (!(e && lunasStatus[e.status])) tunggak.push(b);
       });
-      if (tunggak.length) hasil.push({ label: "Blok " + w.blok + " No." + w.no, nama: w.nama || "", bulan: tunggak, jumlah: tunggak.length * ((RT_CONFIG.iuranBulanan || 60000) + (tambahan ? (RT_CONFIG.iuranTambahanKK || 7500) : 0)) });
+      if (tunggak.length) hasil.push({ key: key, label: "Blok " + w.blok + " No." + w.no, nama: w.nama || "", bulan: tunggak, jumlah: tunggak.length * ((RT_CONFIG.iuranBulanan || 60000) + (tambahan ? (RT_CONFIG.iuranTambahanKK || 7500) : 0)) });
     });
     hasil.sort(function(a, b){ return b.bulan.length - a.bulan.length || a.label.localeCompare(b.label, "id", { numeric: true }); });
     return hasil;
@@ -840,14 +840,19 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
     if (!judul || !box) return;
     var data = tunggakanKini_ = hitungTunggakanAdm_();
     document.getElementById("btnSalinTunggakan").style.display = data.length ? "" : "none";
-    if (!data.length) { judul.textContent = "✅ Tidak ada tunggakan"; box.innerHTML = '<div class="empty-note">Semua rumah sudah lunas untuk bulan-bulan sebelumnya.</div>'; return; }
+    if (!data.length) { judul.textContent = "✅ Tidak ada tunggakan"; box.innerHTML = '<div class="empty-note">Semua rumah sudah lunas sampai bulan ini.</div>'; return; }
     var total = 0; data.forEach(function(d){ total += d.jumlah; });
     judul.textContent = "⚠️ Tunggakan — " + data.length + " rumah · ± " + fmtRp_(total);
     box.innerHTML = data.map(function(d){
       return '<div class="entry-row"><div class="entry-body"><h4>' + esc_(d.label) + '</h4><p>' + esc_(d.nama || "-") + ' • ' + d.bulan.map(bulanPendekAdm_).join(", ") + '</p></div>' +
-        '<span class="entry-badge" style="background:#fdeaea;color:#b42318;white-space:nowrap">' + d.bulan.length + ' bln • ' + fmtRp_(d.jumlah) + '</span></div>';
+        '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end"><span class="entry-badge" style="background:#fdeaea;color:#b42318;white-space:nowrap">' + d.bulan.length + ' bln • ' + fmtRp_(d.jumlah) + '</span>' +
+        '<button type="button" class="btn btn-gold btn-sm" data-teguran="' + esc_(d.key) + '" style="width:auto">💬 ' + (d.bulan.length >= 2 ? "Teguran" : "Pengingat") + '</button></div></div>';
     }).join("");
   }
+  document.getElementById("listTunggakan").addEventListener("click", function(ev){
+    var b = ev.target.closest("[data-teguran]");
+    if (b && window.RTIuranCari) RTIuranCari.kirimTeguran(b.getAttribute("data-teguran"));
+  });
   document.getElementById("btnSalinTunggakan").addEventListener("click", function(){
     if (!tunggakanKini_.length) return;
     var total = 0; tunggakanKini_.forEach(function(d){ total += d.jumlah; });

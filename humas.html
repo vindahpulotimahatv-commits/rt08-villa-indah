@@ -474,7 +474,7 @@ function initDashboard_(){
     renderList_(); renderRingkasan_(); renderRiwayatSetoran_();
   }, function(){ document.getElementById("listSetoran").innerHTML = '<div class="empty-note">Gagal memuat data setoran.</div>'; });
 
-  if (window.RTIuranCari) RTIuranCari.pasang(document.getElementById("cariIuranWadah"), { getData: function(){ return penarikanSemua; } });
+  if (window.RTIuranCari) RTIuranCari.pasang(document.getElementById("cariIuranWadah"), { getData: function(){ return penarikanSemua; }, getKontak: function(){ return kontakData; } });
   db.ref("penarikan").on("value", function(snap){
     penarikanSemua = snap.val() || {};
     renderTunggakan_();
@@ -537,7 +537,7 @@ function subscribeBulan_(k){
    RT_CONFIG.bulanMulaiIuran bila diisi, format "2026-10"), paling jauh 12 bulan ke belakang. */
 function hitungTunggakan_(){
   var sekarang = tglWIB_().slice(0, 7);
-  var terakhir = addBulan_(sekarang, -1);
+  var terakhir = sekarang;   // menunggak terhitung tanggal 1 bulan iuran
   var kunci = Object.keys(penarikanSemua).filter(function(k){ return /^\d{4}-\d{2}$/.test(k); }).sort();
   var mulai = (RT_CONFIG.bulanMulaiIuran && /^\d{4}-\d{2}$/.test(RT_CONFIG.bulanMulaiIuran)) ? RT_CONFIG.bulanMulaiIuran : kunci[0];
   if (!mulai) return [];
@@ -564,7 +564,7 @@ function renderTunggakan_(){
   var judul = document.getElementById("judulTunggakan"), box = document.getElementById("listTunggakan");
   if (!judul || !box) return;
   var data = hitungTunggakan_();
-  if (!data.length) { judul.textContent = "✅ Tidak ada tunggakan"; box.innerHTML = '<div class="empty-note">Semua rumah sudah lunas untuk bulan-bulan sebelumnya.</div>'; return; }
+  if (!data.length) { judul.textContent = "✅ Tidak ada tunggakan"; box.innerHTML = '<div class="empty-note">Semua rumah sudah lunas sampai bulan ini.</div>'; return; }
   var total = 0; data.forEach(function(d){ total += d.jumlah; });
   judul.textContent = "⚠️ Tunggakan — " + data.length + " rumah · ± " + fmtRp_(total);
   var namaPendek = function(k){ return BULAN_ID_LONG[parseInt(k.slice(5, 7), 10) - 1].slice(0, 3) + " " + k.slice(2, 4); };
