@@ -252,7 +252,29 @@ textarea{min-height:76px;resize:vertical}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,500;0,600;0,700;0,800;1,600&display=swap">
-<link rel="stylesheet" href="assets/siaga.css?v=1">
+<link rel="stylesheet" href="assets/siaga.css?v=7">
+<style id="tabs-ikon">
+/* Menu tab berbentuk kotak ikon (seperti halaman warga) - tanpa geser ke samping */
+.tabs,.tabs.tabs-scroll{display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:8px;padding:12px;margin-bottom:18px;overflow:visible;flex-wrap:nowrap}
+.tab-btn,.tabs-scroll .tab-btn{position:relative;flex:none;white-space:normal;display:flex!important;flex-direction:column;align-items:center;justify-content:flex-start;gap:7px;
+  padding:10px 4px 9px;border-radius:16px!important;color:rgba(255,255,255,.88)!important;font:700 11.5px/1.15 var(--font-head,Inter,sans-serif)!important;text-align:center;
+  border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tab-btn .tb-ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;flex:none;
+  background:rgba(212,166,74,.14);border:1px solid rgba(212,166,74,.30);color:#E3BD68}
+.tab-btn .tb-ic .i{width:22px;height:22px;vertical-align:0}
+.tab-btn:hover:not(.active) .tb-ic{background:rgba(212,166,74,.24)}
+.tab-btn.active{color:#071426!important}
+.tab-btn.active .tb-ic{background:rgba(7,20,38,.14);border-color:rgba(7,20,38,.22);color:#071426}
+.tab-btn:focus-visible{outline:3px solid #F0D38B;outline-offset:2px}
+.tab-btn .pill,.tab-btn .tab-dot{position:absolute;top:6px;right:calc(50% - 32px);margin:0;box-shadow:0 0 0 2px #0A1B32}
+.tab-btn .tab-dot{width:11px;height:11px}
+@media(min-width:1024px){
+  #dashboard .tabs{display:flex;flex-direction:column;gap:4px}
+  #dashboard .tabs .tab-btn{flex-direction:row;justify-content:flex-start!important;text-align:left;gap:12px!important;width:100%;padding:8px 10px!important;font-size:14px!important}
+  #dashboard .tabs .tab-btn .tb-ic{width:38px;height:38px;border-radius:12px}
+  #dashboard .tabs .tab-btn .pill,#dashboard .tabs .tab-btn .tab-dot{position:static;margin-left:auto;box-shadow:none}
+}
+</style>
 </head><body class="sg-plain">
 <header class="topbar"><div class="container topbar-inner">
   <div class="brand"><img class="brand-mark" src="assets/logo-badge.png" alt="Logo RT 08 / RW 021"><span>Bendahara RT 08<span class="badge-panitia">🔒 BENDAHARA</span></span></div>
@@ -276,8 +298,8 @@ textarea{min-height:76px;resize:vertical}
   <div class="warn-card" id="warnCard" style="display:none">⚠️ Firebase belum dikonfigurasi di <code>config.js</code>. Data tidak bisa disimpan/ditampilkan sampai diatur admin teknis.</div>
 
   <div class="tabs tabs-scroll">
-    <button class="tab-btn active" data-tab="keuangan">💰 Keuangan</button>
-    <button class="tab-btn" data-tab="iuran" id="tabIuranBtn">🧾 Iuran Bulanan</button>
+    <button class="tab-btn active" data-tab="keuangan" aria-label="Keuangan" title="Keuangan"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-wallet"/></svg></span><span class="tb-l">Keuangan</span></button>
+    <button class="tab-btn" data-tab="iuran" id="tabIuranBtn" aria-label="Iuran Bulanan" title="Iuran Bulanan"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-receipt"/></svg></span><span class="tb-l">Iuran</span></button>
     
   </div>
 
@@ -721,7 +743,7 @@ function initDashboard_(){
   var pendingTransferCount_ = 0, pendingSetoranCount_ = 0, pendingLaporCount_ = 0;
   function updateIuranTabBadge_(){
     var total = pendingTransferCount_ + pendingSetoranCount_ + pendingLaporCount_;
-    document.getElementById("tabIuranBtn").innerHTML = "🧾 Iuran Bulanan" + (total ? '<span class="pill">' + total + '</span>' : "");
+    document.getElementById("tabIuranBtn").innerHTML = '<span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-receipt"/></svg></span><span class="tb-l">Iuran</span>' + (total ? '<span class="pill">' + total + '</span>' : "");
   }
 
   var penarikanSemua_ = {};   // { bulanKey: { rumahKey: entry } }

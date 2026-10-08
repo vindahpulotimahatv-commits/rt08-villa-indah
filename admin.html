@@ -223,7 +223,29 @@ textarea{min-height:76px;resize:vertical}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,500;0,600;0,700;0,800;1,600&display=swap">
-<link rel="stylesheet" href="assets/siaga.css?v=1">
+<link rel="stylesheet" href="assets/siaga.css?v=7">
+<style id="tabs-ikon">
+/* Menu tab berbentuk kotak ikon (seperti halaman warga) - tanpa geser ke samping */
+.tabs,.tabs.tabs-scroll{display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:8px;padding:12px;margin-bottom:18px;overflow:visible;flex-wrap:nowrap}
+.tab-btn,.tabs-scroll .tab-btn{position:relative;flex:none;white-space:normal;display:flex!important;flex-direction:column;align-items:center;justify-content:flex-start;gap:7px;
+  padding:10px 4px 9px;border-radius:16px!important;color:rgba(255,255,255,.88)!important;font:700 11.5px/1.15 var(--font-head,Inter,sans-serif)!important;text-align:center;
+  border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tab-btn .tb-ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;flex:none;
+  background:rgba(212,166,74,.14);border:1px solid rgba(212,166,74,.30);color:#E3BD68}
+.tab-btn .tb-ic .i{width:22px;height:22px;vertical-align:0}
+.tab-btn:hover:not(.active) .tb-ic{background:rgba(212,166,74,.24)}
+.tab-btn.active{color:#071426!important}
+.tab-btn.active .tb-ic{background:rgba(7,20,38,.14);border-color:rgba(7,20,38,.22);color:#071426}
+.tab-btn:focus-visible{outline:3px solid #F0D38B;outline-offset:2px}
+.tab-btn .pill,.tab-btn .tab-dot{position:absolute;top:6px;right:calc(50% - 32px);margin:0;box-shadow:0 0 0 2px #0A1B32}
+.tab-btn .tab-dot{width:11px;height:11px}
+@media(min-width:1024px){
+  #dashboard .tabs{display:flex;flex-direction:column;gap:4px}
+  #dashboard .tabs .tab-btn{flex-direction:row;justify-content:flex-start!important;text-align:left;gap:12px!important;width:100%;padding:8px 10px!important;font-size:14px!important}
+  #dashboard .tabs .tab-btn .tb-ic{width:38px;height:38px;border-radius:12px}
+  #dashboard .tabs .tab-btn .pill,#dashboard .tabs .tab-btn .tab-dot{position:static;margin-left:auto;box-shadow:none}
+}
+</style>
 </head><body class="sg-plain">
 <header class="topbar"><div class="container topbar-inner">
   <div class="brand"><img class="brand-mark" src="assets/logo-badge.png" alt="Logo RT 08 / RW 021"><span>Admin RT 08<span class="badge-panitia">🔒 PENGURUS</span></span></div>
@@ -252,13 +274,13 @@ textarea{min-height:76px;resize:vertical}
   </div>
 
   <div class="tabs tabs-scroll">
-    <button class="tab-btn active" data-tab="laporan">🚨 Laporan Warga</button>
-    <button class="tab-btn" data-tab="livechat" id="tabLivechatBtn">💬 Live Chat<span id="lcUnreadDot" class="tab-dot" style="display:none"></span></button>
-    <button class="tab-btn" data-tab="agenda">📅 Agenda</button>
-    <button class="tab-btn" data-tab="info">📢 Informasi</button>
-    <button class="tab-btn" data-tab="galeri">🖼️ Galeri</button>
-    <button class="tab-btn" data-tab="umkm" id="tabUmkmBtn">🛍️ UMKM</button>
-    <button class="tab-btn" data-tab="pembukuan">📒 Pembukuan Bendahara</button>
+    <button class="tab-btn active" data-tab="laporan" aria-label="Laporan Warga" title="Laporan Warga"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-triangle-alert"/></svg></span><span class="tb-l">Laporan</span></button>
+    <button class="tab-btn" data-tab="livechat" id="tabLivechatBtn" aria-label="Live Chat" title="Live Chat"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-message-circle"/></svg></span><span class="tb-l">Live Chat</span><span id="lcUnreadDot" class="tab-dot" style="display:none"></span></button>
+    <button class="tab-btn" data-tab="agenda" aria-label="Agenda" title="Agenda"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-calendar-days"/></svg></span><span class="tb-l">Agenda</span></button>
+    <button class="tab-btn" data-tab="info" aria-label="Informasi" title="Informasi"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-megaphone"/></svg></span><span class="tb-l">Informasi</span></button>
+    <button class="tab-btn" data-tab="galeri" aria-label="Galeri" title="Galeri"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-images"/></svg></span><span class="tb-l">Galeri</span></button>
+    <button class="tab-btn" data-tab="umkm" id="tabUmkmBtn" aria-label="UMKM" title="UMKM"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-store"/></svg></span><span class="tb-l">UMKM</span></button>
+    <button class="tab-btn" data-tab="pembukuan" aria-label="Pembukuan Bendahara" title="Pembukuan Bendahara"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-wallet"/></svg></span><span class="tb-l">Pembukuan</span></button>
   </div>
 
   <!-- ===== PANEL LAPORAN WARGA ===== -->
@@ -961,7 +983,7 @@ function initDashboard_(){
     items.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
     var n = items.length;
     document.getElementById("pengBadge").innerHTML = n ? '<span class="pill">' + n + ' baru</span>' : "";
-    document.getElementById("tabUmkmBtn").innerHTML = "🛍️ UMKM" + (n ? '<span class="pill">' + n + '</span>' : "");
+    document.getElementById("tabUmkmBtn").innerHTML = '<span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-store"/></svg></span><span class="tb-l">UMKM</span>' + (n ? '<span class="pill">' + n + '</span>' : "");
     var box = document.getElementById("listPengajuan");
     if (n === 0) { box.innerHTML = '<div class="empty-note">Belum ada pengajuan baru.</div>'; return; }
     box.innerHTML = items.map(function(it){
