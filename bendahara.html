@@ -781,7 +781,7 @@ function initDashboard_(){
     return o;
   }
   /* Pakai kode yang sudah ada (kirim ulang = nomor sama); kalau belum ada, buat kode acak baru. */
-function linkCekInvoice_(kode){ var l = (typeof RTSurat !== "undefined") ? RTSurat.linkInvoice(RT_CONFIG, kode) : ""; return l ? "\n\nCek iuran Anda sudah tercatat di Transparansi RT:\n" + l : ""; }
+function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplikasi PANDU RT 08 / 021."; }
   function kodeInvoiceUntuk_(b, it){ return (it && it.kodeKwitansi) || RTSurat.kodeInvoice(b, semuaKodeInvoice_()); }
   /* Paket bayar di muka: semua bulan dalam paket memakai nomor invoice yang sama. */
   function simpanKodeInvoicePaket_(b, r, kode){
@@ -905,8 +905,8 @@ function linkCekInvoice_(kode){ var l = (typeof RTSurat !== "undefined") ? RTSur
     if (!nomor) {
       try { var snap = await db.ref("wargaKontak/" + r + "/telepon").once("value"); nomor = nomorWA_(snap.val()); } catch (e) {}
     }
-    var pesan = salam_() + " Bpk/Ibu " + (it.nama || "") + ", pembayaran *iuran bulanan RT 08* (" + (it.periodeLabel || bulanLong_(b)) + ") sebesar " + fmtRp_(it.paketTotal || it.jumlah) +
-      " via transfer sudah kami terima dan dikonfirmasi Bendahara. Berikut kwitansinya. Terima kasih atas partisipasinya 🙏 (No. Invoice: " + hasil.kode + ")" + linkCekInvoice_(hasil.kode);
+    var pesan = salam_() + " Bpk/Ibu " + (it.nama || "") + ", iuran RT 08 " + (it.periodeLabel || bulanLong_(b)) + " *" + fmtRp_(it.paketTotal || it.jumlah) +
+      "* via transfer sudah kami terima dan dikonfirmasi Bendahara. Kwitansi terlampir. Terima kasih 🙏\nNo. Invoice: " + hasil.kode + linkCekInvoice_(hasil.kode);
     /* Aplikasi Android: buka chat WA warga dengan PDF sudah TERLAMPIR (tinggal tekan Kirim). */
     if (nomor && window.RTAndroid && typeof window.RTAndroid.sharePdf === "function") {
       try { if (window.RTAndroid.sharePdf(bytesKeB64_(hasil.bytes), hasil.namaFile, nomor, pesan)) { showToast("WhatsApp warga dibuka dengan PDF terlampir. Tekan Kirim."); return; } } catch (e) { console.warn(e); }

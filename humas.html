@@ -1242,7 +1242,7 @@ function kodeInvoiceHumas_(payload){
   Object.keys(penarikanSemua || {}).forEach(function(b){ var bln = penarikanSemua[b] || {}; Object.keys(bln).forEach(function(rk){ if (bln[rk] && bln[rk].kodeKwitansi) semua.push(bln[rk].kodeKwitansi); }); });
   return RTSurat.kodeInvoice(bulanKey, semua);
 }
-function linkCekInvoice_(kode){ var l = (typeof RTSurat !== "undefined") ? RTSurat.linkInvoice(RT_CONFIG, kode) : ""; return l ? "\n\nCek iuran Anda sudah tercatat di Transparansi RT:\n" + l : ""; }
+function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplikasi PANDU RT 08 / 021."; }
 function buatKwitansi_(payload){
   if (typeof RTSurat === "undefined") { showToast("Gagal membuat PDF: surat-pdf.js belum termuat."); return; }
   var dataKwitansi = {
@@ -1303,8 +1303,8 @@ function tampilHasilKwitansi_(){
 function modeAPK_(){ return !!(window.RTAndroid && typeof window.RTAndroid.sharePdf === "function"); }
 function teksKwitansi_(payload, hasil, tujuan){
   return tujuan.label === "Warga"
-    ? (salam_() + " Bpk/Ibu " + (payload.nama || "") + ", pembayaran *iuran bulanan RT 08* (" + payload.rumah + ") bulan " + (payload.periodeLabel || bulanLabel_(bulanKey)) +
-       " sebesar *" + fmtRp_(payload.jumlah) + "* (Tunai) sudah kami terima. Kwitansi PDF kami lampirkan. Terima kasih atas partisipasinya 🙏" + catatSaldo_(payload) + " (No. Invoice: " + hasil.kode + ")" + linkCekInvoice_(hasil.kode))
+    ? (salam_() + " Bpk/Ibu " + (payload.nama || "") + ", iuran RT 08 (" + payload.rumah + ") " + (payload.periodeLabel || bulanLabel_(bulanKey)) +
+       " *" + fmtRp_(payload.jumlah) + "* (Tunai) sudah kami terima. Kwitansi terlampir. Terima kasih 🙏" + catatSaldo_(payload) + "\nNo. Invoice: " + hasil.kode + linkCekInvoice_(hasil.kode))
     : (salam_() + " Pak/Bu Bendahara, berikut kwitansi iuran bulanan a.n. " + (payload.nama || "-") + " (" + payload.rumah + "), bulan " +
        (payload.periodeLabel || bulanLabel_(bulanKey)) + " sebesar " + fmtRp_(payload.jumlah) + ". Nomor WA warga ini belum ada di data, jadi untuk sementara " +
        "dikirim ke Bendahara." + catatSaldo_(payload) + " (No. Invoice: " + hasil.kode + ")" + linkCekInvoice_(hasil.kode));
