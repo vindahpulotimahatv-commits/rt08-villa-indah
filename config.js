@@ -90,12 +90,12 @@ const RT_CONFIG = {
   // Link folder dokumen RT (Google Drive, dsb). Kosongkan jika belum tersedia.
   linkDokumen: "",
 
-  // ---------- Acara & Doorprize (Pentas Seni / Malam Apresiasi) ----------
-  namaAcaraDoorprize: "Pentas Seni & Malam Apresiasi",
-  tanggalAcaraDoorprize: "Sabtu, 19 September 2026 · 19.00 WIB",
-  lokasiAcaraDoorprize: "Lapangan RT 08 / Area E6 & E7",
+  // ---------- Acara untuk halaman Daftar Hadir (Pentas Seni / Malam Apresiasi) ----------
+  namaAcara: "Pentas Seni & Malam Apresiasi",
+  tanggalAcara: "Sabtu, 19 September 2026 · 19.00 WIB",
+  lokasiAcara: "Lapangan RT 08 / Area E6 & E7",
   // Konfigurasi Firebase (lihat PANDUAN-FIREBASE.md untuk cara membuatnya).
-  // Selama objek ini kosong, form Daftar Hadir & Roda Doorprize akan menampilkan pesan "belum dikonfigurasi".
+  // Selama objek ini kosong, form Daftar Hadir akan menampilkan pesan "belum dikonfigurasi".
   // Cara isi: buat project di https://console.firebase.google.com, aktifkan Realtime Database,
   // lalu buka Project settings > General > scroll ke "Your apps" > tambah app Web (</>) > salin
   // objek firebaseConfig yang muncul ke sini apa adanya (termasuk databaseURL).

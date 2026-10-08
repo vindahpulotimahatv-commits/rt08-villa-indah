@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="id"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#123a6b"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="assets/icon-192.png"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="RT08 Villa Indah"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Daftar Hadir & Doorprize | PANDU</title><style>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0A1B32"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="assets/icon-192.png"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="RT08 Villa Indah"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Daftar Hadir | PANDU</title><style>
 :root{
   --green:#123a6b;
   --green2:#1c4a86;
@@ -125,19 +125,19 @@ input:focus{border-color:#7d9fd6;box-shadow:0 0 0 4px rgba(18,58,107,.08)}
   .form-card{margin-top:-30px;padding:20px}
 }
 </style>
-</head><body>
-<a class="header-banner" href="index.html"><img src="assets/header-banner.jpg" alt="PANDU - Portal Administrasi Nyata RT 08 / RW 021" loading="lazy"></a>
-<header class="site-header">
-  <div class="container nav">
-    <a class="back-link" href="index.html">← Beranda</a>
-  </div>
-</header>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,500;0,600;0,700;0,800;1,600&display=swap">
+<link rel="stylesheet" href="assets/siaga.css?v=1">
+</head><body class="sg-plain">
+<header class="sg-header fn-top" id="sgHeader"><div class="sg-header__in">
+  <a class="sg-brand" href="index.html" aria-label="PANDU, ke Beranda"><img src="assets/logo-badge.png" alt="" width="46" height="46"><span class="sg-brand__t"><b>PANDU</b><small class="sg-sub-m">RT 08 / RW 021</small></span></a>
+  <div class="sg-tools"><a class="back-link" href="index.html"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-arrow-left"/></svg>Beranda</a></div></div></header>
 <main>
 <section class="hero">
   <div class="container">
-    <span class="kicker">🎉 <span id="hAcara">Pentas Seni & Malam Apresiasi</span></span>
-    <h1>Daftar Hadir & Undian Doorprize</h1>
-    <p>Isi nama & nomor rumah untuk absen kehadiran sekaligus otomatis ikut undian doorprize spin malam ini.</p>
+    <span class="kicker">🎉 <span id="hAcara">Acara RT 08</span></span>
+    <h1>Daftar Hadir</h1>
+    <p>Isi nama & nomor rumah untuk mencatat kehadiran Anda di acara ini.</p>
     <div class="chip-row">
       <span class="info-chip">📅 <span id="hTanggal">-</span></span>
       <span class="info-chip">📍 <span id="hLokasi">-</span></span>
@@ -150,12 +150,12 @@ input:focus{border-color:#7d9fd6;box-shadow:0 0 0 4px rgba(18,58,107,.08)}
 
   <div id="formCard" class="form-card">
     <h2>Isi Daftar Hadir</h2>
-    <p class="sub">Cukup isi sekali per rumah ya — data ini yang akan dipakai panitia saat spin doorprize.</p>
+    <p class="sub">Cukup isi sekali per rumah ya — data ini dipakai panitia untuk rekap kehadiran.</p>
     <form id="hadirForm">
       <div class="field"><label>Nama Lengkap</label><input id="fNama" required placeholder="Contoh: Budi Santoso" autocomplete="name"></div>
       <div class="field autocomplete-field"><label>Blok / No. Rumah</label><input id="fRumah" required placeholder="Ketik untuk mencari, contoh: E2 No.1" autocomplete="off"><div id="rumahSuggest" class="suggest-list"></div></div>
-      <button class="btn btn-gold" type="submit" id="btnSubmit">✅ Daftar & Ikut Undian</button>
-      <p class="note">Dengan mengisi form ini, kamu terdaftar hadir di acara <b id="hAcara2">Pentas Seni & Malam Apresiasi</b> dan otomatis masuk daftar undian doorprize. <b>1 rumah hanya bisa mengisi 1 kali.</b> Nomor rumah diambil dari data induk RT — mulai ketik untuk melihat saran.</p>
+      <button class="btn btn-gold" type="submit" id="btnSubmit">✅ Catat Kehadiran</button>
+      <p class="note">Dengan mengisi form ini, kamu terdaftar hadir di acara <b id="hAcara2">Acara RT 08</b>. <b>1 rumah hanya bisa mengisi 1 kali.</b> Nomor rumah diambil dari data induk RT — mulai ketik untuk melihat saran.</p>
     </form>
   </div>
 
@@ -163,7 +163,7 @@ input:focus{border-color:#7d9fd6;box-shadow:0 0 0 4px rgba(18,58,107,.08)}
     <div class="emoji">🎊</div>
     <h2>Terima kasih sudah terdaftar!</h2>
     <div class="rumah-badge">🏠 <span id="sRumah">-</span> · <span id="sNama">-</span></div>
-    <p>Kamu resmi hadir dan sudah masuk daftar undian doorprize. Sampai jumpa di acara nanti — pantau layar panitia saat sesi spin doorprize dimulai!</p>
+    <p>Kamu resmi tercatat hadir. Terima kasih, sampai jumpa di acara nanti!</p>
     <p class="link-reset">Bukan rumahmu / mau isi ulang? <a href="#" id="linkReset">Klik di sini</a></p>
   </div>
 
@@ -189,10 +189,10 @@ function firebaseReady_(){
 }
 
 document.addEventListener("DOMContentLoaded", function(){
-  document.getElementById("hAcara").textContent = RT_CONFIG.namaAcaraDoorprize || "Acara RT 08";
-  document.getElementById("hAcara2").textContent = RT_CONFIG.namaAcaraDoorprize || "acara RT 08";
-  document.getElementById("hTanggal").textContent = RT_CONFIG.tanggalAcaraDoorprize || "-";
-  document.getElementById("hLokasi").textContent = RT_CONFIG.lokasiAcaraDoorprize || "-";
+  document.getElementById("hAcara").textContent = RT_CONFIG.namaAcara || "Acara RT 08";
+  document.getElementById("hAcara2").textContent = RT_CONFIG.namaAcara || "acara RT 08";
+  document.getElementById("hTanggal").textContent = RT_CONFIG.tanggalAcara || "-";
+  document.getElementById("hLokasi").textContent = RT_CONFIG.lokasiAcara || "-";
 
   if (!firebaseReady_()) {
     document.getElementById("warnCard").style.display = "block";
@@ -263,7 +263,7 @@ document.addEventListener("DOMContentLoaded", function(){
       showToast("Tidak bisa terhubung ke server. Periksa koneksi internet lalu coba lagi.");
     })
     .finally(function(){
-      btn.disabled = false; btn.textContent = "✅ Daftar & Ikut Undian";
+      btn.disabled = false; btn.textContent = "✅ Catat Kehadiran";
     });
   });
 });
@@ -351,4 +351,5 @@ function showToast(msg){
   window.toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 3200);
 }
 </script>
+<script src="assets/siaga-ui.js?v=1"></script>
 </body></html>

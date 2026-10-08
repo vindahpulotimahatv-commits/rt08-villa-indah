@@ -1,6 +1,6 @@
-# Panduan Menghubungkan Daftar Hadir & Doorprize ke Firebase
+# Panduan Menghubungkan Daftar Hadir ke Firebase
 
-Fitur **Daftar Hadir** dan **Roda Doorprize** butuh satu tempat penyimpanan data
+Fitur **Daftar Hadir** butuh satu tempat penyimpanan data
 bersama supaya semua HP warga & panitia melihat data yang sama. Portal ini
 memakai **Firebase Realtime Database** (gratis untuk skala RT/RW) untuk itu.
 
@@ -40,7 +40,7 @@ memakai **Firebase Realtime Database** (gratis untuk skala RT/RW) untuk itu.
    (wajib untuk Realtime Database). Simpan, lalu upload ulang `config.js` ke
    GitHub Pages.
 
-Setelah ini, form Daftar Hadir & halaman Roda Doorprize akan langsung aktif.
+Setelah ini, form Daftar Hadir akan langsung aktif.
 
 ## 4. Perketat aturan keamanan (WAJIB, jangan dilewati)
 
@@ -72,8 +72,8 @@ daftar hadir. Realtime Database pakai format **JSON**, berbeda dari Firestore:
 3. Klik **Publish**.
 
 Penjelasan tiap node:
-- **daftarHadir** — dipakai halaman Daftar Hadir & Doorprize. 1 rumah = 1 entri
-  (anti-duplikat), panitia hanya bisa ubah status menang, tidak bisa hapus.
+- **daftarHadir** — dipakai halaman Daftar Hadir. 1 rumah = 1 entri
+  (anti-duplikat), panitia tidak bisa menghapus data.
 - **agenda, informasi, galeri, umkm, keuangan** — dikelola lewat halaman
   `admin.html` yang dikunci password (`adminPassword` di `config.js`). Karena
   kuncinya di sisi tampilan (bukan Firebase Auth), siapa pun yang tahu URL
@@ -102,8 +102,6 @@ ke paket berbayar (Blaze). Konsekuensinya:
 1. Buka `daftar-hadir.html`, isi nama & nomor rumah, kirim.
 2. Buka Realtime Database > tab **Data** di Firebase Console — akan muncul
    node `daftarHadir` dengan satu entri baru.
-3. Buka `doorprize.html`, klik **Muat Ulang Data** — nama tadi harus muncul di
-   roda undian.
 
 ## Reset data setelah acara selesai
 

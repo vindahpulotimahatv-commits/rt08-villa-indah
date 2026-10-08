@@ -1,11 +1,11 @@
 /* ============================================================
-   BACKEND DAFTAR HADIR & DOORPRIZE — RT 08 / RW 021 VILLA INDAH
+   BACKEND DAFTAR HADIR — RT 08 / RW 021 VILLA INDAH
    ------------------------------------------------------------
    Script ini dipasang di Google Apps Script (terhubung ke satu
-   Google Sheet) supaya daftar-hadir.html dan doorprize.html bisa
+   Google Sheet) supaya daftar-hadir.html bisa
    membaca & menulis data yang SAMA dari HP siapa pun.
 
-   Cara pasang: lihat PANDUAN-DOORPRIZE.md.
+   Cara pasang: lihat PANDUAN-FIREBASE.md.
    ============================================================ */
 
 var SHEET_NAME = "DaftarHadir";
