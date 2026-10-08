@@ -462,12 +462,17 @@ tbody tr:hover td{background:#FAFBFD}
 .hm-hero::after{content:"";position:absolute;pointer-events:none;background-repeat:no-repeat}
 .hm-hero::after{
   right:0;bottom:0;height:100%;width:min(62vw,720px);
-  background-image:url("hero-rumah.png");background-position:right bottom;background-size:auto 92%;opacity:.55;
+  background-image:url("hero-rumah.png");background-position:right bottom;background-size:auto 62%;opacity:.40;
 }
 .hm-hero>.container{position:relative;z-index:1}
 @media(max-width:640px){
   .hm-hero::after{width:100%;background-size:auto 55%;opacity:.35}
 }
+/* Banner PANDU di hero (menyesuaikan lebar layar; versi mobile fokus ke tulisan) */
+.hm-banner-wrap{margin-bottom:28px}
+.hm-banner{display:block;width:100%;max-width:1100px;margin:0 auto}
+.hm-banner img{display:block;width:100%;height:auto;border-radius:22px;box-shadow:0 24px 50px -24px rgba(0,0,0,.75)}
+@media(max-width:700px){.hm-banner-wrap{margin-bottom:20px}.hm-banner img{border-radius:16px}}
 .hm-eyebrow{font:italic 600 clamp(20px,2.4vw,26px)/1.2 var(--font-head);color:var(--gold-400);margin:0 0 14px}
 .hm-hero h1{font-size:clamp(38px,6.2vw,66px);line-height:1.04;letter-spacing:-.035em;color:#fff;margin:0 0 18px;font-weight:800}
 .hm-hero__lead{max-width:46ch;font-size:clamp(16px,1.6vw,18px);line-height:1.7;color:rgba(255,255,255,.82);margin:0}
