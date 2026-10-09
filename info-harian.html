@@ -1,0 +1,161 @@
+<!DOCTYPE html><html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0A1B32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="icon-192.png">
+<title>Info Harian | PANDU</title>
+<style>
+:root{--navy:#123a6b;--navy2:#081c38;--gold:#d5a62b;--ink:#12213f;--muted:#59657f;--line:#dbe2f0}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  background:linear-gradient(180deg,rgba(6,16,36,.78),rgba(8,20,44,.6) 40%,rgba(10,25,56,.9)),url("assets/bg-navy.jpg") center top/cover no-repeat fixed,#0a1b32;padding-bottom:40px}
+a{color:inherit;text-decoration:none}
+.wrap{width:min(900px,calc(100% - 28px));margin:auto}
+header{position:sticky;top:0;z-index:50;background:rgba(8,20,44,.94);backdrop-filter:blur(14px);border-bottom:1px solid rgba(213,166,43,.28)}
+.bar{display:flex;align-items:center;justify-content:space-between;min-height:58px;gap:10px;color:#fff}
+.bar b{font-size:17px}.bar small{display:block;color:var(--gold);font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:800}
+.back{border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:8px 14px;font-weight:800;font-size:13px;color:#fff}
+main{padding-top:16px}
+.card{background:#fff;border-radius:20px;padding:16px;box-shadow:0 14px 40px rgba(3,10,26,.3);margin-bottom:14px}
+h2{margin:0 0 4px;font-size:17px}.sub{margin:0 0 12px;color:var(--muted);font-size:12.5px;line-height:1.5}
+.note{font-size:11.5px;color:var(--muted);margin:10px 0 0;line-height:1.5}
+.msg{padding:14px;text-align:center;color:var(--muted);font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn{border:1.5px solid var(--line);background:#fff;color:var(--navy);border-radius:12px;padding:9px 14px;font-weight:800;font-size:13px;cursor:pointer;display:inline-block}
+
+/* peringatan banjir */
+.flood{border-radius:20px;padding:16px;color:#fff;margin-bottom:14px;box-shadow:0 14px 40px rgba(3,10,26,.3)}
+.flood .top{display:flex;align-items:center;gap:12px}
+.flood .ic{font-size:34px;line-height:1}
+.flood small{display:block;opacity:.85;font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase}
+.flood b{font-size:24px;display:block;line-height:1.15}
+.flood p{margin:10px 0 0;font-size:13.5px;line-height:1.55}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.stat{background:rgba(255,255,255,.16);border-radius:12px;padding:9px 6px;text-align:center}
+.stat b{font-size:16px}.stat small{font-size:10px;letter-spacing:0;text-transform:none;font-weight:600}
+.manual{background:#fff8e6;border:1.5px solid var(--gold);border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:13.5px;line-height:1.5;color:#5a4306}
+
+/* sholat */
+.next{background:linear-gradient(135deg,#123a6b,#0a2447);color:#fff;border-radius:16px;padding:16px;text-align:center;margin-bottom:12px}
+.next small{color:var(--gold);font-weight:800;font-size:11px;letter-spacing:.8px;text-transform:uppercase}
+.next b{display:block;font-size:30px;margin:2px 0}
+.next span{font-size:13px;opacity:.9}
+.times{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.t{border:1.5px solid var(--line);border-radius:14px;padding:10px;text-align:center}
+.t small{display:block;color:var(--muted);font-weight:700;font-size:11.5px}
+.t b{font-size:18px}
+.t.on{border-color:var(--gold);background:#fff8e6}
+.t.sec{opacity:.7}
+
+/* cuaca */
+.now{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.now .big{font-size:52px;line-height:1}
+.now b{font-size:34px}.now span{display:block;color:var(--muted);font-size:13px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.chip{background:#eef2fa;border-radius:10px;padding:6px 10px;font-size:12.5px;font-weight:700;color:var(--navy)}
+.hours{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px}
+.h{flex:none;width:68px;border:1.5px solid var(--line);border-radius:14px;padding:8px 4px;text-align:center;font-size:12px}
+.h .e{font-size:20px;display:block}.h b{display:block;font-size:14px}.h .r{color:#1c64c4;font-weight:700}
+.days{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.d{border:1.5px solid var(--line);border-radius:14px;padding:10px;font-size:12.5px}
+.d b{display:block;font-size:13.5px}.d .e{font-size:22px}.d .r{color:#1c64c4;font-weight:700}
+@media(max-width:480px){.stats{grid-template-columns:repeat(2,1fr)}}
+</style></head><body>
+<header><div class="wrap bar"><div><b>Info Harian</b><small>Sholat · Cuaca · Banjir</small></div><a class="back" href="index.html">← Beranda</a></div></header>
+
+<main class="wrap">
+  <div id="manual"></div>
+
+  <section id="flood" class="flood" style="background:#3a4a66"><div class="msg" style="color:#fff">Memuat peringatan banjir…</div></section>
+
+  <section class="card">
+    <h2>Jadwal Sholat</h2>
+    <p class="sub" id="lokSholat"></p>
+    <div id="sholat"><div class="msg">Memuat jadwal sholat…</div></div>
+    <p class="note">Sumber: Aladhan API dengan metode Kemenag RI. Selisih 1–2 menit dengan jadwal masjid setempat bisa terjadi; ikuti adzan di masjid.</p>
+  </section>
+
+  <section class="card">
+    <h2>Perkiraan Cuaca</h2>
+    <p class="sub" id="lokCuaca"></p>
+    <div id="cuaca"><div class="msg">Memuat cuaca…</div></div>
+    <p class="note">Sumber: Open-Meteo. Perkiraan model, bukan pengamatan resmi.</p>
+  </section>
+
+  <section class="card">
+    <h2>Tentang peringatan banjir</h2>
+    <p class="sub">Tingkat peringatan di atas dihitung <b>otomatis dari perkiraan curah hujan</b> (hujan 24 jam terakhir, perkiraan 6, 24, dan 72 jam ke depan, serta hujan per jam tertinggi). Ini indikator awal untuk bersiap, <b>bukan peringatan resmi</b>.</p>
+    <div class="row">
+      <a class="btn" href="https://www.bmkg.go.id/cuaca/peringatan-dini-cuaca" target="_blank" rel="noopener">Peringatan dini resmi BMKG</a>
+      <a class="btn" href="https://www.bmkg.go.id/cuaca/prakiraan-cuaca" target="_blank" rel="noopener">Prakiraan cuaca BMKG</a>
+      <a class="btn" href="kontak.html">Kontak pengurus</a>
+    </div>
+    <p class="note">Keadaan darurat: hubungi 112 atau keamanan lingkungan.</p>
+  </section>
+</main>
+
+<script src="config.js"></script>
+<script src="info-harian.js"></script>
+<script>
+var P = window.PanduInfoHarian, CFG = (typeof RT_CONFIG !== "undefined" && RT_CONFIG) ? RT_CONFIG : {};
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+var HARI = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+var BLN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+function mm(x){ return (Math.round(x * 10) / 10).toString().replace(".", ","); }
+
+$("lokSholat").textContent = P.lokasi.nama;
+$("lokCuaca").textContent = P.lokasi.nama;
+if (CFG.peringatanBanjirManual) $("manual").innerHTML = '<div class="manual"><b>Info dari pengurus:</b> ' + esc(CFG.peringatanBanjirManual) + '</div>';
+
+/* ---------- sholat ---------- */
+var daftarSholat = null;
+function gambarSholat(){
+  if (!daftarSholat) return;
+  var nb = P.sholatBerikut(daftarSholat), n = P.nowJkt();
+  var h = '<div class="next"><small>Waktu sholat berikutnya</small><b>' + esc(nb.item.nama) + ' ' + esc(nb.item.jam) + '</b><span>' +
+    (nb.besok ? 'besok, ' : '') + 'dalam ' + esc(P.formatSisa(nb.sisaMenit)) + '</span></div><div class="times">';
+  h += daftarSholat.map(function(x){
+    return '<div class="t' + (x.kunci === nb.item.kunci ? ' on' : '') + (x.wajib ? '' : ' sec') + '"><small>' + esc(x.nama) + '</small><b>' + esc(x.jam) + '</b></div>';
+  }).join("") + '</div>';
+  $("sholat").innerHTML = h;
+}
+P.ambilSholat().then(function(r){ daftarSholat = r.daftar; gambarSholat(); setInterval(gambarSholat, 30000); })
+ .catch(function(){ $("sholat").innerHTML = '<div class="msg">Jadwal sholat belum bisa dimuat. Periksa koneksi internet lalu <a href="" style="color:#123a6b;font-weight:800">muat ulang</a>.</div>'; });
+
+/* ---------- cuaca & banjir ---------- */
+function gambarCuaca(c, basi){
+  var now = P.nowJkt(), cur = c.current, kc = P.kodeCuaca(cur.weather_code);
+  var idx = c.hourly.time.indexOf(P.jamKey(now)); if (idx < 0) idx = 0;
+  var h = '<div class="now"><span class="big">' + kc[1] + '</span><div><b>' + Math.round(cur.temperature_2m) + '°C</b><span>' + esc(kc[0]) + '</span></div></div>' +
+    '<div class="chips"><span class="chip">Terasa ' + Math.round(cur.apparent_temperature) + '°C</span><span class="chip">Lembap ' + Math.round(cur.relative_humidity_2m) + '%</span><span class="chip">Angin ' + Math.round(cur.wind_speed_10m) + ' km/j</span></div>';
+  h += '<div class="hours">';
+  for (var i = idx + 1; i < Math.min(c.hourly.time.length, idx + 13); i++) {
+    var w = P.kodeCuaca(c.hourly.weather_code[i]), pr = c.hourly.precipitation_probability[i], jam = c.hourly.time[i].slice(11, 16);
+    h += '<div class="h">' + jam + '<span class="e">' + w[1] + '</span><b>' + Math.round(c.hourly.temperature_2m[i]) + '°</b><span class="r">' + (pr == null ? '–' : pr + '%') + '</span></div>';
+  }
+  h += '</div><div class="days">';
+  var hariIni = P.nowJkt(); var kunciHariIni = c.hourly.time[idx].slice(0, 10);
+  c.daily.time.forEach(function(t, i){
+    if (t < kunciHariIni) return;
+    var d = new Date(t + "T12:00:00"), w = P.kodeCuaca(c.daily.weather_code[i]);
+    h += '<div class="d"><b>' + (t === kunciHariIni ? 'Hari ini' : HARI[d.getDay()]) + ', ' + d.getDate() + ' ' + BLN[d.getMonth()] + '</b><span class="e">' + w[1] + '</span> ' + esc(w[0]) +
+      '<br>' + Math.round(c.daily.temperature_2m_min[i]) + '–' + Math.round(c.daily.temperature_2m_max[i]) + '°C<br><span class="r">Hujan ' + mm(c.daily.precipitation_sum[i]) + ' mm · ' + (c.daily.precipitation_probability_max[i] == null ? '–' : c.daily.precipitation_probability_max[i] + '%') + '</span></div>';
+  });
+  h += '</div>' + (basi ? '<p class="note">⚠️ Tidak ada koneksi — menampilkan data tersimpan terakhir.</p>' : '');
+  $("cuaca").innerHTML = h;
+}
+function gambarBanjir(c){
+  var b = P.hitungBanjir(c, P.nowJkt()), L = b.level;
+  var mulai = b.mulaiHujan ? 'Hujan mulai sekitar pukul ' + b.mulaiHujan.slice(11, 16) + '. ' : (b.depan24 < 1 ? 'Tidak ada hujan berarti dalam 24 jam ke depan. ' : '');
+  var el = $("flood"); el.style.background = L.warna;
+  el.innerHTML = '<div class="top"><span class="ic">' + L.ikon + '</span><div><small>Peringatan banjir (perkiraan) · ' + esc(P.lokasi.nama) + '</small><b>' + esc(L.nama) + '</b></div></div>' +
+    '<p>' + esc(mulai + L.saran) + '</p>' +
+    '<div class="stats"><div class="stat"><b>' + mm(b.lalu24) + ' mm</b><small>hujan 24 jam lalu</small></div><div class="stat"><b>' + mm(b.depan6) + ' mm</b><small>6 jam ke depan</small></div><div class="stat"><b>' + mm(b.depan24) + ' mm</b><small>24 jam ke depan</small></div><div class="stat"><b>' + mm(b.depan72) + ' mm</b><small>3 hari ke depan</small></div></div>';
+}
+P.ambilCuaca().then(function(r){ gambarCuaca(r.data, r.basi); gambarBanjir(r.data); })
+ .catch(function(){
+   $("cuaca").innerHTML = '<div class="msg">Cuaca belum bisa dimuat. Periksa koneksi internet lalu <a href="" style="color:#123a6b;font-weight:800">muat ulang</a>.</div>';
+   $("flood").style.background = "#3a4a66";
+   $("flood").innerHTML = '<div class="msg" style="color:#fff">Peringatan banjir belum bisa dihitung karena data cuaca belum termuat. Cek <a href="https://www.bmkg.go.id/cuaca/peringatan-dini-cuaca" style="text-decoration:underline" target="_blank" rel="noopener">BMKG</a>.</div>';
+ });
+</script>
+</body></html>

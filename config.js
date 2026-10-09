@@ -145,7 +145,18 @@ const RT_CONFIG = {
     { nama: "Dapur Warga", kategori: "Kuliner", deskripsi: "Catering, nasi box, dan snack untuk kegiatan.", wa: "" },
     { nama: "Jasa Service", kategori: "Jasa", deskripsi: "Servis dan perbaikan oleh warga.", wa: "" },
     { nama: "Kue & Snack", kategori: "Kue", deskripsi: "Pesanan kue rumahan dan snack.", wa: "" }
-  ]
+  ],
+
+  // ---------- Info Harian: jadwal sholat, cuaca, peringatan banjir ----------
+  // Koordinat lokasi perumahan. NILAI DI BAWAH MASIH PERKIRAAN (area Babelan) —
+  // ganti dengan titik asli: buka Google Maps, tekan lama pada lokasi perumahan,
+  // lalu salin dua angka koordinatnya (contoh -6.1900, 107.0400).
+  lokasi: { lat: -6.19, lon: 107.04, nama: "Villa Indah Pulo Timaha, Babelan" },
+  // Koreksi jadwal sholat dalam menit (mis. 2 untuk ihtiyat, 0 = tanpa koreksi).
+  koreksiSholatMenit: 0,
+  // Pesan manual dari pengurus yang tampil di atas halaman Info Harian
+  // (mis. "Air Kali Bekasi naik, warga blok A harap siaga"). Kosongkan jika tidak ada.
+  peringatanBanjirManual: ""
 };
 
 /* ============ Fungsi bantu — tidak perlu diubah ============ */
