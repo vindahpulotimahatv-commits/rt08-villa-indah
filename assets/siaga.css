@@ -667,6 +667,4 @@ main{animation:sgIn .35s var(--ease) both}
 .sg-lapor-btn .i{width:16px;height:16px}
 @media(max-width:1023px){.sg-lapor-btn{display:none}}
 .sg-bottom{grid-template-columns:repeat(5,1fr)}
-.hm-hero{padding-bottom:56px!important}
-.hm-hero + .container{margin-top:28px}
 @media(min-width:861px){.sg-footer__grid{grid-template-columns:1.6fr 1fr}}
