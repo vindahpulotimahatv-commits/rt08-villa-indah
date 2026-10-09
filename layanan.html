@@ -333,7 +333,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
     <a class="sg-brand" href="index.html" aria-label="PANDU RT 08 / RW 021, ke Beranda"><img src="assets/logo-badge.png" alt="" width="56" height="56"><span class="sg-brand__t"><b>PANDU</b><small>Portal Administrasi Nyata</small><small class="sg-sub2">RT 08 / RW 021 - Villa Indah Pulo Timaha</small><small class="sg-sub-m">RT 08 / RW 021</small></span></a>
     <nav class="sg-nav" aria-label="Menu utama"><a href="index.html"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-home"/></svg><span>Beranda</span></a><a href="informasi.html"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-megaphone"/></svg><span>Informasi</span></a><a href="agenda.html"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-calendar-days"/></svg><span>Agenda</span></a><a href="layanan.html" class="active" aria-current="page"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span>Layanan</span></a><a href="transparansi.html"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-file-text"/></svg><span>Transparansi</span></a><a href="umkm.html"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-store"/></svg><span>UMKM</span></a>
       <div class="sg-pop"><button type="button" data-pop-btn aria-expanded="false" aria-haspopup="true"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-menu"/></svg><span class="lbl">Lainnya<svg class="i sg-caret" aria-hidden="true" focusable="false"><use href="#i-chevron-down"/></svg></span></button>
-        <div class="sg-dd" role="menu"><a href="bayar.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-credit-card"/></svg></span><span>Bayar Iuran<small>Lapor pembayaran iuran</small></span></a><a href="galeri.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-images"/></svg></span><span>Galeri<small>Dokumentasi kegiatan</small></span></a><a href="berita.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-newspaper"/></svg></span><span>Berita Terkini<small>Berita seputar Bekasi</small></span></a><a href="kontak.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-phone"/></svg></span><span>Kontak Penting<small>Telepon & WhatsApp pengurus</small></span></a><a href="livechat.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-message-circle"/></svg></span><span>Live Chat<small>Tanya langsung ke pengurus</small></span></a><a href="hiburan.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-sparkles"/></svg></span><span>Hiburan<small>Radio Indonesia</small></span></a><a href="masukan.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-message-circle"/></svg></span><span>Kritik, Saran &amp; Survei<small>Suara warga untuk pengurus</small></span></a></div></div>
+        <div class="sg-dd" role="menu"><a href="bayar.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-credit-card"/></svg></span><span>Bayar Iuran<small>Lapor pembayaran iuran</small></span></a><a href="galeri.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-images"/></svg></span><span>Galeri<small>Dokumentasi kegiatan</small></span></a><a href="berita.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-newspaper"/></svg></span><span>Berita Terkini<small>Berita seputar Bekasi</small></span></a><a href="kontak.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-phone"/></svg></span><span>Kontak Penting<small>Telepon & WhatsApp pengurus</small></span></a><a href="livechat.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-message-circle"/></svg></span><span>Live Chat<small>Tanya langsung ke pengurus</small></span></a><a href="hiburan.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-sparkles"/></svg></span><span>Hiburan<small>Radio Indonesia</small></span></a></div></div>
     </nav>
     <div class="sg-tools">
       <button type="button" class="sg-iconbtn sg-only-desktop" data-open="sgSearch" data-focus="#sgSearchInput" aria-label="Cari halaman"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-search"/></svg></button>
@@ -364,6 +364,12 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 </div>
 <div class="preview-wrap" id="lpPreviewWrap" style="display:none"><img id="lpPreview" alt="Pratinjau foto laporan" style="max-width:220px;border-radius:12px;margin:10px 0"></div>
 <div class="form-grid"><div class="field full"><button class="btn btn-gold" type="submit" id="btnKirimLapor">Kirim Laporan</button></div>
+  <div class="field full" id="lpKodeBox" style="display:none">
+    <div class="followup-box" style="background:#eefaf2;border-color:#b7e3c6"><p style="color:#146c3a;margin-bottom:8px">✅ Laporan tercatat. <b>Simpan kode laporan Anda</b> untuk melihat perkembangannya:</p>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b id="lpKodeTeks" style="font-size:22px;letter-spacing:1.5px;color:#0b2144"></b>
+      <button type="button" class="btn btn-brand" id="lpKodeSalin" style="width:auto;padding:0 16px;min-height:40px">Salin kode</button>
+      <a class="btn btn-gold" href="#status-laporan" style="width:auto;padding:0 16px;min-height:40px;display:inline-flex;align-items:center">Cek status</a></div></div>
+  </div>
   <div class="field full" id="laporFollowup" style="display:none">
     <div class="followup-box">
       <p>✅ Laporan sudah terkirim ke <b>Sekretaris RT</b>. Karena kategorinya <b>Keamanan</b>, teruskan juga ke petugas keamanan:</p>
@@ -371,6 +377,101 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
     </div>
   </div>
 </div></form></div></section>
+<section class="section-tight" id="status-laporan"><div class="container"><div class="section-heading"><div><h2>🔎 Cek Status Laporan</h2><p>Masukkan kode laporan (contoh <b>LP-7K3MQ9XD</b>) untuk melihat perkembangannya. Tidak perlu login.</p></div></div>
+<div class="form-card">
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><input id="stKode" placeholder="LP-XXXXXXXX" maxlength="11" autocapitalize="characters" autocomplete="off" spellcheck="false" style="flex:1;min-width:180px;letter-spacing:1px;text-transform:uppercase"><button class="btn btn-brand" type="button" id="stCari" style="width:auto;padding:0 22px">Cek Status</button></div>
+  <div id="stHasil" aria-live="polite" style="margin-top:14px"></div>
+  <div id="stSaya" style="display:none;margin-top:18px"><h3 style="margin:0 0 8px;font-size:14px">Laporan saya di perangkat ini</h3><div id="stSayaList"></div></div>
+</div></div></section>
+<style>
+.stl-card{border:1px solid #dbe2f0;border-radius:16px;padding:14px 16px;background:#fff}
+.stl-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.stl-top b{font-size:17px;letter-spacing:1px}
+.stl-chip{display:inline-block;font-size:12px;font-weight:900;padding:4px 12px;border-radius:999px}
+.stl-Baru{background:#e8eefc;color:#1f4aa8}.stl-Diproses{background:#fff3d6;color:#8a6a10}.stl-Selesai{background:#e3f6ea;color:#146c3a}.stl-Ditolak{background:#fdeaea;color:#a12a2a}
+.stl-meta{margin:6px 0 0;font-size:12.5px;color:#59657f}
+.stl-steps{display:flex;gap:6px;margin:12px 0 4px;padding:0;list-style:none}
+.stl-steps li{flex:1;text-align:center;font-size:11.5px;font-weight:800;padding:7px 4px;border-radius:10px;background:#eef1f8;color:#8a94ab}
+.stl-steps li.on{background:#1f8a4c;color:#fff}
+.stl-cat{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:#f5f7fc;font-size:13.5px;line-height:1.5}
+.stl-err{padding:11px 13px;border-radius:12px;background:#fff3f3;color:#9b1c1c;font-size:13.5px}
+.stl-row{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid #dbe2f0;border-radius:12px;background:#fff;padding:10px 12px;margin-bottom:8px;cursor:pointer;font:inherit}
+</style>
+<script>
+/* ===== Pelacakan status laporan (publik, tanpa login, berbasis kode tiket) ===== */
+(function(){
+  var KEY="pandu.laporanSaya", ALFA="23456789ABCDEFGHJKMNPQRSTUVWXYZ", cur=null;
+  var $=function(i){return document.getElementById(i)};
+  function esc(x){return String(x==null?"":x).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  function dbL(){
+    var c=(typeof RT_CONFIG!=="undefined"&&RT_CONFIG.firebaseConfig)||{};
+    if(!(c.apiKey&&c.databaseURL&&c.appId)||typeof firebase==="undefined") return null;
+    try{ if(!firebase.apps.length) firebase.initializeApp(c); return firebase.database(); }catch(e){ return null; }
+  }
+  function baca(){ try{ return JSON.parse(localStorage.getItem(KEY)||"[]")||[]; }catch(e){ return []; } }
+  function tulis(a){ try{ localStorage.setItem(KEY,JSON.stringify(a.slice(0,20))); }catch(e){} }
+  function tgl(t){ return t?new Date(t).toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"}):"-"; }
+  window.buatKodeLaporan_=function(){
+    var b=new Uint8Array(8), k="";
+    (window.crypto||window.msCrypto).getRandomValues(b);
+    for(var i=0;i<8;i++) k+=ALFA.charAt(b[i]%ALFA.length);
+    return "LP-"+k;
+  };
+  window.lpSimpanSaya_=function(kode,kat){
+    var a=baca().filter(function(x){return x.kode!==kode});
+    a.unshift({kode:kode,kategori:kat,t:Date.now()}); tulis(a); daftarSaya();
+  };
+  window.lpTampilKode_=function(kode){
+    $("lpKodeTeks").textContent=kode; $("lpKodeBox").style.display="block";
+    $("lpKodeSalin").onclick=function(){
+      var ok=function(){ showToast("Kode "+kode+" disalin."); };
+      if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(kode).then(ok,function(){ showToast("Salin manual: "+kode); });
+      else showToast("Salin manual: "+kode);
+    };
+    $("stKode").value=kode;
+  };
+  function tampil(kode,d){
+    var st=d.status||"Baru", urut={Baru:0,Diproses:1,Selesai:2}, n=urut[st];
+    var langkah=st==="Ditolak"?"":'<ol class="stl-steps">'+["Diterima","Diproses","Selesai"].map(function(l,i){return '<li class="'+(i<=n?"on":"")+'">'+l+'</li>'}).join("")+'</ol>';
+    $("stHasil").innerHTML='<div class="stl-card"><div class="stl-top"><b>'+esc(kode)+'</b><span class="stl-chip stl-'+esc(st)+'">'+esc(st==="Baru"?"Diterima":st)+'</span></div>'+
+      '<p class="stl-meta">'+esc(d.kategori||"Laporan")+' • dilaporkan '+esc(tgl(d.createdAt))+(d.updatedAt?' • diperbarui '+esc(tgl(d.updatedAt)):'')+'</p>'+langkah+
+      (d.catatan?'<div class="stl-cat"><b>Catatan pengurus:</b><br>'+esc(d.catatan)+'</div>':'<p class="stl-meta">'+(st==="Baru"?"Laporan sudah diterima pengurus dan menunggu ditindaklanjuti.":"")+'</p>')+'</div>';
+  }
+  function cari(kode){
+    kode=(kode||"").toUpperCase().replace(/\s/g,"");
+    if(/^[23456789A-HJKMNP-Z]{8}$/.test(kode)) kode="LP-"+kode;
+    var box=$("stHasil");
+    if(!/^LP-[A-Z0-9]{8}$/.test(kode)){ box.innerHTML='<div class="stl-err">Format kode tidak sesuai. Contoh: LP-7K3MQ9XD</div>'; return; }
+    var db=dbL(); if(!db){ box.innerHTML='<div class="stl-err">Layanan pelacakan belum aktif. Hubungi pengurus.</div>'; return; }
+    if(cur){ cur.off(); cur=null; }
+    box.innerHTML='<p class="stl-meta">Mencari…</p>';
+    cur=db.ref("statusLaporan/"+kode);
+    cur.on("value",function(snap){
+      var d=snap.val();
+      if(!d){ box.innerHTML='<div class="stl-err">Kode <b>'+esc(kode)+'</b> tidak ditemukan. Periksa kembali penulisannya.</div>'; return; }
+      tampil(kode,d);
+    },function(){ box.innerHTML='<div class="stl-err">Gagal membaca status. Periksa koneksi lalu coba lagi.</div>'; });
+  }
+  function daftarSaya(){
+    var a=baca(), wrap=$("stSaya"), list=$("stSayaList"); if(!wrap) return;
+    if(!a.length){ wrap.style.display="none"; return; }
+    wrap.style.display="block";
+    list.innerHTML=a.map(function(x){return '<button type="button" class="stl-row" data-k="'+esc(x.kode)+'"><span><b>'+esc(x.kode)+'</b><br><small style="color:#59657f">'+esc(x.kategori||"")+' • '+esc(tgl(x.t))+'</small></span><span class="stl-chip" data-s="'+esc(x.kode)+'">…</span></button>'}).join("");
+    var db=dbL(); if(!db) return;
+    a.forEach(function(x){ db.ref("statusLaporan/"+x.kode+"/status").once("value").then(function(sn){
+      var el=list.querySelector('[data-s="'+x.kode+'"]'); if(!el) return; var v=sn.val();
+      if(v){ el.className="stl-chip stl-"+v; el.textContent=v==="Baru"?"Diterima":v; } else el.textContent="-";
+    }).catch(function(){}); });
+  }
+  document.addEventListener("DOMContentLoaded",function(){
+    $("stCari").onclick=function(){ cari($("stKode").value); };
+    $("stKode").addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); cari(this.value); } });
+    $("stSayaList").addEventListener("click",function(e){ var b=e.target.closest("[data-k]"); if(b){ $("stKode").value=b.getAttribute("data-k"); cari(b.getAttribute("data-k")); } });
+    daftarSaya();
+    var m=location.search.match(/[?&]kode=([A-Za-z0-9-]+)/); if(m){ $("stKode").value=m[1].toUpperCase(); cari(m[1]); }
+  });
+})();
+</script>
 </main>
 <footer class="sg-footer">
   <div class="sg-footer__grid">
@@ -393,7 +494,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <p style="margin:10px 22px 0;font:700 11px/1 var(--font-head);letter-spacing:.1em;text-transform:uppercase;color:var(--gold-400)">Menu utama</p>
   <ul><li><a href="index.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-home"/></svg></span><span>Beranda<small>Halaman utama</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li><li><a href="informasi.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-megaphone"/></svg></span><span>Informasi<small>Pengumuman warga</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li><li><a href="agenda.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-calendar-days"/></svg></span><span>Agenda<small>Jadwal kegiatan</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li><li><a href="layanan.html" class="active"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-users"/></svg></span><span>Layanan<small>Surat, pengajuan & lapor</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li><li><a href="transparansi.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-file-text"/></svg></span><span>Transparansi<small>Kas RT</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li><li><a href="umkm.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-store"/></svg></span><span>UMKM<small>Usaha warga</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li></ul><hr>
 <p style="margin:10px 22px 0;font:700 11px/1 var(--font-head);letter-spacing:.1em;text-transform:uppercase;color:var(--gold-400)">Lainnya</p>
-  <ul><li><a href="bayar.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-credit-card"/></svg></span><span>Bayar Iuran<small>Lapor pembayaran iuran</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li><li><a href="galeri.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-images"/></svg></span><span>Galeri<small>Dokumentasi kegiatan</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li><li><a href="berita.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-newspaper"/></svg></span><span>Berita Terkini<small>Berita seputar Bekasi</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li><li><a href="kontak.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-phone"/></svg></span><span>Kontak Penting<small>Telepon & WhatsApp pengurus</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li><li><a href="livechat.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-message-circle"/></svg></span><span>Live Chat<small>Tanya langsung ke pengurus</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li><li><a href="hiburan.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-sparkles"/></svg></span><span>Hiburan<small>Radio Indonesia</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li><li><a href="masukan.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-message-circle"/></svg></span><span>Kritik, Saran &amp; Survei<small>Suara warga untuk pengurus</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li></ul></div></div>
+  <ul><li><a href="bayar.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-credit-card"/></svg></span><span>Bayar Iuran<small>Lapor pembayaran iuran</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li><li><a href="galeri.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-images"/></svg></span><span>Galeri<small>Dokumentasi kegiatan</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li><li><a href="berita.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-newspaper"/></svg></span><span>Berita Terkini<small>Berita seputar Bekasi</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li><li><a href="kontak.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-phone"/></svg></span><span>Kontak Penting<small>Telepon & WhatsApp pengurus</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li><li><a href="livechat.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-message-circle"/></svg></span><span>Live Chat<small>Tanya langsung ke pengurus</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li><li><a href="hiburan.html"><span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-sparkles"/></svg></span><span>Hiburan<small>Radio Indonesia</small></span><svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg></a></li></ul></div></div>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
 <script src="config.js"></script><script src="surat-pdf.js"></script><script>
@@ -486,17 +587,26 @@ document.addEventListener("DOMContentLoaded",()=>{
       const ket=document.getElementById("lpKeterangan").value.trim();
       if(!blok){ showToast(RT_PESAN_RUMAH); return; }
       if(!nama || !ket){ showToast("Mohon lengkapi Nama dan Keterangan."); return; }
-      const pesan = "🚨 LAPORAN WARGA RT 08\nNama: "+nama+"\nBlok/No Rumah: "+blok+"\nKategori: "+kategori+"\nNomor WhatsApp pelapor: "+(wa||"-")+"\nKeterangan: "+ket+(lpFotoData ? "\n📷 Foto bukti terlampir, cek di Admin > Laporan Warga." : "");
+      const kode = buatKodeLaporan_();
+      const pesan = "🚨 LAPORAN WARGA RT 08\nKode Laporan: "+kode+"\nNama: "+nama+"\nBlok/No Rumah: "+blok+"\nKategori: "+kategori+"\nNomor WhatsApp pelapor: "+(wa||"-")+"\nKeterangan: "+ket+(lpFotoData ? "\n📷 Foto bukti terlampir, cek di Admin > Laporan Warga." : "");
 
       const cfg = RT_CONFIG.firebaseConfig || {};
       if(cfg.apiKey && cfg.databaseURL && cfg.appId){
         if(!firebase.apps.length) firebase.initializeApp(cfg);
-        firebase.database().ref("laporan").push({
-          nama: nama, blok: blok, kategori: kategori, wa: wa, keterangan: ket,
+        const dbL = firebase.database();
+        dbL.ref("laporan").push({
+          kode: kode, nama: nama, blok: blok, kategori: kategori, wa: wa, keterangan: ket,
           foto: lpFotoData || null, status: "Baru",
           createdAt: firebase.database.ServerValue.TIMESTAMP
         });
+        /* Data PUBLIK untuk pelacakan: hanya kategori + status (tanpa nama/blok/WA/foto) */
+        dbL.ref("statusLaporan/"+kode).set({
+          kategori: kategori, status: "Baru",
+          createdAt: firebase.database.ServerValue.TIMESTAMP
+        }).catch(function(){ showToast("Pelacakan status belum aktif. Hubungi pengurus."); });
       }
+      lpSimpanSaya_(kode, kategori);
+      lpTampilKode_(kode);
 
       // Laporan SELALU dikirim langsung ke chat Sekretaris (nomor otomatis dari config.js → waSekretaris).
       const nomorKetua = RT_CONFIG.waSekretaris || RT_CONFIG.waKetua;
