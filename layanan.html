@@ -327,6 +327,19 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,500;0,600;0,700;0,800;1,600&display=swap">
 <link rel="stylesheet" href="assets/siaga.css?v=9">
+<style id="inv-pub-css">
+.inv-pub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.inv-pub-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.inv-pub-card h3{margin:0;font-size:15px}.inv-pub-card small{color:var(--muted)}
+.inv-pub-ic{width:42px;height:42px;border-radius:13px;background:var(--mint);display:grid;place-items:center;font-size:20px}
+.inv-pub-tag{display:inline-flex;font-size:10px;font-weight:900;padding:3px 9px;border-radius:999px;background:#eef1f8;color:#34476b;margin-right:4px}
+.inv-pub-tag.baik{background:#e8f6ee;color:#14532d}.inv-pub-tag.ringan{background:#fff4d6;color:#7a5a08}.inv-pub-tag.rusak{background:#fdeaea;color:#b42318}
+.inv-pub-bar{height:7px;border-radius:99px;background:#eef1f8;overflow:hidden}.inv-pub-bar i{display:block;height:100%;background:#1c8a4e}
+.inv-pub-card .btn{margin-top:6px;min-height:40px;font-size:13px}
+.inv-pub-tools{margin-bottom:14px}
+.inv-pick{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.inv-pick:first-child{border-top:0}.inv-pick small{display:block;color:var(--muted)}.inv-pick input{width:84px;flex:none;text-align:center}
+</style>
 </head><body>
 <header class="sg-header" id="sgHeader">
   <div class="sg-header__in">
@@ -353,6 +366,9 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
   <div class="service-card"><div class="icon">💡</div><h3>Aspirasi Warga</h3><p>Sampaikan ide dan saran untuk lingkungan.</p><a class="btn btn-brand" href="#" id="svcAspirasi">Kirim</a></div>
   <div class="service-card"><div class="icon">📄</div><h3>Dokumen RT</h3><p>Akses tata tertib, surat edaran, atau dokumen umum.</p><a class="btn btn-brand" href="#" id="svcDokumen">Buka</a></div>
 </div></div></section>
+<section class="section-tight" id="inventaris" hidden><div class="container"><div class="section-heading"><div><h2>📦 Inventaris Barang RT</h2><p>Barang milik RT yang bisa dipinjam warga. Angka "tersedia" selalu diperbarui pengurus.</p></div></div>
+<div class="inv-pub-tools"><input id="invPubCari" placeholder="Cari barang..." autocomplete="off"></div>
+<div class="inv-pub-grid" id="invPubList"></div></div></section>
 <section class="section-tight" id="lapor"><div class="container"><div class="section-heading"><div><h2>🚨 Lapor Lingkungan</h2><p>Isi form berikut, boleh sertakan foto — laporan langsung masuk ke pengurus RT secara real-time.</p></div></div>
 <form class="form-card" id="reportForm"><div class="form-grid">
   <div class="field"><label>Nama</label><input id="lpNama" required placeholder="Nama warga"></div>
@@ -654,11 +670,93 @@ function showToast(msg){
 }
 </script><div class="sm-overlay" id="smOverlay" hidden><div class="sm-box" role="dialog" aria-modal="true" aria-labelledby="smJudul"><button type="button" class="sm-close" id="smClose" aria-label="Tutup">✕</button><div id="smBody"></div></div></div>
 <script>
+/* ===== Inventaris RT (data publik dari Firebase: inventarisPublik) ===== */
+(function(){
+  function dbI(){
+    var c=(typeof RT_CONFIG!=="undefined"&&RT_CONFIG.firebaseConfig)||{};
+    if(!(c.apiKey&&c.databaseURL&&c.appId)||typeof firebase==="undefined") return null;
+    try{ if(!firebase.apps.length) firebase.initializeApp(c); return firebase.database(); }catch(e){ return null; }
+  }
+  window.rtDbInv=dbI;
+  var R=window.RTInv={items:[],sel:{},siap:false};
+  var IKON={"Perlengkapan Acara":"🎪","Sound & Elektronik":"🔊","Kebersihan & Lingkungan":"🧹","Keamanan":"🛡️","Administrasi & Kantor":"🗂️","Olahraga & Hiburan":"⚽"};
+  function esc(v){ return String(v==null?"":v).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  var sec=document.getElementById("inventaris"), list=document.getElementById("invPubList"), cari=document.getElementById("invPubCari");
+  function render(){
+    if(!sec) return;
+    sec.hidden=!R.items.length;
+    var q=(cari.value||"").trim().toLowerCase();
+    var data=R.items.filter(function(i){ return !q||(i.nama+" "+i.kategori).toLowerCase().indexOf(q)>=0; });
+    if(!data.length){ list.innerHTML='<p class="sm-sub">Tidak ada barang yang cocok.</p>'; return; }
+    list.innerHTML=data.map(function(i){
+      var kls=i.kondisi==="Baik"?"baik":i.kondisi==="Rusak Ringan"?"ringan":"rusak";
+      var pct=i.jumlah>0?Math.round(100*i.tersedia/i.jumlah):0, habis=i.tersedia<1;
+      return '<div class="inv-pub-card"><div class="inv-pub-ic">'+(IKON[i.kategori]||"📦")+'</div><h3>'+esc(i.nama)+'</h3>'+
+        '<div><span class="inv-pub-tag">'+esc(i.kategori)+'</span><span class="inv-pub-tag '+kls+'">'+esc(i.kondisi)+'</span></div>'+
+        '<div class="inv-pub-bar"><i style="width:'+pct+'%"></i></div>'+
+        '<small>Tersedia <b>'+i.tersedia+'</b> dari '+i.jumlah+' '+esc(i.satuan||"unit")+'</small>'+
+        '<button type="button" class="btn btn-brand" data-pinjam="'+esc(i.id)+'"'+(habis?' disabled style="opacity:.5"':'')+'>'+(habis?'Sedang habis':'Pinjam')+'</button></div>';
+    }).join("");
+  }
+  if(cari) cari.addEventListener("input",render);
+  if(list) list.addEventListener("click",function(e){
+    var b=e.target.closest("button[data-pinjam]"); if(!b||b.disabled) return;
+    if(window.rtBukaPinjam) window.rtBukaPinjam(b.getAttribute("data-pinjam"));
+  });
+  var db=dbI();
+  if(db) db.ref("inventarisPublik").on("value",function(sn){
+    var v=sn.val()||{};
+    R.items=Object.keys(v).map(function(k){ var o=v[k]; return {id:k,nama:o.nama||"",kategori:o.kategori||"Lainnya",kondisi:o.kondisi||"Baik",satuan:o.satuan||"unit",jumlah:+o.jumlah||0,tersedia:+o.tersedia||0}; })
+      .sort(function(a,b){ return a.nama.localeCompare(b.nama,"id"); });
+    R.siap=true; render(); document.dispatchEvent(new Event("rtinv"));
+  },function(){ R.siap=true; document.dispatchEvent(new Event("rtinv")); });
+  else { R.siap=true; }
+})();
+</script>
+<script>
 /* ===== Layanan Surat → PDF → kirim ke WhatsApp pengurus ===== */
 (function(){
   var MAP={svcSurat:"suratPengantar",svcSuratMenetap:"suratMenetap",svcWargaBaru:"wargaBaru",svcWargaPindah:"wargaPindah",svcPinjamFasilitas:"pinjamFasilitas"};
   var ov=document.getElementById("smOverlay"), body=document.getElementById("smBody");
-  var logo=null, hasil=null, key=null, dataForm={};
+  var logo=null, hasil=null, key=null, dataForm={}, pjId=null, pjBar={}, pjLain="";
+
+  /* --- Pinjam Fasilitas: pilih barang dari inventaris RT + simpan pengajuan ke Firebase --- */
+  (function(){ var J=(typeof RTSurat!=="undefined")&&RTSurat.JENIS&&RTSurat.JENIS.pinjamFasilitas; if(!J) return;
+    J.fields.forEach(function(f){ if(f.id==="fasilitas"){ f.req=0; f.label="Fasilitas lain (lapangan, balai, dll.)"; f.opts=["Lapangan RT","Balai / Pos Warga"]; f.ph="Kosongkan jika hanya meminjam barang di bawah"; } });
+  })();
+  function invPickerHtml(){ return '<div class="field full" id="smInvBox"><label>Barang inventaris RT yang dipinjam (isi jumlah)</label><div id="smInvList"></div></div>'; }
+  function invPickerIsi(){
+    var box=document.getElementById("smInvList"); if(!box) return;
+    var R=window.RTInv||{items:[],sel:{},siap:false};
+    if(!R.siap){ box.innerHTML='<p class="sm-sub">Memuat daftar barang…</p>'; return; }
+    var ada=R.items.filter(function(i){ return i.tersedia>0; });
+    if(!ada.length){ box.innerHTML='<p class="sm-sub">Belum ada daftar barang. Ketik fasilitas yang ingin dipinjam di kolom di atas.</p>'; return; }
+    box.innerHTML=ada.map(function(i){ return '<div class="inv-pick"><div><b>'+esc(i.nama)+'</b><small>Tersedia '+i.tersedia+' '+esc(i.satuan||"unit")+'</small></div><input type="number" min="0" max="'+i.tersedia+'" inputmode="numeric" data-inv="'+esc(i.id)+'" value="'+(R.sel[i.id]||0)+'"></div>'; }).join("");
+  }
+  document.addEventListener("input",function(e){ var t=e.target; if(t&&t.getAttribute&&t.getAttribute("data-inv")&&window.RTInv){ window.RTInv.sel[t.getAttribute("data-inv")]=parseInt(t.value,10)||0; } });
+  document.addEventListener("rtinv",function(){ if(!ov.hidden) invPickerIsi(); });
+  window.rtBukaPinjam=function(id){ var R=window.RTInv; R.sel={}; if(id) R.sel[id]=1; pjId=null; dataForm={}; tampilForm("pinjamFasilitas"); };
+  function invKumpul(d){
+    var R=window.RTInv||{items:[],sel:{}}, pil=[], bar={}, err="", lain=String(d.fasilitas||"").trim();
+    Object.keys(R.sel).forEach(function(id){
+      var q=parseInt(R.sel[id],10)||0; if(q<=0) return;
+      var it=R.items.filter(function(x){ return x.id===id; })[0]; if(!it) return;
+      if(q>it.tersedia){ err="Jumlah "+it.nama+" melebihi stok tersedia ("+it.tersedia+")."; return; }
+      pil.push(it.nama+" ×"+q); bar[id]={nama:it.nama,jumlah:q,satuan:it.satuan||"unit"};
+    });
+    if(err) return {err:err};
+    if(!pil.length&&!lain) return {err:"Pilih barang dari inventaris atau isi fasilitas yang ingin dipinjam."};
+    d.fasilitas=[lain,pil.join(", ")].filter(Boolean).join("; ");
+    return {bar:bar,lain:lain};
+  }
+  function simpanPengajuan(d){
+    try{
+      var db=window.rtDbInv&&window.rtDbInv(); if(!db) return;
+      if(!pjId) pjId=db.ref("pengajuanPinjam").push().key;
+      db.ref("pengajuanPinjam/"+pjId).set({nama:d.nama,hp:d.hp||"",rumah:d.blok||"",tanggal:d.tanggal||"",jam:d.jam||"",keperluan:d.keperluan||"",lain:pjLain||"",barang:pjBar,status:"Baru",createdAt:firebase.database.ServerValue.TIMESTAMP})
+        .catch(function(e){ console.warn("Pengajuan belum tersimpan:",e&&e.message); });
+    }catch(e){ console.warn(e); }
+  }
 
   /* Form ringkas (Aspirasi, minta Dokumen): Nama + Blok/No Rumah terdaftar + 1 isian teks → WhatsApp pengurus */
   window.rtFormSederhana=function(o){
@@ -693,7 +791,7 @@ function showToast(msg){
 
   Object.keys(MAP).forEach(function(id){
     var el=document.getElementById(id);
-    if(el) el.addEventListener("click",function(e){ e.preventDefault(); tampilForm(MAP[id]); });
+    if(el) el.addEventListener("click",function(e){ e.preventDefault(); if(MAP[id]==="pinjamFasilitas"){ window.RTInv.sel={}; pjId=null; dataForm={}; } tampilForm(MAP[id]); });
   });
 
   function pengurus(J){ return RT_CONFIG[J.pengurus]||"Pengurus RT"; }
@@ -725,17 +823,25 @@ function showToast(msg){
       }
       h+='<div class="field'+(f.full?' full':'')+'"><label'+(t==="rumah"?'':' for="'+id+'"')+'>'+esc(f.label)+(f.req?' <span class="sm-req">*</span>':'')+'</label>'+inp+'</div>';
     });
+    if(k==="pinjamFasilitas") h+=invPickerHtml();
     h+='</div><div class="sm-actions"><button class="btn btn-gold" type="submit">📄 Buat Surat PDF</button></div></form>';
     body.innerHTML=h; buka();
+    if(k==="pinjamFasilitas") invPickerIsi();
     J.fields.forEach(function(f){ if(f.type==="rumah") rtRumahPasang("sm_"+f.id, dataForm[f.id]); });
     document.getElementById("smForm").addEventListener("submit",function(e){
       e.preventDefault();
       var d={}; J.fields.forEach(function(f){ d[f.id]=(f.type==="rumah") ? rtRumahNilai("sm_"+f.id) : document.getElementById("sm_"+f.id).value; });
       dataForm=d;
+      if(k==="pinjamFasilitas"){
+        var lainAsli=d.fasilitas, rk=invKumpul(d);
+        if(rk.err){ showToast(rk.err); return; }
+        pjBar=rk.bar; pjLain=rk.lain; dataForm=Object.assign({},d,{fasilitas:lainAsli});
+      }
       var err=RTSurat.validasi(k,d,RT_CONFIG);
       if(err){ showToast(err); return; }
       try{ hasil=RTSurat.buat(k,d,RT_CONFIG,logo); }
       catch(ex){ console.error(ex); showToast("Maaf, gagal membuat PDF. Coba lagi."); return; }
+      if(k==="pinjamFasilitas") simpanPengajuan(d);
       tampilHasil();
     });
   }

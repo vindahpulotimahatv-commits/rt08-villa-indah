@@ -178,8 +178,8 @@ textarea{min-height:76px;resize:vertical}
   #dashboard .tabs .tab-btn:hover:not(.active){background:rgba(255,255,255,.10);color:#fff}
   #dashboard .panel{grid-column:2;grid-row:3;min-width:0}
   /* panel yang isinya form + daftar: dua kolom berdampingan */
-  #panel-agenda.active,#panel-info.active,#panel-galeri.active{display:grid;grid-template-columns:minmax(340px,430px) minmax(0,1fr);gap:20px;align-items:start}
-  #panel-agenda.active .form-card,#panel-info.active .form-card,#panel-galeri.active .form-card{margin-bottom:0;position:sticky;top:92px}
+  #panel-agenda.active,#panel-info.active,#panel-galeri.active,#panel-inventaris.active{display:grid;grid-template-columns:minmax(340px,430px) minmax(0,1fr);gap:20px;align-items:start}
+  #panel-agenda.active .form-card,#panel-info.active .form-card,#panel-galeri.active .form-card,#panel-inventaris.active .form-card{margin-bottom:0;position:sticky;top:92px}
   /* Iuran: transfer masuk & transfer terkonfirmasi berdampingan, setoran cash memanjang di bawah */
   #panel-iuran.active{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
   #panel-iuran.active>*{min-width:0;margin-bottom:0!important}
@@ -246,6 +246,33 @@ textarea{min-height:76px;resize:vertical}
   #dashboard .tabs .tab-btn .pill,#dashboard .tabs .tab-btn .tab-dot{position:static;margin-left:auto;box-shadow:none}
 }
 </style>
+<style id="inv-css">
+.inv-row{display:flex;gap:12px;align-items:flex-start;padding:13px 14px;border-top:1px solid var(--line)}
+.inv-row:first-of-type{border-top:0}
+.inv-thumb{flex:0 0 58px;width:58px;height:58px;border-radius:14px;object-fit:cover;background:var(--mint);display:grid;place-items:center;font-size:24px;border:1px solid var(--line)}
+.inv-body{flex:1;min-width:0}
+.inv-body h4{margin:0 0 3px;font-size:14px}
+.inv-body p{margin:0;font-size:12px;color:var(--muted);line-height:1.55}
+.inv-tags{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0}
+.inv-tag{font-size:10px;font-weight:900;padding:3px 9px;border-radius:999px;background:#eef1f8;color:#34476b}
+.inv-tag.baik{background:#e8f6ee;color:#14532d}.inv-tag.ringan{background:#fff4d6;color:#7a5a08}.inv-tag.rusak{background:#fdeaea;color:#b42318}.inv-tag.pinjam{background:#e6f0ff;color:#1b3a73}
+.inv-act{display:flex;flex-direction:column;gap:6px;flex:0 0 auto}
+.inv-act button{border:none;border-radius:10px;padding:7px 10px;font-weight:800;font-size:11.5px;cursor:pointer;background:#eef1f8;color:#0b2144;min-height:32px}
+.inv-act .entry-del{width:auto;background:#fdeaea;color:var(--red)}
+.inv-tools{display:flex;gap:8px;flex-wrap:wrap;padding:6px 14px 10px}
+.inv-tools input{flex:1;min-width:150px}.inv-tools select{width:auto;min-width:130px}
+.inv-right{display:block;min-width:0}
+.inv-btn{border:none;border-radius:10px;padding:8px 12px;font-weight:800;font-size:12px;cursor:pointer;background:#eef1f8;color:#0b2144;min-height:36px}
+.inv-loan{display:flex;gap:10px;justify-content:space-between;align-items:center;background:#eef4ff;border-radius:12px;padding:8px 10px;margin:5px 0;font-size:12px}
+.inv-loan.telat{background:#fdeaea}
+.inv-loan button,.inv-act button{border:none;border-radius:10px;padding:7px 10px;font-weight:800;font-size:11.5px;cursor:pointer;background:#fff;color:#0b2144;border:1px solid var(--line);white-space:nowrap}
+.inv-riw{margin-top:6px;font-size:12px}.inv-riw summary{cursor:pointer;font-weight:800;color:var(--muted)}
+.inv-riw-row{border-top:1px dashed var(--line);padding:7px 0;line-height:1.5}
+.inv-ov{position:fixed;inset:0;background:rgba(7,20,38,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:14px}
+.inv-dlg{background:#fff;border-radius:20px;padding:20px;width:100%;max-width:420px;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.inv-dlg h3{margin:0 0 12px}.inv-dlg .field{margin-bottom:10px}
+.inv-dlg-act{display:grid;gap:8px;margin-top:14px}
+</style>
 </head><body class="sg-plain">
 <header class="topbar"><div class="container topbar-inner">
   <div class="brand"><img class="brand-mark" src="assets/logo-badge.png" alt="Logo RT 08 / RW 021"><span>Admin RT 08<span class="badge-panitia">🔒 PENGURUS</span></span></div>
@@ -280,6 +307,7 @@ textarea{min-height:76px;resize:vertical}
     <button class="tab-btn" data-tab="info" aria-label="Informasi" title="Informasi"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-megaphone"/></svg></span><span class="tb-l">Informasi</span></button>
     <button class="tab-btn" data-tab="galeri" aria-label="Galeri" title="Galeri"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-images"/></svg></span><span class="tb-l">Galeri</span></button>
     <button class="tab-btn" data-tab="umkm" id="tabUmkmBtn" aria-label="UMKM" title="UMKM"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-store"/></svg></span><span class="tb-l">UMKM</span></button>
+    <button class="tab-btn" data-tab="inventaris" id="tabInvBtn" aria-label="Inventaris Barang RT" title="Inventaris Barang RT"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-package"/></svg></span><span class="tb-l">Inventaris</span></button>
     <button class="tab-btn" data-tab="pembukuan" aria-label="Pembukuan Bendahara" title="Pembukuan Bendahara"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-wallet"/></svg></span><span class="tb-l">Pembukuan</span></button>
     <button class="tab-btn" data-tab="masukan" aria-label="Masukan Warga" title="Masukan Warga"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-message-circle"/></svg></span><span class="tb-l">Masukan</span></button>
   </div>
@@ -393,6 +421,64 @@ textarea{min-height:76px;resize:vertical}
     <div class="list-card">
       <div class="list-title">Foto Tersimpan</div>
       <div id="listGaleri" class="thumb-grid"><div class="empty-note">Memuat data...</div></div>
+    </div>
+  </div>
+
+  <!-- ===== PANEL INVENTARIS BARANG RT ===== -->
+  <div class="panel" id="panel-inventaris">
+    <div class="form-card">
+      <h3 id="invFormJudul">Tambah Barang Inventaris</h3>
+      <p class="sub">Catat barang milik RT: jumlah, kondisi, lokasi simpan. Barang baru tersembunyi dari warga sampai Anda mencentang "Tampilkan ke warga" atau menekan "Publikasikan semua".</p>
+      <form id="formInv">
+        <div class="form-grid">
+          <div class="field full"><label>Nama Barang</label><input id="invNama" required placeholder="Contoh: Tenda 3x3 m"></div>
+          <div class="field"><label>Kategori</label>
+            <select id="invKategori">
+              <option>Perlengkapan Acara</option><option>Sound &amp; Elektronik</option><option>Kebersihan &amp; Lingkungan</option>
+              <option>Keamanan</option><option>Administrasi &amp; Kantor</option><option>Olahraga &amp; Hiburan</option><option>Lainnya</option>
+            </select></div>
+          <div class="field"><label>Kondisi</label>
+            <select id="invKondisi"><option value="Baik">Baik</option><option value="Rusak Ringan">Rusak Ringan</option><option value="Rusak">Rusak</option></select></div>
+          <div class="field"><label>Jumlah</label><input type="number" id="invJumlah" min="0" step="1" value="1" required></div>
+          <div class="field"><label>Satuan</label><input id="invSatuan" placeholder="unit / buah / set" value="unit"></div>
+          <div class="field"><label>Lokasi Simpan</label><input id="invLokasi" placeholder="Contoh: Pos Keamanan"></div>
+          <div class="field"><label>Dipegang / Penanggung Jawab</label><input id="invPJ" placeholder="Contoh: Pak Jati"></div>
+          <div class="field"><label>Sumber</label>
+            <select id="invSumber"><option>Kas RT</option><option>Hibah</option><option>Sumbangan Warga</option><option>Iuran</option><option>Lainnya</option></select></div>
+          <div class="field"><label>Tahun Perolehan (opsional)</label><input type="number" id="invTahun" min="1990" max="2100" placeholder="2026"></div>
+          <div class="field full"><label>Catatan (opsional)</label><textarea id="invCatatan" placeholder="Ukuran, merek, kelengkapan, riwayat perbaikan, dsb."></textarea></div>
+          <div class="field full"><label>Foto (opsional, hanya terlihat pengurus)</label><input type="file" id="invFoto" accept="image/*"></div>
+          <div class="field full"><label style="display:flex;gap:10px;align-items:center;font-weight:800"><input type="checkbox" id="invTampil" style="width:auto"> Tampilkan ke warga (nama, kategori, kondisi, jumlah &amp; stok tersedia)</label></div>
+        </div>
+        <div class="preview-wrap" id="invPreviewWrap" style="display:none"><img id="invPreview" alt="Pratinjau foto barang"></div>
+        <button class="btn btn-brand" type="submit" id="btnSimpanInv">➕ Simpan Barang</button>
+        <button class="btn" type="button" id="btnBatalInv" style="display:none;margin-top:8px;background:#eef1f8;color:#0b2144">Batal edit</button>
+      </form>
+    </div>
+    <div class="inv-right">
+      <div class="list-card" style="margin-bottom:20px">
+        <div class="list-title">Pengajuan Pinjam dari Warga <span id="invPengPill"></span></div>
+        <p class="sub" style="padding:0 14px;margin:0 0 6px;color:var(--muted);font-size:12px">Masuk otomatis dari form Pinjam Fasilitas di halaman Layanan. "Setujui" akan mencatat peminjaman dan mengurangi stok.</p>
+        <div id="listPeng"><div class="empty-note">Memuat data...</div></div>
+      </div>
+      <div class="list-card">
+        <div class="list-title">Daftar Inventaris</div>
+        <div class="finance-summary">
+          <div class="fs-item"><span>Jenis Barang</span><strong id="invSumJenis">0</strong></div>
+          <div class="fs-item"><span>Total Unit</span><strong id="invSumUnit">0</strong></div>
+          <div class="fs-item keluar"><span>Rusak / Dipinjam</span><strong id="invSumPerhatian">0</strong></div>
+        </div>
+        <div class="inv-tools">
+          <input id="invCari" placeholder="Cari nama barang / lokasi...">
+          <select id="invFilter"><option value="">Semua</option><option value="Baik">Kondisi baik</option><option value="Rusak Ringan">Rusak ringan</option><option value="Rusak">Rusak</option><option value="__pinjam">Sedang dipinjam</option><option value="__tampil">Tampil ke warga</option><option value="__sembunyi">Disembunyikan</option></select>
+        </div>
+        <div class="inv-tools" style="padding-top:0">
+          <button type="button" class="inv-btn" id="btnInvPubSemua">👁 Publikasikan semua</button>
+          <button type="button" class="inv-btn" id="btnInvSembunyiSemua">🙈 Sembunyikan semua</button>
+          <button type="button" class="inv-btn" id="btnInvCsv">⬇️ Unduh CSV</button>
+        </div>
+        <div id="listInv"><div class="empty-note">Memuat data...</div></div>
+      </div>
     </div>
   </div>
 
@@ -1081,6 +1167,313 @@ function initDashboard_(){
         '<div class="thumb-cap">' + esc_(it.judul) + '</div>' +
         '<button class="thumb-del" data-id="' + it.id + '" data-node="galeri" title="Hapus">✕</button></div>';
     }).join("");
+  });
+
+  /* ---- INVENTARIS BARANG RT ---- */
+  var invData_ = [], pubData_ = {}, pengData_ = [], invLoaded_ = false, pubLoaded_ = false, syncGagal_ = false;
+  var invEditId_ = null, invFotoData_ = null, invFotoLama_ = "";
+  function tglID_(iso){ if (!iso) return "-"; var d = new Date(iso + "T00:00:00"); return isNaN(d) ? esc_(iso) : d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }); }
+  function waNo_(n){ var d = String(n || "").replace(/[^0-9]/g, ""); if (!d) return ""; if (d.indexOf("62") === 0) return d; if (d.charAt(0) === "0") return "62" + d.slice(1); return "62" + d; }
+  function loansOf_(it){ var m = it.dipinjam || {}; return Object.keys(m).filter(function(k){ return m[k] && typeof m[k] === "object"; }).map(function(k){ return Object.assign({ id: k }, m[k]); }); }
+  function riwayatOf_(it){ var m = it.riwayat || {}; return Object.keys(m).filter(function(k){ return m[k] && typeof m[k] === "object"; }).map(function(k){ return Object.assign({ id: k }, m[k]); }).sort(function(a, b){ return String(b.tanggalKembali || "").localeCompare(String(a.tanggalKembali || "")); }); }
+  function pinjamTotal_(it){ var n = 0; loansOf_(it).forEach(function(l){ n += parseInt(l.jumlah, 10) || 0; }); return n; }
+  function tersedia_(it){ if (it.kondisi === "Rusak") return 0; return Math.max(0, (parseInt(it.jumlah, 10) || 0) - pinjamTotal_(it)); }
+  function pubPayload_(it){ return { jumlah: parseInt(it.jumlah, 10) || 0, kategori: it.kategori || "Lainnya", kondisi: it.kondisi || "Baik", nama: it.nama || "", satuan: it.satuan || "unit", tersedia: tersedia_(it) }; }
+  function samaPub_(a, b){ if (!a || !b) return false; return ["jumlah","kategori","kondisi","nama","satuan","tersedia"].every(function(k){ return a[k] === b[k]; }); }
+
+  /* Sinkron otomatis ke data publik (yang dilihat warga): hanya barang bertanda "tampil", tanpa foto/lokasi/penanggung jawab. */
+  function invSync_(){
+    if (!invLoaded_ || !pubLoaded_) return;
+    var want = {}, upd = {}, n = 0;
+    invData_.forEach(function(it){ if (it.tampil) want[it.id] = pubPayload_(it); });
+    Object.keys(want).forEach(function(id){ if (!samaPub_(want[id], pubData_[id])) { upd["inventarisPublik/" + id] = want[id]; n++; } });
+    Object.keys(pubData_).forEach(function(id){ if (!want[id]) { upd["inventarisPublik/" + id] = null; n++; } });
+    if (!n) return;
+    db.ref().update(upd).catch(function(err){ if (!syncGagal_) { syncGagal_ = true; showToast(pesanGagal_(err, "Sinkron ke halaman warga")); } });
+  }
+
+  function invDialog_(judul, html, okLabel, onOk){
+    var ov = document.createElement("div"); ov.className = "inv-ov";
+    ov.innerHTML = '<div class="inv-dlg" role="dialog" aria-modal="true"><h3>' + judul + '</h3>' + html +
+      '<div class="inv-dlg-act"><button type="button" class="btn btn-brand" data-ok>' + okLabel + '</button><button type="button" class="btn" data-no style="background:#eef1f8;color:#0b2144">Batal</button></div></div>';
+    document.body.appendChild(ov);
+    var tutup = function(){ ov.remove(); };
+    ov.addEventListener("click", function(e){ if (e.target === ov) tutup(); });
+    ov.querySelector("[data-no]").onclick = tutup;
+    ov.querySelector("[data-ok]").onclick = function(){ if (onOk(ov) !== false) tutup(); };
+    return ov;
+  }
+  function gagalToast_(err){ showToast(pesanGagal_(err, "Penyimpanan")); }
+
+  function invReset_(){
+    document.getElementById("formInv").reset();
+    document.getElementById("invSatuan").value = "unit";
+    document.getElementById("invJumlah").value = 1;
+    document.getElementById("invPreviewWrap").style.display = "none";
+    document.getElementById("invFormJudul").textContent = "Tambah Barang Inventaris";
+    document.getElementById("btnSimpanInv").textContent = "➕ Simpan Barang";
+    document.getElementById("btnBatalInv").style.display = "none";
+    invEditId_ = null; invFotoData_ = null; invFotoLama_ = "";
+  }
+  document.getElementById("invFoto").addEventListener("change", function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    compressImage_(file, 640, 0.7).then(function(dataUrl){
+      invFotoData_ = dataUrl;
+      document.getElementById("invPreview").src = dataUrl;
+      document.getElementById("invPreviewWrap").style.display = "block";
+    }).catch(function(){ showToast("Gagal membaca foto, coba foto lain."); });
+  });
+  document.getElementById("btnBatalInv").addEventListener("click", invReset_);
+  document.getElementById("formInv").addEventListener("submit", function(e){
+    e.preventDefault();
+    var nama = document.getElementById("invNama").value.trim();
+    var jumlah = parseInt(document.getElementById("invJumlah").value, 10);
+    if (!nama) { showToast("Nama barang wajib diisi."); return; }
+    if (!(jumlah >= 0)) { showToast("Jumlah tidak valid."); return; }
+    var tahun = parseInt(document.getElementById("invTahun").value, 10);
+    var data = {
+      nama: nama, kategori: document.getElementById("invKategori").value, kondisi: document.getElementById("invKondisi").value,
+      jumlah: jumlah, satuan: document.getElementById("invSatuan").value.trim() || "unit",
+      lokasi: document.getElementById("invLokasi").value.trim(), penanggungJawab: document.getElementById("invPJ").value.trim(),
+      sumber: document.getElementById("invSumber").value, tahun: tahun >= 1990 ? tahun : null,
+      catatan: document.getElementById("invCatatan").value.trim(), foto: invFotoData_ || invFotoLama_ || "",
+      tampil: document.getElementById("invTampil").checked,
+      updatedAt: firebase.database.ServerValue.TIMESTAMP
+    };
+    var btn = document.getElementById("btnSimpanInv"), sedangEdit = !!invEditId_;
+    btn.disabled = true; btn.textContent = "Menyimpan...";
+    var p;
+    if (sedangEdit) p = db.ref("inventaris/" + invEditId_).update(data);
+    else { data.createdAt = firebase.database.ServerValue.TIMESTAMP; p = db.ref("inventaris").push(data); }
+    p.then(function(){ showToast(sedangEdit ? "Data barang diperbarui." : "Barang tersimpan di inventaris."); invReset_(); })
+     .catch(gagalToast_)
+     .finally(function(){ btn.disabled = false; btn.textContent = invEditId_ ? "💾 Simpan Perubahan" : "➕ Simpan Barang"; });
+  });
+
+  function invFiltered_(){
+    var q = document.getElementById("invCari").value.trim().toLowerCase(), f = document.getElementById("invFilter").value;
+    return invData_.filter(function(it){
+      if (f === "__pinjam" && !loansOf_(it).length) return false;
+      if (f === "__tampil" && !it.tampil) return false;
+      if (f === "__sembunyi" && it.tampil) return false;
+      if (f && f.indexOf("__") !== 0 && it.kondisi !== f) return false;
+      if (q && (it.nama + " " + (it.lokasi || "") + " " + (it.kategori || "") + " " + (it.penanggungJawab || "")).toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+  }
+  function invRender_(){
+    var box = document.getElementById("listInv"), unit = 0, perhatian = 0, hari = tglWIB_();
+    invData_.forEach(function(it){ unit += (parseInt(it.jumlah, 10) || 0); if (it.kondisi !== "Baik" || loansOf_(it).length) perhatian++; });
+    document.getElementById("invSumJenis").textContent = invData_.length;
+    document.getElementById("invSumUnit").textContent = unit;
+    document.getElementById("invSumPerhatian").textContent = perhatian;
+    var list = invFiltered_();
+    if (!invData_.length) { box.innerHTML = '<div class="empty-note">Belum ada barang. Tambahkan lewat form di samping.</div>'; return; }
+    if (!list.length) { box.innerHTML = '<div class="empty-note">Tidak ada barang yang cocok.</div>'; return; }
+    box.innerHTML = list.map(function(it){
+      var kls = it.kondisi === "Baik" ? "baik" : it.kondisi === "Rusak Ringan" ? "ringan" : "rusak";
+      var thumb = it.foto ? '<img class="inv-thumb" src="' + it.foto + '" alt="' + esc_(it.nama) + '">' : '<div class="inv-thumb">📦</div>';
+      var meta = [it.lokasi ? "📍 " + it.lokasi : "", it.penanggungJawab ? "👤 " + it.penanggungJawab : "", it.sumber ? it.sumber + (it.tahun ? " " + it.tahun : "") : ""].filter(Boolean).join(" • ");
+      var loans = loansOf_(it), riw = riwayatOf_(it), tersedia = tersedia_(it);
+      var pinjamHtml = loans.map(function(l){
+        var telat = l.kembali && l.kembali < hari;
+        return '<div class="inv-loan' + (telat ? " telat" : "") + '"><span>🤝 <b>' + esc_(l.nama || "-") + '</b> · ' + esc_(l.jumlah) + ' ' + esc_(it.satuan || "unit") + (l.rumah ? " · " + esc_(l.rumah) : "") +
+          '<br><small>Pakai ' + tglID_(l.tanggal) + ' · kembali ' + tglID_(l.kembali) + (telat ? ' · <b>TERLAMBAT</b>' : "") + '</small></span>' +
+          '<button type="button" data-inv="kembali" data-id="' + esc_(it.id) + '" data-loan="' + esc_(l.id) + '">↩ Dikembalikan</button></div>';
+      }).join("");
+      var riwHtml = riw.length ? '<details class="inv-riw"><summary>📜 Riwayat peminjaman (' + riw.length + ')</summary>' + riw.map(function(r){
+        var bermasalah = r.kondisi && r.kondisi !== "Baik";
+        return '<div class="inv-riw-row"><b>' + esc_(r.nama || "-") + '</b> · ' + esc_(r.jumlah) + ' ' + esc_(it.satuan || "unit") + '<br><small>' + tglID_(r.tanggalPinjam) + ' → ' + tglID_(r.tanggalKembali) + '</small><br>' +
+          '<span class="inv-tag ' + (bermasalah ? "rusak" : "baik") + '">Kembali: ' + esc_(r.kondisi || "Baik") + (bermasalah && r.jumlahBermasalah ? " (" + esc_(r.jumlahBermasalah) + ")" : "") + '</span>' +
+          (r.catatan ? '<br><small>📝 ' + esc_(r.catatan) + '</small>' : "") + '</div>';
+      }).join("") + '</details>' : "";
+      return '<div class="inv-row">' + thumb +
+        '<div class="inv-body"><h4>' + esc_(it.nama) + ' <small style="color:var(--muted);font-weight:700">total ' + esc_(it.jumlah) + ' ' + esc_(it.satuan || "unit") + '</small></h4>' +
+        '<div class="inv-tags"><span class="inv-tag">' + esc_(it.kategori || "Lainnya") + '</span><span class="inv-tag ' + kls + '">' + esc_(it.kondisi || "-") + '</span>' +
+        '<span class="inv-tag ' + (tersedia > 0 ? "baik" : "rusak") + '">Tersedia ' + tersedia + '</span>' +
+        '<span class="inv-tag ' + (it.tampil ? "pinjam" : "") + '">' + (it.tampil ? "👁 Tampil ke warga" : "🙈 Disembunyikan") + '</span></div>' +
+        pinjamHtml + '<p>' + esc_(meta || "-") + '</p>' + (it.catatan ? '<p style="margin-top:3px">' + esc_(it.catatan) + '</p>' : "") + riwHtml + '</div>' +
+        '<div class="inv-act">' +
+          '<button type="button" data-inv="pinjam" data-id="' + esc_(it.id) + '">🤝 Pinjamkan</button>' +
+          '<button type="button" data-inv="tampil" data-id="' + esc_(it.id) + '">' + (it.tampil ? "🙈 Sembunyikan" : "👁 Tampilkan") + '</button>' +
+          '<button type="button" data-inv="edit" data-id="' + esc_(it.id) + '">✏️ Edit</button>' +
+          '<button class="entry-del" data-id="' + esc_(it.id) + '" data-node="inventaris" title="Hapus">✕ Hapus</button>' +
+        '</div></div>';
+    }).join("");
+  }
+
+  /* ---- Pengajuan pinjam dari warga ---- */
+  function pengRender_(){
+    var box = document.getElementById("listPeng"), baru = pengData_.filter(function(p){ return (p.status || "Baru") === "Baru"; }).length;
+    document.getElementById("invPengPill").innerHTML = baru ? '<span class="pill">' + baru + ' baru</span>' : "";
+    var tab = document.getElementById("tabInvBtn");
+    if (tab) tab.innerHTML = '<span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-package"/></svg></span><span class="tb-l">Inventaris</span>' + (baru ? '<span class="pill">' + baru + '</span>' : "");
+    if (!pengData_.length) { box.innerHTML = '<div class="empty-note">Belum ada pengajuan.</div>'; return; }
+    box.innerHTML = pengData_.map(function(p){
+      var st = p.status || "Baru", kls = st === "Disetujui" ? "baik" : st === "Ditolak" ? "rusak" : "ringan";
+      var bar = p.barang || {}, barIds = Object.keys(bar);
+      var barTxt = barIds.map(function(id){ return esc_(bar[id].nama) + " ×" + esc_(bar[id].jumlah); }).join(", ");
+      var aksi = st === "Baru"
+        ? '<button type="button" data-peng="setuju" data-id="' + esc_(p.id) + '">✅ Setujui</button><button type="button" data-peng="tolak" data-id="' + esc_(p.id) + '">✖ Tolak</button>'
+        : "";
+      return '<div class="inv-row"><div class="inv-thumb">📋</div><div class="inv-body">' +
+        '<h4>' + esc_(p.nama) + ' <small style="color:var(--muted);font-weight:700">' + esc_(p.rumah || "") + '</small></h4>' +
+        '<div class="inv-tags"><span class="inv-tag ' + kls + '">' + esc_(st) + '</span><span class="inv-tag">Pakai ' + tglID_(p.tanggal) + (p.jam ? " · " + esc_(p.jam) : "") + '</span></div>' +
+        '<p>' + (barTxt ? "📦 " + barTxt : "") + (p.lain ? (barTxt ? "<br>" : "") + "🏟️ " + esc_(p.lain) : "") + '</p>' +
+        '<p style="margin-top:3px">🎯 ' + esc_(p.keperluan || "-") + (p.hp ? "<br>📱 " + esc_(p.hp) : "") + (p.alasan ? "<br>Alasan: " + esc_(p.alasan) : "") + '</p></div>' +
+        '<div class="inv-act">' + aksi +
+          (p.hp ? '<button type="button" data-peng="wa" data-id="' + esc_(p.id) + '">💬 WhatsApp</button>' : "") +
+          '<button class="entry-del" data-id="' + esc_(p.id) + '" data-node="pengajuanPinjam" title="Hapus">✕ Hapus</button></div></div>';
+    }).join("");
+  }
+
+  db.ref("inventaris").on("value", function(snap){
+    var val = snap.val() || {};
+    invData_ = Object.keys(val).map(function(k){ return Object.assign({ id: k }, val[k]); });
+    invData_.sort(function(a, b){ return String(a.nama || "").localeCompare(String(b.nama || ""), "id"); });
+    invLoaded_ = true; invRender_(); invSync_(); pengRender_();
+  }, function(){ document.getElementById("listInv").innerHTML = '<div class="empty-note">Gagal memuat inventaris. Pastikan Rules Firebase sudah diperbarui.</div>'; });
+  db.ref("inventarisPublik").on("value", function(snap){ pubData_ = snap.val() || {}; pubLoaded_ = true; invSync_(); }, function(){});
+  db.ref("pengajuanPinjam").on("value", function(snap){
+    var val = snap.val() || {};
+    pengData_ = Object.keys(val).map(function(k){ return Object.assign({ id: k }, val[k]); });
+    pengData_.sort(function(a, b){ var sa = (a.status || "Baru") === "Baru" ? 0 : 1, sb = (b.status || "Baru") === "Baru" ? 0 : 1; return sa - sb || (b.createdAt || 0) - (a.createdAt || 0); });
+    pengRender_();
+  }, function(){ document.getElementById("listPeng").innerHTML = '<div class="empty-note">Gagal memuat pengajuan. Pastikan Rules Firebase sudah diperbarui.</div>'; });
+
+  document.getElementById("invCari").addEventListener("input", invRender_);
+  document.getElementById("invFilter").addEventListener("change", invRender_);
+
+  function invSetTampilSemua_(nilai){
+    if (!invData_.length) { showToast("Belum ada barang."); return; }
+    if (!confirm(nilai ? "Tampilkan SEMUA barang ke warga?" : "Sembunyikan SEMUA barang dari warga?")) return;
+    var upd = {}; invData_.forEach(function(it){ upd["inventaris/" + it.id + "/tampil"] = nilai; });
+    db.ref().update(upd).then(function(){ showToast(nilai ? "Semua barang kini tampil ke warga." : "Semua barang disembunyikan."); }).catch(gagalToast_);
+  }
+  document.getElementById("btnInvPubSemua").addEventListener("click", function(){ invSetTampilSemua_(true); });
+  document.getElementById("btnInvSembunyiSemua").addEventListener("click", function(){ invSetTampilSemua_(false); });
+
+  function dialogPinjam_(it){
+    var sisa = tersedia_(it);
+    if (sisa < 1) { showToast("Stok tersedia habis" + (it.kondisi === "Rusak" ? " (barang berkondisi rusak)." : ".")); return; }
+    invDialog_("🤝 Pinjamkan: " + esc_(it.nama),
+      '<div class="field"><label>Nama peminjam</label><input id="dpNama" placeholder="Contoh: Pak Bimba (E2 No.1)"></div>' +
+      '<div class="field"><label>Blok / No. rumah (opsional)</label><input id="dpRumah" placeholder="E2 No.1"></div>' +
+      '<div class="field"><label>No. WhatsApp (opsional)</label><input id="dpHp" type="tel" placeholder="08xxxxxxxxxx"></div>' +
+      '<div class="field"><label>Jumlah (tersedia ' + sisa + ')</label><input id="dpJml" type="number" min="1" max="' + sisa + '" value="1"></div>' +
+      '<div class="field"><label>Tanggal pakai</label><input id="dpPakai" type="date" value="' + tglWIB_() + '"></div>' +
+      '<div class="field"><label>Rencana kembali</label><input id="dpKembali" type="date" value="' + tglWIB_() + '"></div>',
+      "Catat Peminjaman", function(ov){
+        var nama = ov.querySelector("#dpNama").value.trim(), jml = parseInt(ov.querySelector("#dpJml").value, 10);
+        if (!nama) { showToast("Nama peminjam wajib diisi."); return false; }
+        if (!(jml >= 1) || jml > sisa) { showToast("Jumlah harus 1 sampai " + sisa + "."); return false; }
+        var key = db.ref("inventaris/" + it.id + "/dipinjam").push().key;
+        db.ref("inventaris/" + it.id + "/dipinjam/" + key).set({ nama: nama, rumah: ov.querySelector("#dpRumah").value.trim(), hp: ov.querySelector("#dpHp").value.trim(), jumlah: jml, tanggal: ov.querySelector("#dpPakai").value || tglWIB_(), kembali: ov.querySelector("#dpKembali").value || "" })
+          .then(function(){ showToast("Peminjaman dicatat."); }).catch(gagalToast_);
+      });
+  }
+  function dialogKembali_(it, l){
+    invDialog_("↩ Barang dikembalikan: " + esc_(it.nama),
+      '<p class="sub" style="margin:0 0 10px">Peminjam: <b>' + esc_(l.nama || "-") + '</b> · ' + esc_(l.jumlah) + ' ' + esc_(it.satuan || "unit") + '</p>' +
+      '<div class="field"><label>Tanggal kembali</label><input id="dkTgl" type="date" value="' + tglWIB_() + '"></div>' +
+      '<div class="field"><label>Kondisi saat kembali</label><select id="dkKondisi"><option value="Baik">Baik / lengkap</option><option value="Rusak Ringan">Ada yang rusak ringan</option><option value="Rusak">Ada yang rusak</option><option value="Hilang">Ada yang hilang</option></select></div>' +
+      '<div class="field"><label>Jumlah rusak / hilang (0 jika tidak ada)</label><input id="dkJml" type="number" min="0" max="' + (parseInt(l.jumlah, 10) || 0) + '" value="0"></div>' +
+      '<div class="field"><label>Catatan</label><textarea id="dkCatatan" placeholder="Contoh: 1 kursi patah kaki, warga akan mengganti"></textarea></div>',
+      "Simpan & Tandai Kembali", function(ov){
+        var kondisi = ov.querySelector("#dkKondisi").value, jb = parseInt(ov.querySelector("#dkJml").value, 10) || 0, maks = parseInt(l.jumlah, 10) || 0;
+        if (jb < 0 || jb > maks) { showToast("Jumlah rusak/hilang maksimal " + maks + "."); return false; }
+        if (kondisi !== "Baik" && jb < 1) { showToast("Isi jumlah yang rusak/hilang (minimal 1)."); return false; }
+        if (kondisi === "Baik") jb = 0;
+        var tglK = ov.querySelector("#dkTgl").value || tglWIB_(), rid = db.ref("inventaris/" + it.id + "/riwayat").push().key, upd = {};
+        upd["inventaris/" + it.id + "/dipinjam/" + l.id] = null;
+        upd["inventaris/" + it.id + "/riwayat/" + rid] = { nama: l.nama || "", rumah: l.rumah || "", hp: l.hp || "", jumlah: parseInt(l.jumlah, 10) || 0, tanggalPinjam: l.tanggal || "", rencanaKembali: l.kembali || "", tanggalKembali: tglK, kondisi: kondisi, jumlahBermasalah: jb, catatan: ov.querySelector("#dkCatatan").value.trim() };
+        if (kondisi === "Hilang") upd["inventaris/" + it.id + "/jumlah"] = Math.max(0, (parseInt(it.jumlah, 10) || 0) - jb);
+        else if ((kondisi === "Rusak" || kondisi === "Rusak Ringan") && it.kondisi !== "Rusak") upd["inventaris/" + it.id + "/kondisi"] = kondisi;
+        db.ref().update(upd).then(function(){ showToast(kondisi === "Baik" ? "Barang dikembalikan, tercatat di riwayat." : "Dikembalikan dengan catatan, kondisi barang diperbarui."); }).catch(gagalToast_);
+      });
+  }
+  function editBarang_(it){
+    invEditId_ = it.id; invFotoData_ = null; invFotoLama_ = it.foto || "";
+    document.getElementById("invNama").value = it.nama || "";
+    document.getElementById("invKategori").value = it.kategori || "Lainnya";
+    document.getElementById("invKondisi").value = it.kondisi || "Baik";
+    document.getElementById("invJumlah").value = it.jumlah != null ? it.jumlah : 1;
+    document.getElementById("invSatuan").value = it.satuan || "unit";
+    document.getElementById("invLokasi").value = it.lokasi || "";
+    document.getElementById("invPJ").value = it.penanggungJawab || "";
+    document.getElementById("invSumber").value = it.sumber || "Kas RT";
+    document.getElementById("invTahun").value = it.tahun || "";
+    document.getElementById("invCatatan").value = it.catatan || "";
+    document.getElementById("invTampil").checked = !!it.tampil;
+    if (it.foto) { document.getElementById("invPreview").src = it.foto; document.getElementById("invPreviewWrap").style.display = "block"; }
+    else document.getElementById("invPreviewWrap").style.display = "none";
+    document.getElementById("invFormJudul").textContent = "Edit Barang Inventaris";
+    document.getElementById("btnSimpanInv").textContent = "💾 Simpan Perubahan";
+    document.getElementById("btnBatalInv").style.display = "";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  document.getElementById("listInv").addEventListener("click", function(e){
+    var b = e.target.closest("button[data-inv]");
+    if (!b) return;
+    var id = b.getAttribute("data-id"), aksi = b.getAttribute("data-inv");
+    var it = invData_.filter(function(x){ return x.id === id; })[0];
+    if (!it) return;
+    if (aksi === "pinjam") dialogPinjam_(it);
+    else if (aksi === "kembali") { var l = loansOf_(it).filter(function(x){ return x.id === b.getAttribute("data-loan"); })[0]; if (l) dialogKembali_(it, l); }
+    else if (aksi === "tampil") db.ref("inventaris/" + id + "/tampil").set(!it.tampil).catch(gagalToast_);
+    else if (aksi === "edit") editBarang_(it);
+  });
+
+  function pesanWaPeng_(p){
+    var st = p.status || "Baru", bar = p.barang || {}, brg = Object.keys(bar).map(function(id){ return bar[id].nama + " x" + bar[id].jumlah; }).join(", ");
+    var isi = (brg || p.lain || "fasilitas") + (brg && p.lain ? ", " + p.lain : "");
+    var sapa = "Halo " + (p.nama || "Bapak/Ibu") + ", pengajuan pinjam " + isi + " untuk tanggal " + tglID_(p.tanggal) + " ";
+    if (st === "Disetujui") return sapa + "*DISETUJUI*. Barang bisa diambil sesuai kesepakatan dengan pengurus. Mohon dijaga dan dikembalikan tepat waktu. Terima kasih. - Pengurus RT 08";
+    if (st === "Ditolak") return sapa + "belum dapat kami setujui." + (p.alasan ? " Alasan: " + p.alasan + "." : "") + " Terima kasih. - Pengurus RT 08";
+    return sapa + "sudah kami terima dan sedang diproses. - Pengurus RT 08";
+  }
+  document.getElementById("listPeng").addEventListener("click", function(e){
+    var b = e.target.closest("button[data-peng]");
+    if (!b) return;
+    var p = pengData_.filter(function(x){ return x.id === b.getAttribute("data-id"); })[0], aksi = b.getAttribute("data-peng");
+    if (!p) return;
+    if (aksi === "wa") { window.open("https://wa.me/" + waNo_(p.hp) + "?text=" + encodeURIComponent(pesanWaPeng_(p)), "_blank", "noopener"); return; }
+    if (aksi === "tolak") {
+      invDialog_("✖ Tolak pengajuan", '<div class="field"><label>Alasan (opsional, ikut dikirim ke warga)</label><textarea id="dtAlasan" placeholder="Contoh: barang sedang dipakai kegiatan RT"></textarea></div>', "Tolak", function(ov){
+        db.ref("pengajuanPinjam/" + p.id).update({ status: "Ditolak", alasan: ov.querySelector("#dtAlasan").value.trim(), diprosesAt: firebase.database.ServerValue.TIMESTAMP })
+          .then(function(){ showToast("Pengajuan ditolak. Tekan WhatsApp untuk mengabari warga."); }).catch(gagalToast_);
+      });
+      return;
+    }
+    if (aksi === "setuju") {
+      var bar = p.barang || {}, ids = Object.keys(bar), upd = {}, masalah = [];
+      ids.forEach(function(id){
+        var it = invData_.filter(function(x){ return x.id === id; })[0], q = parseInt(bar[id].jumlah, 10) || 0;
+        if (!it) { masalah.push(bar[id].nama + " sudah tidak ada di inventaris"); return; }
+        if (q > tersedia_(it)) { masalah.push(it.nama + ": diminta " + q + ", tersedia " + tersedia_(it)); return; }
+        var key = db.ref("inventaris/" + id + "/dipinjam").push().key;
+        upd["inventaris/" + id + "/dipinjam/" + key] = { nama: p.nama || "", rumah: p.rumah || "", hp: p.hp || "", jumlah: q, tanggal: p.tanggal || tglWIB_(), kembali: p.tanggal || "", pengajuanId: p.id };
+      });
+      if (masalah.length) { alert("Tidak bisa disetujui:\n- " + masalah.join("\n- ")); return; }
+      if (!confirm("Setujui pengajuan " + (p.nama || "") + (ids.length ? " dan catat peminjaman barang (stok berkurang)?" : "?"))) return;
+      upd["pengajuanPinjam/" + p.id + "/status"] = "Disetujui";
+      upd["pengajuanPinjam/" + p.id + "/diprosesAt"] = firebase.database.ServerValue.TIMESTAMP;
+      db.ref().update(upd).then(function(){ showToast("Disetujui" + (ids.length ? " & peminjaman dicatat." : ".") + " Tekan WhatsApp untuk mengabari warga."); }).catch(gagalToast_);
+    }
+  });
+
+  document.getElementById("btnInvCsv").addEventListener("click", function(){
+    var list = invFiltered_();
+    if (!list.length) { showToast("Tidak ada data untuk diunduh."); return; }
+    var q = function(v){ return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; };
+    var rows = [["Nama","Kategori","Total","Satuan","Tersedia","Kondisi","Lokasi Simpan","Penanggung Jawab","Sumber","Tahun","Sedang Dipinjam","Tampil ke Warga","Catatan"]];
+    list.forEach(function(it){ rows.push([it.nama, it.kategori, it.jumlah, it.satuan, tersedia_(it), it.kondisi, it.lokasi, it.penanggungJawab, it.sumber, it.tahun, loansOf_(it).map(function(l){ return l.nama + " x" + l.jumlah; }).join("; "), it.tampil ? "Ya" : "Tidak", it.catatan]); });
+    var csv = "\ufeff" + rows.map(function(r){ return r.map(q).join(","); }).join("\r\n");
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    a.download = "inventaris-rt08-" + tglWIB_() + ".csv";
+    document.body.appendChild(a); a.click(); a.remove();
   });
 
   /* ---- UMKM ---- */
