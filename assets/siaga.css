@@ -384,7 +384,9 @@ body{padding-bottom:calc(104px + env(safe-area-inset-bottom))}
 .service-card h3,.umkm-body h3{font-size:18px}
 .finance-card strong{font:800 28px/1.1 var(--font-head);color:var(--navy-900);letter-spacing:-.02em}
 .finance-card span{font-size:13px}
-.umkm-cover{background:linear-gradient(145deg,var(--navy-800),var(--navy-950))!important;color:var(--gold-400)}
+.umkm-cover:not(.has-foto){background:linear-gradient(145deg,var(--navy-800),var(--navy-950))!important;color:var(--gold-400)}
+.umkm-cover.has-foto{background:#f2f5fb!important;padding:0;overflow:hidden}
+.umkm-cover.has-foto img{width:100%;height:100%;object-fit:contain;display:block}
 .gallery-item{border-radius:var(--radius-lg);box-shadow:var(--shadow-sm)}
 .callout{background:linear-gradient(135deg,var(--gold-100),#fff);border:1px solid rgba(212,166,74,.45);border-radius:var(--radius-lg)}
 .timeline-item:before{background:var(--gold-500);box-shadow:0 0 0 6px var(--gold-100)}
@@ -659,3 +661,12 @@ main{animation:sgIn .35s var(--ease) both}
   *,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
 @media print{.sg-header,.sg-bottom,.sg-footer,.sg-layer{display:none!important}body{padding:0}}
+
+/* ---- Penyederhanaan menu ---- */
+.sg-lapor-btn{padding:9px 16px;min-height:0;font-size:13.5px;gap:7px;white-space:nowrap}
+.sg-lapor-btn .i{width:16px;height:16px}
+@media(max-width:1023px){.sg-lapor-btn{display:none}}
+.sg-bottom{grid-template-columns:repeat(5,1fr)}
+.hm-hero{padding-bottom:56px!important}
+.hm-hero + .container{margin-top:28px}
+@media(min-width:861px){.sg-footer__grid{grid-template-columns:1.6fr 1fr}}
