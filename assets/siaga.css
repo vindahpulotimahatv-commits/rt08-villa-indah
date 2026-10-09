@@ -668,3 +668,4 @@ main{animation:sgIn .35s var(--ease) both}
 @media(max-width:1023px){.sg-lapor-btn{display:none}}
 .sg-bottom{grid-template-columns:repeat(5,1fr)}
 @media(min-width:861px){.sg-footer__grid{grid-template-columns:1.6fr 1fr}}
+@media(min-width:1024px){.hm-welcome{grid-column:1/-1}}
