@@ -1,0 +1,222 @@
+<!DOCTYPE html><html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0A1B32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="icon-192.png">
+<title>Masukan Warga | PANDU</title>
+<style>
+:root{--navy:#123a6b;--gold:#d5a62b;--ink:#12213f;--muted:#59657f;--line:#dbe2f0;--red:#c74444;--ok:#1f8a4c}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  background:linear-gradient(180deg,rgba(6,16,36,.78),rgba(8,20,44,.6) 40%,rgba(10,25,56,.9)),url("assets/bg-navy.jpg") center top/cover no-repeat fixed,#0a1b32;padding-bottom:40px}
+a{color:inherit;text-decoration:none}button,input,textarea{font:inherit}
+.wrap{width:min(760px,calc(100% - 28px));margin:auto}
+header{position:sticky;top:0;z-index:50;background:rgba(8,20,44,.94);backdrop-filter:blur(14px);border-bottom:1px solid rgba(213,166,43,.28)}
+.bar{display:flex;align-items:center;justify-content:space-between;min-height:58px;gap:10px;color:#fff}
+.bar b{font-size:17px}.bar small{display:block;color:var(--gold);font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:800}
+.back{border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:8px 14px;font-weight:800;font-size:13px;color:#fff}
+.tabs{display:flex;gap:8px;margin:18px 0 14px}
+.tab{flex:1;border:0;border-radius:14px;padding:13px 8px;font-weight:900;font-size:14px;cursor:pointer;background:rgba(255,255,255,.12);color:#fff}
+.tab.on{background:linear-gradient(135deg,#e8c05a,#c49325);color:#0b2144}
+.card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 14px 40px rgba(3,10,26,.3);margin-bottom:14px}
+h2{margin:0 0 4px;font-size:18px}h3{margin:20px 0 4px;font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:var(--navy)}
+.sub{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.55}
+.note{font-size:11.5px;color:var(--muted);margin:12px 0 0;line-height:1.5}
+label.f{display:block;font-weight:800;font-size:14px;margin:16px 0 6px}
+textarea{width:100%;min-height:130px;padding:12px 14px;border:1.5px solid var(--line);border-radius:14px;font-size:15px;resize:vertical;line-height:1.5}
+textarea:focus{outline:none;border-color:var(--navy)}
+.cnt{text-align:right;font-size:11.5px;color:var(--muted);margin-top:3px}
+.q{padding:14px 0;border-top:1px solid #eef1f8}.q:first-of-type{border-top:0}
+.q>p{margin:0 0 9px;font-weight:700;font-size:14px;line-height:1.45}
+.q>p em{font-style:normal;color:var(--muted);font-weight:600;font-size:12px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts input{position:absolute;opacity:0;pointer-events:none}
+.opts label{position:relative;border:1.5px solid var(--line);border-radius:12px;padding:9px 13px;font-size:13.5px;font-weight:700;cursor:pointer;background:#fff;user-select:none}
+.opts input:checked+span,.opts label.sel{}
+.opts label:has(input:checked){border-color:var(--gold);background:#fff8e6;color:#5a4306}
+.opts label:has(input:focus-visible){outline:2px solid var(--navy)}
+.scale{display:grid;gap:6px}
+.scale.s5{grid-template-columns:repeat(5,1fr)}.scale.s11{grid-template-columns:repeat(11,1fr)}
+.scale label{text-align:center;padding:10px 0}
+.ends{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:5px}
+.q.bad{background:#fff3f3;border-radius:12px;padding-left:10px;padding-right:10px}
+.q.bad>p::after{content:" — wajib dijawab";color:var(--red);font-size:12px;font-weight:800}
+.btn{border:0;border-radius:14px;padding:14px 18px;font-weight:900;font-size:15px;cursor:pointer;width:100%;margin-top:16px;background:linear-gradient(135deg,#e8c05a,#c49325);color:#0b2144}
+.btn:disabled{opacity:.6;cursor:default}
+.msg{padding:12px 14px;border-radius:12px;font-size:13.5px;line-height:1.5;margin-top:12px}
+.msg.err{background:#fff3f3;color:#9b1c1c}.msg.ok{background:#eefaf2;color:#146c3a}
+.thanks{text-align:center;padding:26px 8px}.thanks .big{font-size:46px}.thanks b{display:block;font-size:19px;margin:6px 0}
+.hide{display:none}
+@media(max-width:480px){.scale.s11{grid-template-columns:repeat(6,1fr)}}
+</style></head><body>
+<header><div class="wrap bar"><div><b>Masukan Warga</b><small>Kritik, Saran &amp; Survei</small></div><a class="back" href="index.html">← Beranda</a></div></header>
+
+<main class="wrap">
+  <div class="tabs" role="tablist">
+    <button class="tab on" id="tKS" role="tab" aria-selected="true">Kritik &amp; Saran</button>
+    <button class="tab" id="tSV" role="tab" aria-selected="false">Survei Aplikasi</button>
+  </div>
+
+  <!-- ===== KRITIK & SARAN ===== -->
+  <section id="pKS" class="card">
+    <h2>Kritik &amp; Saran untuk Pengurus RT</h2>
+    <p class="sub">Sampaikan penilaian Anda terhadap Pengurus RT sejak awal menjabat sampai sekarang. Pesan Anda <b>anonim</b> dan hanya bisa dibaca oleh pengurus.</p>
+    <form id="fKS" novalidate>
+      <label class="f" for="ksKritik">Kritik</label>
+      <textarea id="ksKritik" maxlength="1000" placeholder="Hal yang menurut Anda masih kurang atau perlu dibenahi dari Pengurus RT…"></textarea>
+      <div class="cnt"><span id="cK">0</span>/1000</div>
+      <label class="f" for="ksSaran">Saran</label>
+      <textarea id="ksSaran" maxlength="1000" placeholder="Masukan atau harapan Anda untuk Pengurus RT ke depan…"></textarea>
+      <div class="cnt"><span id="cS">0</span>/1000</div>
+      <div id="ksMsg"></div>
+      <button class="btn" id="ksBtn" type="submit">Kirim</button>
+    </form>
+    <div id="ksDone" class="thanks hide"><div class="big">🙏</div><b>Terima kasih atas masukan Anda</b><span class="sub">Kritik dan saran Anda sudah diterima pengurus.</span>
+      <button class="btn" id="ksLagi" type="button" style="max-width:260px">Kirim masukan lagi</button></div>
+  </section>
+
+  <!-- ===== SURVEI APLIKASI ===== -->
+  <section id="pSV" class="card hide">
+    <h2>Survei Aplikasi PANDU</h2>
+    <p class="sub">Bantu kami menyempurnakan aplikasi sebelum diluncurkan. Hanya sekitar 3 menit, <b>anonim</b>, dan hasilnya hanya dilihat pengurus.</p>
+    <form id="fSV" novalidate></form>
+    <div id="svDone" class="thanks hide"><div class="big">✅</div><b>Survei sudah terkirim</b><span class="sub">Terima kasih. Jawaban Anda sangat membantu menyempurnakan aplikasi ini.</span></div>
+  </section>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="config.js"></script>
+<script>
+var CFG = (typeof RT_CONFIG !== "undefined" && RT_CONFIG) ? RT_CONFIG : {};
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function simpanLokal(k, v){ try { localStorage.setItem(k, v); } catch (e) {} }
+function bacaLokal(k){ try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+/* ---------- Firebase ---------- */
+var db = null;
+(function(){
+  var c = CFG.firebaseConfig || {};
+  if (!(c.apiKey && c.databaseURL && c.appId) || typeof firebase === "undefined") return;
+  try { if (!firebase.apps.length) firebase.initializeApp(c); db = firebase.database(); } catch (e) { db = null; }
+})();
+var BELUM_SIAP = "Formulir belum aktif karena koneksi ke server belum dikonfigurasi. Silakan hubungi pengurus.";
+
+function pesanGagal(err){
+  if (err && /permission/i.test(String(err.code || err.message))) return "Pengiriman ditolak server. Aturan Firebase untuk formulir ini belum dipasang — hubungi pengurus.";
+  return "Gagal mengirim. Periksa koneksi internet lalu coba lagi.";
+}
+
+/* ---------- Tab ---------- */
+function pilihTab(ks){
+  $("tKS").classList.toggle("on", ks); $("tSV").classList.toggle("on", !ks);
+  $("tKS").setAttribute("aria-selected", ks); $("tSV").setAttribute("aria-selected", !ks);
+  $("pKS").classList.toggle("hide", !ks); $("pSV").classList.toggle("hide", ks);
+  try { history.replaceState(null, "", ks ? "#kritik-saran" : "#survei"); } catch (e) {}
+}
+$("tKS").onclick = function(){ pilihTab(true); };
+$("tSV").onclick = function(){ pilihTab(false); };
+if (location.hash === "#survei") pilihTab(false);
+
+/* ---------- Kritik & Saran ---------- */
+var JEDA_MS = 20000;
+function hitung(){ $("cK").textContent = $("ksKritik").value.length; $("cS").textContent = $("ksSaran").value.length; }
+$("ksKritik").addEventListener("input", hitung); $("ksSaran").addEventListener("input", hitung);
+$("fKS").addEventListener("submit", function(e){
+  e.preventDefault();
+  var kritik = $("ksKritik").value.trim(), saran = $("ksSaran").value.trim(), box = $("ksMsg");
+  box.innerHTML = "";
+  if (!kritik && !saran) { box.innerHTML = '<div class="msg err">Isi kritik atau saran terlebih dahulu.</div>'; return; }
+  if (!db) { box.innerHTML = '<div class="msg err">' + esc(BELUM_SIAP) + '</div>'; return; }
+  var terakhir = +bacaLokal("pandu.ks.terakhir") || 0;
+  if (Date.now() - terakhir < JEDA_MS) { box.innerHTML = '<div class="msg err">Mohon tunggu sebentar sebelum mengirim lagi.</div>'; return; }
+  var btn = $("ksBtn"); btn.disabled = true; btn.textContent = "Mengirim…";
+  db.ref("kritikSaran").push({ kritik: kritik, saran: saran, createdAt: firebase.database.ServerValue.TIMESTAMP }).then(function(){
+    simpanLokal("pandu.ks.terakhir", String(Date.now()));
+    $("fKS").classList.add("hide"); $("ksDone").classList.remove("hide");
+  }).catch(function(err){
+    box.innerHTML = '<div class="msg err">' + esc(pesanGagal(err)) + '</div>';
+  }).then(function(){ btn.disabled = false; btn.textContent = "Kirim"; });
+});
+$("ksLagi").onclick = function(){
+  $("ksKritik").value = ""; $("ksSaran").value = ""; hitung();
+  $("ksDone").classList.add("hide"); $("fKS").classList.remove("hide");
+};
+
+/* ---------- Survei Aplikasi ---------- */
+var SURVEI_VERSI = "v1";
+var FITUR = [["pengumuman","Pengumuman"],["agenda","Agenda"],["surat","Surat online"],["lapor","Lapor masalah"],["iuran","Bayar iuran"],["kas","Transparansi kas"],["umkm","UMKM"],["galeri","Galeri"],["chat","Chat"],["info","Sholat/cuaca/banjir"]];
+var TANYA = [
+  { bagian: "Kebiasaan sekarang" },
+  { id: "sumber", t: "Sekarang Anda paling sering mendapat informasi RT dari mana?", o: [["wa","Grup WhatsApp"],["papan","Papan pengumuman"],["tetangga","Dari tetangga"],["pengurus","Langsung dari pengurus"]] },
+  { id: "perangkat", t: "Perangkat yang Anda pakai", o: [["android","Android"],["iphone","iPhone"],["keduanya","Keduanya"],["belum","Belum punya smartphone"]] },
+  { bagian: "Harapan" },
+  { id: "bantu", t: "Aplikasi warga seperti ini akan membantu saya.", skala: 5, ujung: ["Sangat tidak setuju","Sangat setuju"] },
+  { id: "fitur", t: "Fitur yang paling Anda butuhkan", em: "boleh pilih lebih dari satu", multi: FITUR },
+  { id: "khawatir", t: "Kekhawatiran Anda saat memakai aplikasi", o: [["teknologi","Kurang paham teknologi"],["privasi","Privasi data"],["error","Takut error"],["wa","Lebih nyaman WhatsApp"],["tidak","Tidak ada"]] },
+  { id: "bersedia", t: "Apakah Anda bersedia memakai aplikasi ini setelah diluncurkan?", o: [["ya","Ya"],["mungkin","Mungkin"],["belum","Belum yakin"],["tidak","Tidak"]] },
+  { id: "bantuan", t: "Bantuan yang Anda butuhkan agar bisa memakainya", o: [["panduan","Panduan singkat"],["sosialisasi","Sosialisasi tatap muka"],["dibantu","Dibantu pengurus"],["tidak","Tidak perlu"]] },
+  { bagian: "Penilaian setelah mencoba" },
+  { id: "tampilan", t: "Tampilan nyaman dan mudah dipahami.", skala: 5, ujung: ["Sangat tidak setuju","Sangat setuju"] },
+  { id: "tulisan", t: "Menu dan tulisan mudah dibaca.", skala: 5, ujung: ["Sangat tidak setuju","Sangat setuju"] },
+  { id: "kendala", t: "Bagian yang membingungkan atau kendala yang Anda temui", em: "boleh dikosongkan jika tidak ada", teks: true },
+  { id: "nps", t: "Seberapa besar kemungkinan Anda merekomendasikan aplikasi ini ke tetangga?", skala: 11, mulai: 0, ujung: ["Tidak mungkin","Sangat mungkin"] },
+  { id: "saran", t: "Saran untuk aplikasi", em: "boleh dikosongkan", teks: true }
+];
+
+function bangunSurvei(){
+  var h = "";
+  TANYA.forEach(function(q){
+    if (q.bagian) { h += '<h3>' + esc(q.bagian) + '</h3>'; return; }
+    h += '<div class="q" data-q="' + q.id + '"><p>' + esc(q.t) + (q.em ? ' <em>(' + esc(q.em) + ')</em>' : '') + '</p>';
+    if (q.o) {
+      h += '<div class="opts">' + q.o.map(function(o){ return '<label><input type="radio" name="' + q.id + '" value="' + o[0] + '"><span>' + esc(o[1]) + '</span></label>'; }).join("") + '</div>';
+    } else if (q.multi) {
+      h += '<div class="opts">' + q.multi.map(function(o){ return '<label><input type="checkbox" name="' + q.id + '" value="' + o[0] + '"><span>' + esc(o[1]) + '</span></label>'; }).join("") + '</div>';
+    } else if (q.skala) {
+      var m = (q.mulai != null ? q.mulai : 1), a = "";
+      for (var i = m; i < m + q.skala; i++) a += '<label><input type="radio" name="' + q.id + '" value="' + i + '"><span>' + i + '</span></label>';
+      h += '<div class="opts scale s' + q.skala + '">' + a + '</div><div class="ends"><span>' + esc(q.ujung[0]) + '</span><span>' + esc(q.ujung[1]) + '</span></div>';
+    } else if (q.teks) {
+      h += '<textarea name="' + q.id + '" maxlength="500" style="min-height:90px"></textarea>';
+    }
+    h += '</div>';
+  });
+  h += '<div id="svMsg"></div><button class="btn" id="svBtn" type="submit">Kirim Survei</button><p class="note">Survei hanya bisa diisi satu kali per perangkat.</p>';
+  $("fSV").innerHTML = h;
+}
+bangunSurvei();
+if (bacaLokal("pandu.survei." + SURVEI_VERSI) === "1") { $("fSV").classList.add("hide"); $("svDone").classList.remove("hide"); }
+
+$("fSV").addEventListener("submit", function(e){
+  e.preventDefault();
+  var f = $("fSV"), data = {}, kosong = null;
+  Array.prototype.forEach.call(f.querySelectorAll(".q"), function(el){ el.classList.remove("bad"); });
+  TANYA.forEach(function(q){
+    if (q.bagian) return;
+    var el = f.querySelector('.q[data-q="' + q.id + '"]'), ok = true;
+    if (q.o || q.skala) {
+      var r = f.querySelector('input[name="' + q.id + '"]:checked');
+      if (r) data[q.id] = q.skala ? +r.value : r.value; else ok = false;
+    } else if (q.multi) {
+      var cs = f.querySelectorAll('input[name="' + q.id + '"]:checked');
+      if (cs.length) { data[q.id] = {}; Array.prototype.forEach.call(cs, function(c){ data[q.id][c.value] = true; }); } else ok = false;
+    } else if (q.teks) {
+      data[q.id] = f.querySelector('textarea[name="' + q.id + '"]').value.trim();
+    }
+    if (!ok) { el.classList.add("bad"); if (!kosong) kosong = el; }
+  });
+  var box = $("svMsg"); box.innerHTML = "";
+  if (kosong) { box.innerHTML = '<div class="msg err">Masih ada pertanyaan yang belum dijawab.</div>'; kosong.scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+  if (!db) { box.innerHTML = '<div class="msg err">' + esc(BELUM_SIAP) + '</div>'; return; }
+  data.versi = SURVEI_VERSI;
+  data.createdAt = firebase.database.ServerValue.TIMESTAMP;
+  var btn = $("svBtn"); btn.disabled = true; btn.textContent = "Mengirim…";
+  db.ref("surveiApp").push(data).then(function(){
+    simpanLokal("pandu.survei." + SURVEI_VERSI, "1");
+    f.classList.add("hide"); $("svDone").classList.remove("hide"); window.scrollTo(0, 0);
+  }).catch(function(err){
+    box.innerHTML = '<div class="msg err">' + esc(pesanGagal(err)) + '</div>'; btn.disabled = false; btn.textContent = "Kirim Survei";
+  });
+});
+</script>
+</body></html>

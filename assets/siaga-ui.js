@@ -118,6 +118,8 @@ var PAGES=[
  ["Kontak Penting","kontak.html","phone","kontak telepon whatsapp pengurus ketua sekretaris bendahara keamanan"],
  ["Live Chat","livechat.html","message-circle","chat tanya asisten admin"],
  ["Berita Terkini","berita.html","newspaper","berita bekasi"],
+ ["Info Harian","info-harian.html","calendar-days","jadwal sholat adzan cuaca hujan banjir peringatan"],
+ ["Kritik, Saran & Survei","masukan.html","message-circle","kritik saran masukan survei aplikasi pengurus"],
  ["Bayar Iuran","bayar.html","credit-card","iuran bayar transfer bulanan"],
  ["Hiburan Radio","hiburan.html","sparkles","hiburan radio musik"]
 ];

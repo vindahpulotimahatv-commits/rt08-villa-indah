@@ -281,6 +281,7 @@ textarea{min-height:76px;resize:vertical}
     <button class="tab-btn" data-tab="galeri" aria-label="Galeri" title="Galeri"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-images"/></svg></span><span class="tb-l">Galeri</span></button>
     <button class="tab-btn" data-tab="umkm" id="tabUmkmBtn" aria-label="UMKM" title="UMKM"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-store"/></svg></span><span class="tb-l">UMKM</span></button>
     <button class="tab-btn" data-tab="pembukuan" aria-label="Pembukuan Bendahara" title="Pembukuan Bendahara"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-wallet"/></svg></span><span class="tb-l">Pembukuan</span></button>
+    <button class="tab-btn" data-tab="masukan" aria-label="Masukan Warga" title="Masukan Warga"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-message-circle"/></svg></span><span class="tb-l">Masukan</span></button>
   </div>
 
   <!-- ===== PANEL LAPORAN WARGA ===== -->
@@ -409,6 +410,25 @@ textarea{min-height:76px;resize:vertical}
   </div>
 
   <!-- ===== PANEL UMKM ===== -->
+  <!-- ===== PANEL MASUKAN WARGA ===== -->
+  <div class="panel" id="panel-masukan">
+    <div class="list-card">
+      <div class="list-title">Survei Aplikasi PANDU</div>
+      <p class="sub" style="padding:0 14px 6px;margin:0">Jawaban anonim dari halaman <b>masukan.html</b>. Hanya pengurus yang bisa melihat.</p>
+      <div id="svRingkas"><div class="empty-note">Memuat data...</div></div>
+      <div style="padding:4px 14px 12px"><button type="button" id="svCsv" style="border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:9px 14px;font-weight:800;font-size:13px;cursor:pointer">Unduh CSV survei</button></div>
+    </div>
+    <div class="list-card" style="margin-top:14px">
+      <div class="list-title">Kritik &amp; Saran untuk Pengurus <span id="ksJumlah"></span></div>
+      <div style="padding:0 14px 8px"><button type="button" id="ksCsv" style="border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:9px 14px;font-weight:800;font-size:13px;cursor:pointer">Unduh CSV kritik &amp; saran</button></div>
+      <div id="listKS"><div class="empty-note">Memuat data...</div></div>
+    </div>
+    <div class="list-card" style="margin-top:14px">
+      <div class="list-title">Jawaban Teks Survei (kendala &amp; saran aplikasi)</div>
+      <div id="listSVteks"><div class="empty-note">Memuat data...</div></div>
+    </div>
+  </div>
+
   <div class="panel" id="panel-umkm">
     <div class="list-card" style="margin-bottom:18px">
       <div class="list-title">📥 Pengajuan Usaha Masuk <span id="pengBadge"></span></div>
@@ -688,6 +708,100 @@ function initDashboard_(){
         '</div>';
     }).join("");
   });
+
+  /* ---- MASUKAN: KRITIK & SARAN + SURVEI APLIKASI ---- */
+  (function(){
+    var LBL = {
+      sumber:{wa:"Grup WhatsApp",papan:"Papan pengumuman",tetangga:"Dari tetangga",pengurus:"Langsung dari pengurus"},
+      perangkat:{android:"Android",iphone:"iPhone",keduanya:"Keduanya",belum:"Belum punya smartphone"},
+      khawatir:{teknologi:"Kurang paham teknologi",privasi:"Privasi data",error:"Takut error",wa:"Lebih nyaman WhatsApp",tidak:"Tidak ada"},
+      bersedia:{ya:"Ya",mungkin:"Mungkin",belum:"Belum yakin",tidak:"Tidak"},
+      bantuan:{panduan:"Panduan singkat",sosialisasi:"Sosialisasi tatap muka",dibantu:"Dibantu pengurus",tidak:"Tidak perlu"},
+      fitur:{pengumuman:"Pengumuman",agenda:"Agenda",surat:"Surat online",lapor:"Lapor masalah",iuran:"Bayar iuran",kas:"Transparansi kas",umkm:"UMKM",galeri:"Galeri",chat:"Chat",info:"Sholat/cuaca/banjir"}
+    };
+    var JUDUL = {sumber:"Sumber informasi RT saat ini",perangkat:"Perangkat",fitur:"Fitur yang paling dibutuhkan",khawatir:"Kekhawatiran",bersedia:"Bersedia memakai setelah peluncuran",bantuan:"Bantuan yang dibutuhkan"};
+    var ksData = [], svData = [];
+    function tgl(ts){ if(!ts) return ""; var d=new Date(ts); return d.toLocaleDateString("id-ID",{day:"2-digit",month:"short",year:"numeric"})+" "+d.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"}); }
+    function rata(arr){ return arr.length ? (arr.reduce(function(a,b){return a+b;},0)/arr.length) : 0; }
+    function f1(n){ return (Math.round(n*10)/10).toString().replace(".",","); }
+    function csvEsc(v){ v = String(v == null ? "" : v); if (/^[=+\-@\t\r]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g,'""') + '"'; }
+    function unduh(nama, baris){
+      var isi = "﻿" + baris.map(function(r){ return r.map(csvEsc).join(","); }).join("\r\n");
+      var a = document.createElement("a"), url = URL.createObjectURL(new Blob([isi],{type:"text/csv;charset=utf-8"}));
+      a.href = url; a.download = nama; document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 500);
+    }
+    function toArr(val){ return Object.keys(val || {}).map(function(k){ return Object.assign({id:k}, val[k]); }).sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); }); }
+    function bar(label, n, total){
+      var pct = total ? Math.round(n*100/total) : 0;
+      return '<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700"><span>'+esc_(label)+'</span><span>'+n+' ('+pct+'%)</span></div><div style="height:8px;background:#eef1f8;border-radius:6px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:#c49325"></div></div></div>';
+    }
+    function kotak(judul, nilai, ket){ return '<div style="flex:1;min-width:120px;background:#f5f7fc;border-radius:14px;padding:12px;text-align:center"><div style="font-size:11px;font-weight:800;color:var(--muted)">'+esc_(judul)+'</div><div style="font-size:24px;font-weight:900">'+nilai+'</div><div style="font-size:11px;color:var(--muted)">'+esc_(ket)+'</div></div>'; }
+
+    function gambarSurvei(){
+      var box = document.getElementById("svRingkas"), n = svData.length;
+      if (!n) { box.innerHTML = '<div class="empty-note">Belum ada jawaban survei.</div>'; }
+      else {
+        var nps = svData.map(function(x){ return +x.nps; }).filter(function(v){ return !isNaN(v); });
+        var pro = nps.filter(function(v){return v>=9;}).length, det = nps.filter(function(v){return v<=6;}).length;
+        var skor = nps.length ? Math.round((pro-det)*100/nps.length) : 0;
+        var h = '<div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 14px">' +
+          kotak("Responden", n, "orang") +
+          kotak("Membantu", f1(rata(svData.map(function(x){return +x.bantu||0;}))), "dari 5") +
+          kotak("Tampilan", f1(rata(svData.map(function(x){return +x.tampilan||0;}))), "dari 5") +
+          kotak("Tulisan", f1(rata(svData.map(function(x){return +x.tulisan||0;}))), "dari 5") +
+          kotak("Skor rekomendasi", skor, "NPS (-100 s/d 100)") + '</div>';
+        ["sumber","perangkat","bersedia","khawatir","bantuan"].forEach(function(k){
+          var hit = {}; svData.forEach(function(x){ if (x[k]) hit[x[k]] = (hit[x[k]]||0)+1; });
+          h += '<div style="padding:8px 14px"><div style="font-size:12px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">'+JUDUL[k]+'</div>' +
+            Object.keys(LBL[k]).map(function(o){ return bar(LBL[k][o], hit[o]||0, n); }).join("") + '</div>';
+        });
+        var hf = {}; svData.forEach(function(x){ Object.keys(x.fitur||{}).forEach(function(o){ hf[o]=(hf[o]||0)+1; }); });
+        h += '<div style="padding:8px 14px"><div style="font-size:12px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">'+JUDUL.fitur+' (boleh pilih banyak)</div>' +
+          Object.keys(LBL.fitur).sort(function(a,b){ return (hf[b]||0)-(hf[a]||0); }).map(function(o){ return bar(LBL.fitur[o], hf[o]||0, n); }).join("") + '</div>';
+        box.innerHTML = h;
+      }
+      var teks = [];
+      svData.forEach(function(x){
+        if (x.kendala) teks.push({id:x.id, jenis:"Kendala", isi:x.kendala, t:x.createdAt});
+        if (x.saran) teks.push({id:x.id, jenis:"Saran", isi:x.saran, t:x.createdAt});
+      });
+      document.getElementById("listSVteks").innerHTML = teks.length ? teks.map(function(t){
+        return '<div class="entry-row"><div class="entry-body"><span class="entry-badge">'+t.jenis+'</span><p>'+esc_(t.isi)+'</p><p style="font-size:11.5px;color:var(--muted)">'+esc_(tgl(t.t))+'</p></div></div>';
+      }).join("") : '<div class="empty-note">Belum ada jawaban teks.</div>';
+    }
+    function gambarKS(){
+      document.getElementById("ksJumlah").textContent = ksData.length ? "(" + ksData.length + ")" : "";
+      var box = document.getElementById("listKS");
+      if (!ksData.length) { box.innerHTML = '<div class="empty-note">Belum ada kritik atau saran masuk.</div>'; return; }
+      box.innerHTML = ksData.map(function(it){
+        return '<div class="entry-row"><div class="entry-body">' +
+          (it.kritik ? '<span class="entry-badge">Kritik</span><p>'+esc_(it.kritik)+'</p>' : '') +
+          (it.saran ? '<span class="entry-badge" style="background:#e7f5ec;color:#146c3a">Saran</span><p>'+esc_(it.saran)+'</p>' : '') +
+          '<p style="font-size:11.5px;color:var(--muted)">'+esc_(tgl(it.createdAt))+'</p></div>' +
+          '<button class="entry-del" data-id="'+esc_(it.id)+'" data-node="kritikSaran" title="Hapus">✕</button></div>';
+      }).join("");
+    }
+    function gagal(id){ return function(err){ var b=document.getElementById(id); if(b) b.innerHTML='<div class="empty-note">Data tidak bisa dimuat ('+esc_(err && err.code || "error")+'). Pastikan aturan Firebase terbaru sudah dipasang.</div>'; }; }
+    db.ref("kritikSaran").on("value", function(snap){ ksData = toArr(snap.val()); gambarKS(); }, gagal("listKS"));
+    db.ref("surveiApp").on("value", function(snap){ svData = toArr(snap.val()); gambarSurvei(); }, function(e){ gagal("svRingkas")(e); gagal("listSVteks")(e); });
+
+    document.getElementById("ksCsv").addEventListener("click", function(){
+      if (!ksData.length) { showToast("Belum ada data untuk diunduh."); return; }
+      unduh("kritik-saran.csv", [["Waktu","Kritik","Saran"]].concat(ksData.slice().reverse().map(function(x){ return [tgl(x.createdAt), x.kritik, x.saran]; })));
+    });
+    document.getElementById("svCsv").addEventListener("click", function(){
+      if (!svData.length) { showToast("Belum ada data untuk diunduh."); return; }
+      var fk = Object.keys(LBL.fitur);
+      var kepala = ["Waktu","Sumber informasi","Perangkat","Membantu (1-5)","Fitur dibutuhkan","Kekhawatiran","Bersedia memakai","Bantuan dibutuhkan","Tampilan (1-5)","Tulisan (1-5)","Kendala","Rekomendasi (0-10)","Saran"];
+      unduh("survei-aplikasi.csv", [kepala].concat(svData.slice().reverse().map(function(x){
+        return [tgl(x.createdAt), LBL.sumber[x.sumber]||x.sumber, LBL.perangkat[x.perangkat]||x.perangkat, x.bantu,
+          fk.filter(function(o){ return x.fitur && x.fitur[o]; }).map(function(o){ return LBL.fitur[o]; }).join("; "),
+          LBL.khawatir[x.khawatir]||x.khawatir, LBL.bersedia[x.bersedia]||x.bersedia, LBL.bantuan[x.bantuan]||x.bantuan,
+          x.tampilan, x.tulisan, x.kendala, x.nps, x.saran];
+      })));
+    });
+  })();
 
   /* ---- LIVE CHAT ---- */
   (function(){

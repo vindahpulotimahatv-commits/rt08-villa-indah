@@ -63,6 +63,79 @@
         ".validate": "newData.hasChildren(['bulanKey','petugas','jumlah','rumahKeys','status']) && newData.child('jumlah').isNumber() && newData.child('jumlah').val() > 0 && (newData.child('status').val() == 'menunggu' || newData.child('status').val() == 'diterima')"
       }
     },
+    "kritikSaran": {
+      ".read": "auth != null && (auth.uid == 'DOHOhpaimmTY2oB1WxbNQg0BLIG2' || auth.uid == 'S1wZXXYJixTlw0VCQyvDf2eVXv23' || auth.uid == '1VnzbcWA8edwPLFNfASNnUK9bn22')",
+      "$id": {
+        ".write": "(!data.exists() && newData.exists()) || (auth != null && auth.uid == 'DOHOhpaimmTY2oB1WxbNQg0BLIG2' && !newData.exists())",
+        ".validate": "newData.hasChildren(['kritik','saran','createdAt']) && (newData.child('kritik').val().length + newData.child('saran').val().length) > 0",
+        "kritik": {
+          ".validate": "newData.isString() && newData.val().length <= 1000"
+        },
+        "saran": {
+          ".validate": "newData.isString() && newData.val().length <= 1000"
+        },
+        "createdAt": {
+          ".validate": "newData.val() === now"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "surveiApp": {
+      ".read": "auth != null && (auth.uid == 'DOHOhpaimmTY2oB1WxbNQg0BLIG2' || auth.uid == 'S1wZXXYJixTlw0VCQyvDf2eVXv23' || auth.uid == '1VnzbcWA8edwPLFNfASNnUK9bn22')",
+      "$id": {
+        ".write": "(!data.exists() && newData.exists()) || (auth != null && auth.uid == 'DOHOhpaimmTY2oB1WxbNQg0BLIG2' && !newData.exists())",
+        ".validate": "newData.hasChildren(['sumber','perangkat','bantu','fitur','khawatir','bersedia','bantuan','tampilan','tulisan','nps','versi','createdAt'])",
+        "sumber": {
+          ".validate": "newData.isString() && (newData.val() == 'wa' || newData.val() == 'papan' || newData.val() == 'tetangga' || newData.val() == 'pengurus')"
+        },
+        "perangkat": {
+          ".validate": "newData.isString() && (newData.val() == 'android' || newData.val() == 'iphone' || newData.val() == 'keduanya' || newData.val() == 'belum')"
+        },
+        "bantu": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5 && newData.val() % 1 == 0"
+        },
+        "fitur": {
+          "$f": {
+            ".validate": "newData.isBoolean() && newData.val() == true && ($f == 'pengumuman' || $f == 'agenda' || $f == 'surat' || $f == 'lapor' || $f == 'iuran' || $f == 'kas' || $f == 'umkm' || $f == 'galeri' || $f == 'chat' || $f == 'info')"
+          }
+        },
+        "khawatir": {
+          ".validate": "newData.isString() && (newData.val() == 'teknologi' || newData.val() == 'privasi' || newData.val() == 'error' || newData.val() == 'wa' || newData.val() == 'tidak')"
+        },
+        "bersedia": {
+          ".validate": "newData.isString() && (newData.val() == 'ya' || newData.val() == 'mungkin' || newData.val() == 'belum' || newData.val() == 'tidak')"
+        },
+        "bantuan": {
+          ".validate": "newData.isString() && (newData.val() == 'panduan' || newData.val() == 'sosialisasi' || newData.val() == 'dibantu' || newData.val() == 'tidak')"
+        },
+        "tampilan": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5 && newData.val() % 1 == 0"
+        },
+        "tulisan": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5 && newData.val() % 1 == 0"
+        },
+        "kendala": {
+          ".validate": "newData.isString() && newData.val().length <= 500"
+        },
+        "saran": {
+          ".validate": "newData.isString() && newData.val().length <= 500"
+        },
+        "nps": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10 && newData.val() % 1 == 0"
+        },
+        "versi": {
+          ".validate": "newData.isString() && newData.val().length <= 10"
+        },
+        "createdAt": {
+          ".validate": "newData.val() === now"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
     "appConfig": {
       ".read": "auth != null && auth.uid == 'DOHOhpaimmTY2oB1WxbNQg0BLIG2'",
       "testMode": {

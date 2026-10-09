@@ -148,10 +148,9 @@ const RT_CONFIG = {
   ],
 
   // ---------- Info Harian: jadwal sholat, cuaca, peringatan banjir ----------
-  // Koordinat lokasi perumahan. NILAI DI BAWAH MASIH PERKIRAAN (area Babelan) —
-  // ganti dengan titik asli: buka Google Maps, tekan lama pada lokasi perumahan,
-  // lalu salin dua angka koordinatnya (contoh -6.1900, 107.0400).
-  lokasi: { lat: -6.19, lon: 107.04, nama: "Villa Indah Pulo Timaha, Babelan" },
+  // Koordinat lokasi perumahan (lintang, bujur). Untuk mengganti: buka Google Maps,
+  // tekan lama pada lokasi, lalu salin dua angka koordinatnya.
+  lokasi: { lat: -6.1514865, lon: 107.0273682, nama: "Villa Indah Pulo Timaha, Babelan" },
   // Koreksi jadwal sholat dalam menit (mis. 2 untuk ihtiyat, 0 = tanpa koreksi).
   koreksiSholatMenit: 0,
   // Pesan manual dari pengurus yang tampil di atas halaman Info Harian
