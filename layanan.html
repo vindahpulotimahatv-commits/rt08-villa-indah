@@ -357,7 +357,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <form class="form-card" id="reportForm"><div class="form-grid">
   <div class="field"><label>Nama</label><input id="lpNama" required placeholder="Nama warga"></div>
   <div class="field"><label>Blok / Nomor Rumah</label><div id="lpRumah"></div></div>
-  <div class="field"><label>Kategori</label><select id="lpKategori"><option>Keamanan</option><option>Lampu Jalan</option><option>Sampah</option><option>Drainase</option><option>Jalan</option><option>Fasilitas Umum</option><option>Lainnya</option></select></div>
+  <div class="field"><label>Kategori</label><select id="lpKategori"><option>Keamanan</option><option>Lampu Jalan</option><option>Sampah</option><option>Drainase</option><option>Jalan</option><option>Fasilitas Umum</option><option>Menpora (Karang Taruna)</option><option>Lainnya</option></select><small id="lpTujuan" style="display:block;margin-top:6px;color:#59657f"></small></div>
   <div class="field"><label>Nomor WhatsApp</label><input id="lpWA" placeholder="08xxxxxxxxxx"></div>
   <div class="field full"><label>Keterangan</label><textarea id="lpKeterangan" required placeholder="Jelaskan laporan secara singkat dan jelas..."></textarea></div>
   <div class="field full"><label>Foto Bukti (opsional)</label><input type="file" id="lpFoto" accept="image/*" capture="environment"></div>
@@ -608,40 +608,42 @@ document.addEventListener("DOMContentLoaded",()=>{
       lpSimpanSaya_(kode, kategori);
       lpTampilKode_(kode);
 
-      // Laporan SELALU dikirim langsung ke chat Sekretaris (nomor otomatis dari config.js → waSekretaris).
-      const nomorKetua = RT_CONFIG.waSekretaris || RT_CONFIG.waKetua;
-      const linkKetua = rtWaLink(nomorKetua, pesan);
-      if(!linkKetua){
-        showToast("Nomor WhatsApp Sekretaris belum diatur admin di config.js.");
+      // Laporan dikirim langsung ke penanggung jawab sesuai kategori (lihat lpTujuan_ di bawah).
+      const tujuan = lpTujuan_(kategori);
+      const linkTujuan = rtWaLink(tujuan.wa, pesan);
+      if(!linkTujuan){
+        showToast("Nomor WhatsApp " + tujuan.label + " belum diatur admin di config.js.");
         return;
       }
-      window.open(linkKetua, "_blank", "noopener");
+      window.open(linkTujuan, "_blank", "noopener");
       form.reset();
       rtRumahReset("lpRumah");
       lpFotoData = null;
       document.getElementById("lpPreviewWrap").style.display = "none";
-
-      if(kategori === "Keamanan"){
-        // Khusus kategori Keamanan, tampilkan tombol lanjutan untuk kirim juga ke Keamanan.
-        document.getElementById("laporFollowup").style.display = "block";
-        const btnKeamanan = document.getElementById("btnKirimKeamanan");
-        btnKeamanan.onclick = () => {
-          const nomorKeamanan = RT_CONFIG.waKeamanan;
-          const linkKeamanan = rtWaLink(nomorKeamanan, pesan);
-          if(linkKeamanan){
-            window.open(linkKeamanan, "_blank", "noopener");
-            showToast("WhatsApp Keamanan terbuka — silakan tekan kirim.");
-          } else {
-            showToast("Nomor WhatsApp Keamanan belum diatur admin di config.js.");
-          }
-        };
-        showToast("Laporan dibuka ke WhatsApp Sekretaris. Lanjut kirim ke Keamanan di bawah ini.");
-      } else {
-        document.getElementById("laporFollowup").style.display = "none";
-        showToast("WhatsApp Sekretaris terbuka — silakan tekan kirim.");
-      }
+      document.getElementById("laporFollowup").style.display = "none";
+      lpTampilTujuan_();
+      showToast("WhatsApp " + tujuan.label + " terbuka — silakan tekan kirim.");
     });
   }
+});
+/* Penerima laporan per kategori. Nomor & nama diatur di config.js. */
+function lpTujuan_(kategori){
+  const C = RT_CONFIG, ketua = { wa: C.waKetua, label: "Pak RT" + (C.namaKetua ? " (" + C.namaKetua + ")" : "") };
+  const peta = {
+    "Keamanan":    { wa: C.waKeamanan,   label: "Pak " + (C.namaKeamanan   || "Keamanan") },
+    "Lampu Jalan": { wa: C.waLampuJalan, label: "Pak " + (C.namaLampuJalan || "Lampu Jalan") },
+    "Jalan":       { wa: C.waJalan,      label: "Pak " + (C.namaJalan      || "Jalan") },
+    "Menpora (Karang Taruna)": { wa: C.waMenpora, label: "Mas " + (C.namaMenpora || "Menpora") + " (Menpora)" }
+  };
+  return peta[kategori] || ketua;   // Drainase, Sampah, Fasilitas Umum, Lainnya -> Pak RT
+}
+function lpTampilTujuan_(){
+  const sel = document.getElementById("lpKategori"), el = document.getElementById("lpTujuan");
+  if(sel && el) el.textContent = "Laporan akan dikirim ke " + lpTujuan_(sel.value).label + " via WhatsApp.";
+}
+document.addEventListener("DOMContentLoaded", function(){
+  const sel = document.getElementById("lpKategori");
+  if(sel){ sel.addEventListener("change", lpTampilTujuan_); lpTampilTujuan_(); }
 });
 function showToast(msg){
   let t=document.querySelector(".toast");

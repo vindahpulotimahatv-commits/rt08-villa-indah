@@ -40,6 +40,13 @@ const RT_CONFIG = {
   waSekretaris: "6285643013072",
   waBendahara: "6285770053707",
   waKeamanan: "6285811522118",
+  // Penerima laporan warga per kategori (halaman Layanan > Lapor):
+  //   Keamanan -> waKeamanan | Lampu Jalan -> waLampuJalan | Jalan -> waJalan
+  //   Menpora (Karang Taruna) -> waMenpora
+  //   Drainase, Sampah, Fasilitas Umum, Lainnya -> waKetua (Pak RT)
+  waLampuJalan: "6282311309798",
+  waJalan: "6281381112532",
+  waMenpora: "6281932136575",   // Menpora / Karang Taruna (Mas Adin)
 
   // Nomor WhatsApp yang menerima pesan "Pendaftaran UMKM" dari halaman UMKM.
   // Kosongkan ("") untuk memakai nomor Ketua RT (waKetua).
@@ -50,6 +57,9 @@ const RT_CONFIG = {
   namaSekretaris: "Syarif",
   namaBendahara: "Hendyanto",
   namaKeamanan: "Jati",
+  namaLampuJalan: "Agus",
+  namaJalan: "Iqbal",
+  namaMenpora: "Adin",
 
   // Link undangan Grup WhatsApp warga (opsional, kosongkan jika belum ada)
   linkGrupWA: "",
