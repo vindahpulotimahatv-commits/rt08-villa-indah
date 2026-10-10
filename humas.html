@@ -324,6 +324,8 @@ function nomorWA_(n){
    ke link WhatsApp setelah data tersimpan. Kalau tetap diblokir, tampil tombol manual. */
 function bukaLinkWA_(link, waPre){
   try {
+    /* Di aplikasi Android (WebView) tidak ada jendela baru: arahkan langsung, aplikasi akan membuka WhatsApp. */
+    if (window.RTAndroid) { window.location.href = link; return true; }
     if (waPre && !waPre.closed) { waPre.location.href = link; return true; }
     var w = window.open(link, "_blank");
     return !!w;
@@ -338,7 +340,7 @@ function tampilTombolWA_(link, judul, sub, sudahTerbuka){
     '<div class="msheet-actions"><button class="btn btn-gold" id="btnBukaWA" type="button">💬 Kirim Pesan WhatsApp</button>' +
     '<button class="btn btn-brand" id="btnTutupWA" type="button">Selesai</button></div>';
   /* Sama seperti tombol kirim kwitansi: dibuka langsung dari tap petugas, jadi tidak diblokir browser. */
-  document.getElementById("btnBukaWA").addEventListener("click", function(){ window.open(link, "_blank", "noopener"); });
+  document.getElementById("btnBukaWA").addEventListener("click", function(){ if (window.RTAndroid) window.location.href = link; else window.open(link, "_blank", "noopener"); });
   document.getElementById("btnTutupWA").addEventListener("click", closeModal_);
   showModal_();
 }
@@ -864,7 +866,7 @@ function openModal_(r){
       '<div class="status-now" id="mdPaketInfo" style="display:none;margin-top:6px"></div></div>' +
     '<div class="mtotal"><span id="mdTotalLabel">Total Tagihan Bulan Ini</span><strong id="mdTotal">' + fmtRp_(RT_CONFIG.iuranBulanan) + '</strong></div>' +
     '<div class="mfield" id="mdTerimaWrap" style="display:none"><label>Uang yang diterima (Rp) — isi lebih besar bila warga membayar lebih, sisanya jadi saldo bulan depan</label><input type="number" id="mdDiterima" inputmode="numeric" min="0" step="1000"><div class="status-now" id="mdSaldoInfo" style="margin-top:6px"></div></div>' +
-    '<div class="mfield"><label>Nomor WhatsApp Warga (opsional — kalau kosong, kwitansi sementara ke Bendahara &amp; reminder ke Pak RT)</label><input type="tel" id="mdTelp" placeholder="08xxxxxxxxxx" value="' + esc_(telpAwal) + '"></div>' +
+    '<div class="mfield"><label>Nomor WhatsApp Warga (wajib diisi bila memilih Lainnya, supaya reminder terkirim ke warga)</label><input type="tel" id="mdTelp" placeholder="08xxxxxxxxxx" value="' + esc_(telpAwal) + '"></div>' +
     '<div class="mfield"><label>Cara Pembayaran</label><select id="mdMetode">' +
       '<option value="cash"' + (metodeAwal === "cash" ? " selected" : "") + '>Cash (Tunai)</option>' +
       '<option value="transfer"' + (metodeAwal === "transfer" ? " selected" : "") + '>Transfer</option>' +
@@ -998,6 +1000,13 @@ function simpanTransaksi_(){
     if (!telNorm_) { showToast("Nomor WhatsApp tidak valid. Contoh: 081234567890"); return; }
     telp = telNorm_;
   }
+  if (metode === "lainnya" && !telp) {
+    var tersimpan_ = nomorWAValid_(nomorWargaTersimpan_(currentRumah.key));
+    if (tersimpan_) { telp = tersimpan_; document.getElementById("mdTelp").value = tersimpan_; }
+    else if (!confirm("Nomor WhatsApp " + currentRumah.label + " belum ada.\n\nTanpa nomor, reminder TIDAK terkirim ke warga, hanya diteruskan ke Pak RT.\n\nOK = lanjut kirim ke Pak RT\nBatal = kembali & isi nomor WA warga dulu")) {
+      document.getElementById("mdTelp").focus(); return;
+    }
+  }
   var wrapBln_ = document.getElementById("mdBulanWrap");
   var nBulan_ = (wrapBln_ && wrapBln_.style.display !== "none") ? (parseInt(document.getElementById("mdJmlBulan").value, 10) || 1) : 1;
   if (nBulan_ > 1 && metode !== "lainnya") { simpanPaket_(metode, tambahan, telp, nBulan_); return; }
@@ -1048,7 +1057,7 @@ function simpanTransaksi_(){
   var kontakKey_ = currentRumah.key;
 
   var waPre = null;
-  if (metode === "lainnya") {
+  if (metode === "lainnya" && !window.RTAndroid) {
     try { waPre = window.open("", "_blank"); if (waPre) waPre.document.write("<p style='font-family:sans-serif'>Membuka WhatsApp...</p>"); } catch (e) { waPre = null; }
   }
   db.ref().update(updates).then(function(){
@@ -1205,7 +1214,7 @@ function tampilKirimTransfer_(payload, foto){
 }
 
 function kirimReminder_(payload, waPre){
-  var nomor = nomorWA_(payload.teleponWarga);
+  var nomor = nomorWA_(payload.teleponWarga || (currentRumah ? nomorWargaTersimpan_(currentRumah.key) : ""));
   var rek = rekeningTeks_();
   var link, judul, sub;
   if (nomor) {
