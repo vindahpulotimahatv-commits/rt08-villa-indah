@@ -41,7 +41,7 @@ panduan tersebut).
 
 ## Layanan → Surat PDF (siap tanda tangan & stempel)
 
-Empat layanan di `layanan.html` — **Surat Pengantar, Warga Baru, Warga Pindah, Pinjam Fasilitas** —
+Layanan surat di `layanan.html` — **Surat Pengantar, Surat Keterangan Domisili, Warga Baru, Warga Pindah, Pinjam Fasilitas** (dan surat pernyataan lainnya) —
 sekarang membuat **surat PDF** (lengkap kop RT, nomor, tabel data, ruang tanda tangan & stempel Ketua RT),
 bukan lagi sekadar pesan teks WhatsApp. Aspirasi, Dokumen RT, dan Lapor Lingkungan tetap lewat WhatsApp teks.
 

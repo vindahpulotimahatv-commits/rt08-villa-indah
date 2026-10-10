@@ -464,7 +464,10 @@
   function pernyataanAkhir(L, c, d, kalimat) {
     L.space(2);
     L.p(kalimat || "Demikian surat keterangan ini saya buat dengan penuh kesadaran.", { justify: true, after: 14 });
-    L.sign(null, { jabatan: "Yang menyatakan,", nama: d.nama }, c.tempat + ", ......................... " + c.tahun);
+    /* Kiri: "Mengetahui" Ketua RT (sesuai master). Kanan: yang menyatakan, sejajar dengan baris "Ketua,". */
+    L.sign({ jabatan: ["Mengetahui,", "RUKUN TETANGGA " + c.rt3 + ", RUKUN WARGA " + c.rw3, "PERUMAHAN " + c.kompleks.toUpperCase(), "Ketua,"], nama: c.ketua },
+           { jabatan: ["", "", "", "Yang menyatakan,"], nama: d.nama },
+           c.tempat + ", ......................... " + c.tahun, { size: 11 });
   }
   /* Tabel tamu: No | Nama Tamu | Status (Keluarga/Teman), selalu 5 baris seperti master */
   function tabelTamu(L, list) {
@@ -523,6 +526,47 @@
         L.p(d.keperluan, { x: L.ml + 14, w: L.w - 14, after: 6 });
         L.p("Demikian surat pengantar ini dibuat dan kami berikan kepada yang bersangkutan untuk digunakan sebagaimana mestinya, " +
             "kepada Dinas/Instansi/Lembaga/Perusahaan yang terkait agar dapat membantunya.", { justify: true, after: 14 });
+        L.sign({ jabatan: "Ketua RT " + c.rt3 + "/RW " + c.rw3, nama: c.ketua, kurung: true },
+               { jabatan: "Ketua RW " + c.rw3 + "/Dusun III", nama: c.ketuaRW, kurung: true },
+               c.tempat + ", ......................... " + c.tahun);
+      }
+    },
+
+    /* Surat Keterangan Domisili — surat resmi dari Ketua RT (pola sama seperti Surat Pengantar):
+       ditandatangani Ketua RT, mengetahui Ketua RW. Redaksi baku; sesuaikan bila ada master dari pengurus. */
+    suratDomisili: {
+      kode: "SD", judul: "Surat Keterangan Domisili", ikon: "📍", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
+      fields: [
+        { id: "nama", label: "Nama Lengkap", req: 1, full: 1 },
+        { id: "tempatLahir", label: "Tempat Lahir", req: 1 },
+        { id: "tglLahir", label: "Tanggal Lahir", type: "date", req: 1 },
+        { id: "jk", label: "Jenis Kelamin", type: "select", opts: JK, req: 1 },
+        { id: "agama", label: "Agama", type: "select", opts: AGAMA },
+        { id: "pekerjaan", label: "Pekerjaan" },
+        { id: "nik", label: "NIK (16 digit)", type: "nik", req: 1 },
+        { id: "hp", label: "Nomor WhatsApp", type: "tel", ph: "08xxxxxxxxxx" },
+        { id: "blok", label: "Blok / No. Rumah", type: "rumah", req: 1, full: 1 },
+        { id: "tglMulai", label: "Berdomisili di sini sejak (opsional)", type: "date" },
+        { id: "keperluan", label: "Keperluan Surat Domisili", type: "textarea", req: 1, full: 1, ph: "Contoh: Pengurusan KTP / KK / SKCK / pembukaan rekening bank / pendaftaran sekolah..." }
+      ],
+      render: function (L, d, c) {
+        var wil = "RT " + c.rt3 + " RW " + c.rw3 + " Desa Babelan Kota Kecamatan Babelan Kabupaten Bekasi";
+        judul(L, "SURAT KETERANGAN DOMISILI"); nomorSuratMaster(L, c);
+        L.p("Yang bertanda tangan dibawah ini pengurus lingkungan Rukun Tetangga (RT) " + c.rt3 + " Rukun Warga (RW) " + c.rw3 +
+            " Desa Babelan Kota Kecamatan Babelan Kabupaten Bekasi Provinsi Jawa Barat. Menerangkan bahwa :", { justify: true, after: 4 });
+        L.rows([
+          ["Nama", d.nama],
+          ["Tempat, Tgl Lahir", d.tempatLahir + (d.tglLahir ? ", " + tgl(d.tglLahir) : "")],
+          ["Jenis Kelamin", d.jk], ["Warga Negara", "Indonesia"], ["Agama", d.agama],
+          ["Pekerjaan", d.pekerjaan], ["NIK", d.nik]
+        ]);
+        L.space(6);
+        L.p("Adalah BENAR nama tersebut diatas berdomisili di Perumahan " + c.kompleks + " Blok/No. " + d.blok + " Rt.\u00a0" + c.rt3 + "/" + c.rw3 +
+            " Desa Babelan Kota Kec. Babelan Kab. Bekasi" + (d.tglMulai ? ", sejak " + tgl(d.tglMulai) : "") +
+            ", dan merupakan warga penduduk di lingkungan wilayah " + wil + ".", { justify: true, after: 4 });
+        L.p("Surat keterangan domisili ini dibuat untuk keperluan :", { after: 4 });
+        L.p(d.keperluan, { x: L.ml + 14, w: L.w - 14, after: 6 });
+        L.p("Demikian surat keterangan domisili ini dibuat dengan sebenarnya dan diberikan kepada yang bersangkutan untuk digunakan sebagaimana mestinya.", { justify: true, after: 14 });
         L.sign({ jabatan: "Ketua RT " + c.rt3 + "/RW " + c.rw3, nama: c.ketua, kurung: true },
                { jabatan: "Ketua RW " + c.rw3 + "/Dusun III", nama: c.ketuaRW, kurung: true },
                c.tempat + ", ......................... " + c.tahun);
