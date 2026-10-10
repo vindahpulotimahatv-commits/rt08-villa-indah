@@ -239,8 +239,10 @@
       if (!val) continue;
       var lines = wrap(val, "R", size, vw);
       this.ensure(lead * Math.min(lines.length, 2));
-      this.doc.text(x0, this.y + size, label, "R", size);
-      this.doc.text(x0 + labelW, this.y + size, ":", "R", size);
+      if (label) {                                    // label kosong = baris lanjutan (tanpa label & titik dua)
+        this.doc.text(x0, this.y + size, label, "R", size);
+        this.doc.text(x0 + labelW, this.y + size, ":", "R", size);
+      }
       for (var j = 0; j < lines.length; j++) {
         this.ensure(lead);
         if (lines[j].t) this.doc.text(vx, this.y + size, lines[j].t, "R", size);
@@ -249,9 +251,10 @@
     }
   };
   /* Blok tanda tangan: kiri (opsional) + kanan. Ruang kosong disediakan untuk TTD & stempel. */
-  Layout.prototype.sign = function (left, right, tempatTgl) {
-    var size = 12, colW = 200, gapTtd = 78;
-    this.ensure(28 + 16 + gapTtd + 30);
+  Layout.prototype.sign = function (left, right, tempatTgl, o) {
+    var size = (o && o.size) || 12, colW = 200, gapTtd = 78, lh = size * 1.42;
+    var ls = left ? [].concat(left.jabatan) : [], rs = [].concat(right.jabatan), nl = Math.max(ls.length, rs.length, 1);
+    this.ensure(28 + lh * nl + gapTtd + 30);
     var xl = this.ml + 6, xr = PAGE_W - this.mr - colW;
     var ml = this.ml, mr = this.mr;
     var cx = function (x, s, f) {
@@ -262,18 +265,17 @@
     var t = norm(tempatTgl);
     d.text(cx(xr, t, "R"), y + size, t, "R", size);
     y += 17;
-    var l1 = norm(left.jabatan), r1 = norm(right.jabatan);
-    d.text(cx(xl, l1, "R"), y + size, l1, "R", size);
-    d.text(cx(xr, r1, "R"), y + size, r1, "R", size);
-    y += 17 + gapTtd;
-    var ln = norm(left.nama), rn = norm(right.nama);
-    var fl = left.bold ? "B" : "R", fr = right.bold ? "B" : "R";
-    d.text(cx(xl, ln, fl), y + size, ln, fl, size);
-    d.text(cx(xr, rn, fr), y + size, rn, fr, size);
-    var uw = textWidth(rn, fr, size), ux = cx(xr, rn, fr);
-    d.line(ux, y + size + 1.5, ux + uw, y + size + 1.5, 0.7);
-    var lw = textWidth(ln, fl, size), lx = cx(xl, ln, fl);
-    d.line(lx, y + size + 1.5, lx + lw, y + size + 1.5, 0.7);
+    ls.forEach(function (s, i) { s = norm(s); d.text(cx(xl, s, "R"), y + size + i * lh, s, "R", size); });
+    rs.forEach(function (s, i) { s = norm(s); d.text(cx(xr, s, "R"), y + size + i * lh, s, "R", size); });
+    y += nl * lh + gapTtd;
+    /* kurung:true -> nama dicetak "( Nama )" tanpa garis bawah (gaya surat resmi pengurus) */
+    function tulisNama(x, p) {
+      var s = norm(p.kurung ? "( " + p.nama + " )" : p.nama), f = p.bold ? "B" : "R", px = cx(x, s, f);
+      d.text(px, y + size, s, f, size);
+      if (!p.kurung) d.line(px, y + size + 1.5, px + textWidth(s, f, size), y + size + 1.5, 0.7);
+    }
+    if (left) tulisNama(xl, left);
+    tulisNama(xr, right);
     this.y = y + 30;
   };
 
@@ -370,12 +372,16 @@
   function nomorSurat(L, c) {
     L.center("Nomor : ........ / RT." + c.rt + " / RW." + c.rw + " / " + c.bulanRomawi + " / " + c.tahun, "R", 12, 24);
   }
-  function footer(doc, kode) {
+  /* Format nomor Surat Pengantar sesuai master: "Nomor :      /RT 008/021/      /2026" (bagian kosong diisi pengurus) */
+  function nomorSuratMaster(L, c) {
+    L.center("Nomor :  ..........  /RT " + c.rt3 + "/" + c.rw3 + "/  ..........  /" + c.tahun, "R", 12, 24);
+  }
+  function footer(doc, kode, catatan) {
     var n = doc.pages.length, cur = doc.page;
     for (var i = 0; i < n; i++) {
       doc.page = doc.pages[i];
       var s = "Dibuat lewat Portal Warga RT 08 • Kode: " + kode + (n > 1 ? " • Hal. " + (i + 1) + "/" + n : "") +
-              " • Surat ini baru sah setelah ditandatangani dan distempel pengurus RT.";
+              " • " + (catatan || "Surat ini baru sah setelah ditandatangani dan distempel pengurus RT.");
       var lines = wrap(norm(s), "I", 8, PAGE_W - 136);
       doc.line(68, PAGE_H - 62, PAGE_W - 68, PAGE_H - 62, 0.4, 0.6);
       for (var j = 0; j < lines.length; j++) doc.text(68, PAGE_H - 50 + j * 10, lines[j].t, "I", 8, { gray: 0.4 });
@@ -400,71 +406,211 @@
     L.sign({ jabatan: "Pemohon,", nama: d.nama }, { jabatan: "Ketua RT " + c.rt + " / RW " + c.rw, nama: c.ketua, bold: true }, c.tempat + ", " + c.tglHariIni);
   }
 
+  /* Butir bernomor "1.  teks" dengan baris lanjutan menjorok */
+  function butir(L, no, teks) {
+    L.ensure(18);
+    L.doc.text(L.ml + 4, L.y + 12, no + ".", "R", 12);
+    L.p(teks, { x: L.ml + 24, w: L.w - 24, justify: true, after: 4 });
+  }
+
+  /* ---- Pola surat pernyataan warga (SM, Mengontrak, Pindah, Tamu): ditandatangani warga sendiri ---- */
+  var META_PERNYATAAN = {
+    subForm: "Isi data di bawah — sistem membuatkan surat <b>PDF</b> otomatis. Cetak/unduh, tanda tangani sendiri di bagian “Yang menyatakan”, lalu serahkan ke Pengurus RT.",
+    alur: "Tekan tombol di bawah untuk mengirimnya ke WhatsApp <b>{pengurus}</b>. Surat ini ditandatangani sendiri oleh yang menyatakan (bukan pengurus) — cetak, tanda tangani, lalu serahkan ke Pengurus RT.",
+    catatanFile: "Surat ini ditandatangani oleh yang menyatakan dan diserahkan kepada Pengurus RT.",
+    pesanAkhir: "Berkas PDF surat terlampir. Surat akan saya cetak, tandatangani, dan serahkan ke Pengurus RT. Terima kasih."
+  };
+  var META_3HARI = {
+    alur: "Tekan tombol di bawah untuk mengirimnya ke WhatsApp <b>{pengurus}</b>. Surat ini ditandatangani sendiri oleh yang menyatakan (bukan pengurus) — cetak, tanda tangani, lalu serahkan ke Pengurus RT. Salinan data kependudukan diserahkan paling lambat 3 (tiga) hari.",
+    pesanAkhir: "Berkas PDF surat pernyataan terlampir. Salinan data kependudukan akan saya serahkan paling lambat 3 (tiga) hari. Terima kasih."
+  };
+  function extend(o) {
+    for (var i = 1; i < arguments.length; i++) for (var k in arguments[i]) o[k] = arguments[i][k];
+    return o;
+  }
+  var ID_JENIS = ["KTP", "SIM"], STATUS_KK = ["Kepala Keluarga", "Lajang"];
+  function fieldIdentitas() {
+    return [
+      { id: "nama", label: "Nama Lengkap", req: 1, full: 1 },
+      { id: "jenisId", label: "Jenis Identitas", type: "select", opts: ID_JENIS, req: 1 },
+      { id: "noId", label: "Nomor KTP / SIM", req: 1, ph: "Nomor identitas" },
+      { id: "hp", label: "Nomor WhatsApp", type: "tel", ph: "08xxxxxxxxxx" },
+      { id: "status", label: "Status", type: "select", opts: STATUS_KK, req: 1 }
+    ];
+  }
+  var FIELD_ANGGOTA = { id: "anggota", label: "Anggota Keluarga (maksimal 5)", type: "textarea", full: 1, ph: "Satu nama per baris. Kosongkan jika lajang." };
+  var FIELD_BLOK = { id: "blok", label: "Blok / No. Rumah", type: "rumah", req: 1, full: 1 };
+  function pecahTgl(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
+    return { t: m ? String(+m[3]) : "......", b: m ? BULAN[+m[2] - 1] : "..............", y: m ? m[1] : "......" };
+  }
+  function teksTgl(iso) { var p = pecahTgl(iso); return "tanggal " + p.t + " bulan " + p.b + " tahun " + p.y; }
+  function barisIdentitas(d) {
+    return [["Nama Lengkap", d.nama], ["No ID", (d.jenisId ? d.jenisId + " " : "") + d.noId], ["Status", d.status]];
+  }
+  function barisAnggota(d) {
+    var a = String(d.anggota || "").split("\n").map(rapikan).filter(Boolean).slice(0, 5), out = [];
+    if (!a.length) out.push(["Anggota Keluarga", "-"]);
+    else a.forEach(function (x, i) { out.push([i === 0 ? "Anggota Keluarga" : "", (i + 1) + ". " + x]); });
+    return out;
+  }
+  function pernyataanAwal(L, d, judulSurat, denganAnggota) {
+    judul(L, judulSurat);
+    L.space(4);
+    L.p("Yang bertanda tangan dibawah ini:", { after: 4 });
+    L.rows(denganAnggota === false ? barisIdentitas(d) : barisIdentitas(d).concat(barisAnggota(d)));
+    L.space(6);
+  }
+  function pernyataanAkhir(L, c, d, kalimat) {
+    L.space(2);
+    L.p(kalimat || "Demikian surat keterangan ini saya buat dengan penuh kesadaran.", { justify: true, after: 14 });
+    L.sign(null, { jabatan: "Yang menyatakan,", nama: d.nama }, c.tempat + ", ......................... " + c.tahun);
+  }
+  /* Tabel tamu: No | Nama Tamu | Status (Keluarga/Teman), selalu 5 baris seperti master */
+  function tabelTamu(L, list) {
+    var rowH = 24, n = 5, x0 = L.ml, W = L.w, c1 = 34, c2 = (W - c1) / 2, d = L.doc, size = 12;
+    L.ensure(rowH * (n + 1) + 12);
+    var y0 = L.y, hitam = [0, 0, 0];
+    d.rect(x0, y0, W, rowH * (n + 1), { stroke: hitam, lw: 0.8 });
+    for (var i = 1; i <= n; i++) d.line(x0, y0 + rowH * i, x0 + W, y0 + rowH * i, 0.8);
+    d.line(x0 + c1, y0, x0 + c1, y0 + rowH * (n + 1), 0.8);
+    d.line(x0 + c1 + c2, y0, x0 + c1 + c2, y0 + rowH * (n + 1), 0.8);
+    function tengah(x, w, s, f, row) {
+      s = norm(s); var tw = textWidth(s, f, size);
+      d.text(x + Math.max(3, (w - tw) / 2), y0 + rowH * row + rowH / 2 + size * 0.35, s, f, size);
+    }
+    tengah(x0, c1, "No", "R", 0); tengah(x0 + c1, c2, "Nama Tamu", "R", 0); tengah(x0 + c1 + c2, c2, "Status (Keluarga/Teman)", "R", 0);
+    for (var r = 0; r < n; r++) {
+      var t = list[r]; if (!t) continue;
+      tengah(x0, c1, String(r + 1), "R", r + 1);
+      d.text(x0 + c1 + 6, y0 + rowH * (r + 1) + rowH / 2 + size * 0.35, norm(t.nama), "R", size);
+      d.text(x0 + c1 + c2 + 6, y0 + rowH * (r + 1) + rowH / 2 + size * 0.35, norm(t.status), "R", size);
+    }
+    L.y = y0 + rowH * (n + 1) + 12;
+  }
+
   var JENIS = {
     suratPengantar: {
       kode: "SP", judul: "Surat Pengantar", ikon: "📝", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
       fields: [
         { id: "nama", label: "Nama Lengkap", req: 1, full: 1 },
-        { id: "nik", label: "NIK (16 digit)", type: "nik", req: 1 },
-        { id: "hp", label: "Nomor WhatsApp", type: "tel", ph: "08xxxxxxxxxx" },
         { id: "tempatLahir", label: "Tempat Lahir", req: 1 },
         { id: "tglLahir", label: "Tanggal Lahir", type: "date", req: 1 },
         { id: "jk", label: "Jenis Kelamin", type: "select", opts: JK, req: 1 },
         { id: "agama", label: "Agama", type: "select", opts: AGAMA },
-        { id: "status", label: "Status Perkawinan", type: "select", opts: KAWIN },
         { id: "pekerjaan", label: "Pekerjaan" },
+        { id: "nik", label: "NIK (16 digit)", type: "nik", req: 1 },
+        { id: "hp", label: "Nomor WhatsApp", type: "tel", ph: "08xxxxxxxxxx" },
         { id: "blok", label: "Blok / No. Rumah", type: "rumah", req: 1, full: 1 },
-        { id: "keperluan", label: "Keperluan Surat", type: "textarea", req: 1, full: 1, ph: "Contoh: Pengurusan KTP / KK / SKCK / surat keterangan domisili..." },
-        { id: "tujuan", label: "Ditujukan kepada (opsional)", full: 1, ph: "Contoh: Kelurahan / Kecamatan / nama instansi" }
+        { id: "keperluan", label: "Keperluan Surat Pengantar", type: "textarea", req: 1, full: 1, ph: "Contoh: Pengurusan KTP / KK / SKCK / surat keterangan domisili..." }
       ],
+      /* Redaksi mengikuti MASTER SURAT PENGANTAR RT (PDF master pengurus). */
       render: function (L, d, c) {
-        judul(L, "SURAT PENGANTAR"); nomorSurat(L, c); pembuka(L, c);
+        var wil = "RT " + c.rt3 + " RW " + c.rw3 + " Desa Babelan Kota Kecamatan Babelan Kabupaten Bekasi";
+        judul(L, "SURAT PENGANTAR"); nomorSuratMaster(L, c);
+        L.p("Yang bertanda tangan dibawah ini pengurus lingkungan Rukun Tetangga (RT) " + c.rt3 + " Rukun Warga (RW) " + c.rw3 +
+            " Desa Babelan Kota Kecamatan Babelan Kabupaten Bekasi Provinsi Jawa Barat. Menerangkan bahwa :", { justify: true, after: 4 });
         L.rows([
-          ["Nama", d.nama], ["NIK", d.nik],
-          ["Tempat/Tgl. Lahir", d.tempatLahir + (d.tglLahir ? ", " + tgl(d.tglLahir) : "")],
-          ["Jenis Kelamin", d.jk], ["Agama", d.agama], ["Status Perkawinan", d.status],
-          ["Pekerjaan", d.pekerjaan], ["Alamat", alamatRumah(d, c)]
+          ["Nama", d.nama],
+          ["Tempat, Tgl Lahir", d.tempatLahir + (d.tglLahir ? ", " + tgl(d.tglLahir) : "")],
+          ["Jenis Kelamin", d.jk], ["Warga Negara", "Indonesia"], ["Agama", d.agama],
+          ["Pekerjaan", d.pekerjaan], ["NIK", d.nik],
+          ["Alamat", "Perumahan " + c.kompleks + " Blok/No. " + d.blok + " Rt.\u00a0" + c.rt3 + "/" + c.rw3 + " Desa Babelan Kota Kec. Babelan Kab. Bekasi"]
         ]);
         L.space(6);
-        L.p("Adalah benar yang bersangkutan berdomisili dan tercatat sebagai warga RT " + c.rt + " / RW " + c.rw + " " + c.kompleks +
-            ". Surat pengantar ini diberikan untuk keperluan sebagai berikut:", { justify: true, after: 4 });
-        L.rows([["Keperluan", d.keperluan], ["Ditujukan kepada", d.tujuan]]);
-        penutup(L); ttdRT(L, c, d);
+        L.p("Adalah BENAR nama tersebut diatas seorang warga penduduk di lingkungan wilayah " + wil +
+            ", Memohon agar dibuatkan surat pengantar untuk keperluan :", { justify: true, after: 4 });
+        L.p(d.keperluan, { x: L.ml + 14, w: L.w - 14, after: 6 });
+        L.p("Demikian surat pengantar ini dibuat dan kami berikan kepada yang bersangkutan untuk digunakan sebagaimana mestinya, " +
+            "kepada Dinas/Instansi/Lembaga/Perusahaan yang terkait agar dapat membantunya.", { justify: true, after: 14 });
+        L.sign({ jabatan: "Ketua RT " + c.rt3 + "/RW " + c.rw3, nama: c.ketua, kurung: true },
+               { jabatan: "Ketua RW " + c.rw3 + "/Dusun III", nama: c.ketuaRW, kurung: true },
+               c.tempat + ", ......................... " + c.tahun);
       }
     },
 
-    suratMenetap: {
-      kode: "SM", judul: "Surat Keterangan Menetap", ikon: "🏡", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
+    suratMenetap: extend(extend({
+      kode: "SM", judul: "Surat Keterangan Tinggal Menetap", ikon: "🏡", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
+      fields: fieldIdentitas().concat([FIELD_ANGGOTA, FIELD_BLOK, { id: "tglMulai", label: "Tinggal menetap sejak tanggal", type: "date", req: 1 }]),
+      /* Redaksi mengikuti MASTER SURAT KETERANGAN TINGGAL MENETAP (docx master pengurus). */
+      render: function (L, d, c) {
+        pernyataanAwal(L, d, "SURAT KETERANGAN TINGGAL MENETAP");
+        L.p("Menerangkan bahwa:", { after: 4 });
+        butir(L, 1, "Tinggal menetap di Blok " + d.blok + " Perumahan " + c.kompleks + " RT " + c.rt3 + " RW " + c.rw3 + " Desa Babelan Kota sejak " + teksTgl(d.tglMulai));
+        butir(L, 2, "Taat dan patuh terhadap ketentuan yang tertuang dalam AD/ART");
+        butir(L, 3, "Salinan data kependudukan akan saya serahkan kepada Pengurus RT selambat-lambatnya dalam waktu 3 (tiga) hari sejak membuat keterangan ini.");
+        pernyataanAkhir(L, c, d);
+      }
+    }, META_PERNYATAAN), META_3HARI),
+
+    suratMengontrak: extend(extend({
+      kode: "SK", judul: "Surat Keterangan Tinggal Mengontrak", ikon: "🔑", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
+      fields: fieldIdentitas().concat([FIELD_ANGGOTA, FIELD_BLOK,
+        { id: "tglMulai", label: "Mengontrak mulai tanggal", type: "date", req: 1 },
+        { id: "tglSelesai", label: "Mengontrak sampai tanggal", type: "date", req: 1 }]),
+      /* Redaksi mengikuti MASTER SURAT KETERANGAN TINGGAL MENGONTRAK. */
+      render: function (L, d, c) {
+        pernyataanAwal(L, d, "SURAT KETERANGAN TINGGAL MENGONTRAK");
+        L.p("Menerangkan bahwa:", { after: 4 });
+        butir(L, 1, "Tinggal mengontrak di Blok " + d.blok + " Perumahan " + c.kompleks + " RT " + c.rt3 + " RW " + c.rw3 + " Desa Babelan Kota sejak " +
+                    teksTgl(d.tglMulai) + " s/d " + teksTgl(d.tglSelesai));
+        butir(L, 2, "Taat dan patuh terhadap ketentuan yang tertuang dalam AD/ART");
+        butir(L, 3, "Salinan data kependudukan akan saya serahkan kepada Pengurus RT selambat-lambatnya dalam waktu 3 (tiga) hari sejak membuat keterangan ini.");
+        pernyataanAkhir(L, c, d);
+      }
+    }, META_PERNYATAAN), META_3HARI),
+
+    tamuMenginap: extend({
+      kode: "TM", judul: "Surat Pemberitahuan Tamu Menginap", ikon: "🛏️", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
+      fields: fieldIdentitas().concat([FIELD_BLOK,
+        { id: "tglMulai", label: "Tamu menginap mulai tanggal", type: "date", req: 1 },
+        { id: "tglSelesai", label: "Sampai tanggal", type: "date", req: 1 },
+        { id: "tamu1", label: "Nama tamu 1", req: 1 }, { id: "st1", label: "Status tamu 1", type: "select", opts: ["Keluarga", "Teman"], req: 1 },
+        { id: "tamu2", label: "Nama tamu 2" }, { id: "st2", label: "Status tamu 2", type: "select", opts: ["Keluarga", "Teman"] },
+        { id: "tamu3", label: "Nama tamu 3" }, { id: "st3", label: "Status tamu 3", type: "select", opts: ["Keluarga", "Teman"] },
+        { id: "tamu4", label: "Nama tamu 4" }, { id: "st4", label: "Status tamu 4", type: "select", opts: ["Keluarga", "Teman"] },
+        { id: "tamu5", label: "Nama tamu 5" }, { id: "st5", label: "Status tamu 5", type: "select", opts: ["Keluarga", "Teman"] }]),
+      /* Redaksi mengikuti MASTER SURAT PEMBERITAHUAN TAMU MENGINAP. */
+      render: function (L, d, c) {
+        var tamu = [];
+        for (var i = 1; i <= 5; i++) if (d["tamu" + i]) tamu.push({ nama: d["tamu" + i], status: d["st" + i] || "" });
+        pernyataanAwal(L, d, "SURAT PEMBERITAHUAN TAMU MENGINAP", false);
+        L.p("Memberitahukan bahwa:", { after: 6 });
+        tabelTamu(L, tamu);
+        butir(L, 1, "Nama-nama tersebut diatas menginap/tinggal di rumah saya Blok " + d.blok + " pada " + teksTgl(d.tglMulai) + " s/d " + teksTgl(d.tglSelesai));
+        butir(L, 2, "Saya menyatakan bertanggung jawab penuh atas tamu saya tersebut diatas.");
+        pernyataanAkhir(L, c, d, "Demikian surat pemberitahuan ini saya buat untuk dipergunakan sebagaimana mestinya.");
+      }
+    }, META_PERNYATAAN),
+
+    banjir: {
+      kode: "BJ", judul: "Surat Keterangan Terdampak Bencana Banjir", ikon: "🌊", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
       fields: [
         { id: "nama", label: "Nama Lengkap", req: 1, full: 1 },
-        { id: "nik", label: "NIK (16 digit)", type: "nik", req: 1 },
-        { id: "hp", label: "Nomor WhatsApp", type: "tel", ph: "08xxxxxxxxxx" },
-        { id: "tempatLahir", label: "Tempat Lahir", req: 1 },
-        { id: "tglLahir", label: "Tanggal Lahir", type: "date", req: 1 },
         { id: "jk", label: "Jenis Kelamin", type: "select", opts: JK, req: 1 },
-        { id: "agama", label: "Agama", type: "select", opts: AGAMA },
-        { id: "status", label: "Status Perkawinan", type: "select", opts: KAWIN },
+        { id: "nik", label: "NIK (16 digit)", type: "nik", req: 1 },
         { id: "pekerjaan", label: "Pekerjaan" },
-        { id: "blok", label: "Blok / No. Rumah", type: "rumah", req: 1, full: 1 },
-        { id: "hunian", label: "Status hunian", type: "select", opts: ["Pemilik", "Sewa / Kontrak", "Menumpang / ikut keluarga"], req: 1 },
-        { id: "tglMulai", label: "Menetap di alamat ini sejak", type: "date", req: 1 },
-        { id: "keperluan", label: "Keperluan Surat", type: "textarea", req: 1, full: 1, ph: "Contoh: Persyaratan sekolah anak / pekerjaan / pengurusan administrasi bank..." },
-        { id: "tujuan", label: "Ditujukan kepada (opsional)", full: 1, ph: "Contoh: Nama sekolah / perusahaan / instansi" }
+        { id: "hp", label: "Nomor WhatsApp", type: "tel", ph: "08xxxxxxxxxx" },
+        FIELD_BLOK,
+        { id: "tglBanjir", label: "Terdampak banjir mulai tanggal", type: "date", req: 1 }
       ],
+      /* Redaksi mengikuti MASTER SUKET KEJADIAN BANJIR. Ditandatangani Ketua RW & Ketua RT. */
       render: function (L, d, c) {
-        judul(L, "SURAT KETERANGAN MENETAP"); nomorSurat(L, c); pembuka(L, c);
+        judul(L, "SURAT KETERANGAN TERDAMPAK BENCANA BANJIR");
+        L.center("Nomor :  ..........  /RT." + c.rt3 + ".RW." + c.rw3 + "/  ..........  /" + c.tahun, "R", 12, 24);
+        L.p("Yang bertanda tangan dibawah ini, Ketua RT " + c.rt3 + ", RW " + c.rw3 + " " + "Perumahan " + c.kompleks + ", Desa Babelan Kota, dengan ini menerangkan bahwa :", { justify: true, after: 6 });
         L.rows([
-          ["Nama", d.nama], ["NIK", d.nik],
-          ["Tempat/Tgl. Lahir", d.tempatLahir + (d.tglLahir ? ", " + tgl(d.tglLahir) : "")],
-          ["Jenis Kelamin", d.jk], ["Agama", d.agama], ["Status Perkawinan", d.status],
-          ["Pekerjaan", d.pekerjaan], ["Alamat", alamatRumah(d, c)]
+          ["Nama", d.nama], ["Jenis Kelamin", d.jk], ["NIK", d.nik], ["Pekerjaan", d.pekerjaan],
+          ["Alamat", "Perumahan " + c.kompleks + " Blok/No. " + d.blok + " Rt. " + c.rt3 + ", Rw. " + c.rw3 + ", Babelan Kota"]
         ]);
-        L.space(6);
-        L.p("Adalah benar yang bersangkutan menetap dan bertempat tinggal di alamat tersebut di atas, wilayah RT " + c.rt + " / RW " + c.rw + " " + c.kompleks +
-            ", dengan status hunian " + String(d.hunian || "").toLowerCase() + ", sejak " + tgl(d.tglMulai) + " sampai dengan surat ini dibuat. " +
-            "Surat keterangan ini diberikan untuk keperluan sebagai berikut:", { justify: true, after: 4 });
-        L.rows([["Keperluan", d.keperluan], ["Ditujukan kepada", d.tujuan]]);
-        penutup(L); ttdRT(L, c, d);
+        L.space(8);
+        var t = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d.tglBanjir || "") ? tgl(d.tglBanjir) : "……………………………";
+        L.p("Merupakan warga kami dan terdampak banjir di wilayah Perumahan " + c.kompleks + " mulai pada tanggal " + t +
+            " sampai surat keterangan ini dibuat (rumah terendam, halaman terendam dan akses jalan perumahan terendam).", { justify: true, after: 4 });
+        L.p("Demikian surat keterangan ini kami buat dengan sebenarnya, dan untuk dipergunakan sebagaimana mestinya.", { justify: true, after: 14 });
+        L.sign({ jabatan: ["RUKUN WARGA " + c.rw3, "PERUMAHAN " + c.kompleks.toUpperCase(), "Ketua,"], nama: c.ketuaRW },
+               { jabatan: ["RUKUN TETANGGA " + c.rt3 + ", RUKUN WARGA " + c.rw3, "PERUMAHAN " + c.kompleks.toUpperCase(), "Ketua,"], nama: c.ketua },
+               c.tempat + ", ......................... " + c.tahun, { size: 10.5 });
       }
     },
 
@@ -496,31 +642,19 @@
       }
     },
 
-    wargaPindah: {
-      kode: "WP", judul: "Lapor Warga Pindah", ikon: "🚚", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
-      fields: [
-        { id: "nama", label: "Nama Lengkap (kepala keluarga/pemohon)", req: 1, full: 1 },
-        { id: "nik", label: "NIK (16 digit)", type: "nik", req: 1 },
-        { id: "hp", label: "Nomor WhatsApp", type: "tel", ph: "08xxxxxxxxxx" },
-        { id: "blok", label: "Blok / No. Rumah (alamat asal)", type: "rumah", req: 1, full: 1 },
-        { id: "tglPindah", label: "Tanggal pindah", type: "date", req: 1 },
-        { id: "jumlah", label: "Jumlah anggota yang pindah", type: "number", ph: "Contoh: 4" },
-        { id: "tujuanAlamat", label: "Alamat lengkap tujuan pindah", type: "textarea", req: 1, full: 1, ph: "Jalan, RT/RW, kelurahan, kota..." },
-        { id: "alasan", label: "Alasan pindah (opsional)", full: 1 }
-      ],
+    wargaPindah: extend({
+      kode: "WP", judul: "Surat Keterangan Pindah", ikon: "🚚", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
+      fields: fieldIdentitas().concat([FIELD_ANGGOTA, { id: "blok", label: "Blok / No. Rumah (rumah yang ditinggalkan)", type: "rumah", req: 1, full: 1 },
+        { id: "tglPindah", label: "Tanggal pindah", type: "date", req: 1 }]),
+      /* Redaksi mengikuti MASTER SURAT KETERANGAN PINDAH. */
       render: function (L, d, c) {
-        judul(L, "SURAT PENGANTAR PINDAH"); nomorSurat(L, c); pembuka(L, c);
-        L.rows([
-          ["Nama", d.nama], ["NIK", d.nik], ["Alamat Asal", alamatRumah(d, c)],
-          ["Alamat Tujuan", d.tujuanAlamat], ["Tanggal Pindah", tgl(d.tglPindah)],
-          ["Jumlah yang Pindah", d.jumlah ? d.jumlah + " orang" : ""], ["Alasan Pindah", d.alasan]
-        ], { labelW: 140 });
-        L.space(6);
-        L.p("Adalah benar yang bersangkutan merupakan warga RT " + c.rt + " / RW " + c.rw + " " + c.kompleks +
-            " yang bermaksud pindah domisili ke alamat tujuan tersebut di atas. Surat ini dibuat sebagai pengantar untuk keperluan pengurusan surat pindah dan administrasi kependudukan.", { justify: true });
-        penutup(L); ttdRT(L, c, d);
+        pernyataanAwal(L, d, "SURAT KETERANGAN PINDAH");
+        L.p("Menerangkan bahwa:", { after: 4 });
+        butir(L, 1, "Akan pindah rumah dari Blok " + d.blok + " Perumahan " + c.kompleks + " RT " + c.rt3 + " RW " + c.rw3 + " Desa Babelan Kota sejak " + teksTgl(d.tglPindah));
+        butir(L, 2, "Bertanggungjawab atas segala permasalahan yang timbul atas kepindahan saya berupa tunggakan Iuran Wajib Bulanan, kebersihan rumah dan lingkungan sekitar rumah.");
+        pernyataanAkhir(L, c, d);
       }
-    },
+    }, META_PERNYATAAN),
 
     /* Kwitansi Iuran Bulanan — dipakai halaman Humas (humas.html) untuk pembayaran CASH.
        Dibuat via RTSurat.buat("kwitansiIuran", data, RT_CONFIG) — bukan dari form layanan.html,
@@ -629,6 +763,8 @@
     return {
       urlSitus: cfg.urlSitus || "", rt: rt, rw: rw, kompleks: kompleks,
       ketua: cfg.namaKetua || "Ketua RT",
+      ketuaRW: cfg.namaKetuaRW || "Ketua RW",
+      rt3: ("000" + rt).slice(-3), rw3: ("000" + rw).slice(-3),
       tempat: cfg.tempatSurat || kompleks,
       kopPemerintah: cfg.kopPemerintah || "PEMERINTAH KABUPATEN BEKASI",
       kopKecamatan: cfg.kopKecamatan || "KECAMATAN BABELAN",
@@ -666,11 +802,11 @@
     var doc = new Doc(), L = new Layout(doc);
     if (!J.ringkas) kop(L, c, logo);   // ringkas = dokumen non-formal (mis. kwitansi elektronik): tanpa kop resmi
     J.render(L, d, c, kode);
-    if (!J.ringkas) footer(doc, kode);
+    if (!J.ringkas) footer(doc, kode, J.catatanFile);
     var bytes = doc.build(J.judul + " - " + d.nama);
     var namaFile = J.judul.replace(/\s+/g, "-") + "_" + (slug(d.nama) || "warga") + "_" + kode + ".pdf";
     var pesan = "Halo Pengurus RT " + c.rt + ", saya " + d.nama + " (Blok/No. " + d.blok + ") mengajukan *" + J.judul +
-      "*. Berkas PDF terlampir, mohon ditandatangani dan distempel. Terima kasih. (Kode: " + kode + ")";
+      "*. " + (J.pesanAkhir || "Berkas PDF terlampir, mohon ditandatangani dan distempel. Terima kasih.") + " (Kode: " + kode + ")";
     return { bytes: bytes, namaFile: namaFile, kode: kode, pesan: pesan, data: d };
   }
 

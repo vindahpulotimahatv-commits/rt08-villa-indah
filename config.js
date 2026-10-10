@@ -54,6 +54,7 @@ const RT_CONFIG = {
 
   // Nama pengurus (ditampilkan di halaman Kontak)
   namaKetua: "Abd Hafiz",
+  namaKetuaRW: "Benny Arie Mardiyanto", // dicetak di tanda tangan Surat Pengantar (Ketua RW 021 / Dusun III)
   namaSekretaris: "Syarif",
   namaBendahara: "Hendyanto",
   namaKeamanan: "Jati",

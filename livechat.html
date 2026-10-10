@@ -584,8 +584,8 @@ document.addEventListener("DOMContentLoaded", function(){
       balas("Iuran bulanan warga: " + fmtRp_(RT_CONFIG.iuranBulanan) + " per rumah/KK" + (RT_CONFIG.iuranTambahanKK ? ", tambahan " + fmtRp_(RT_CONFIG.iuranTambahanKK) + " untuk KK terpisah di rumah yang sama" : "") + ". Transfer ke " + (rek.bank||"-") + " " + (rek.nomor||"-") + " a.n. " + (rek.nama||"-") + ", atau lihat detail di halaman Transparansi.");
     } else if(cocok_(t, ["lapor","pengaduan","komplain","keluhan"])){
       balas("Untuk melapor atau mengadukan sesuatu, buka halaman Layanan → menu \"Lapor & Pengaduan\". Kamu juga bisa langsung ketik keluhannya di sini, nanti diteruskan ke Admin RT.");
-    } else if(cocok_(t, ["surat pengantar","warga baru","warga pindah","pinjam fasilitas","buat surat","surat"])){
-      balas("Pembuatan surat (Pengantar, Warga Baru, Warga Pindah, Pinjam Fasilitas) bisa dilakukan di halaman Layanan — isi form, lalu sistem otomatis membuat PDF surat resmi untuk ditandatangani & distempel Ketua RT.");
+    } else if(cocok_(t, ["surat pengantar","surat pindah","warga baru","warga pindah","mengontrak","tamu menginap","banjir","pinjam fasilitas","buat surat","surat"])){
+      balas("Pembuatan surat (Pengantar, Keterangan Pindah, Tinggal Menetap, Tinggal Mengontrak, Tamu Menginap, Terdampak Banjir, Warga Baru, Pinjam Fasilitas) bisa dilakukan di halaman Layanan — isi form, lalu sistem otomatis membuat PDF surat resmi untuk ditandatangani & distempel Ketua RT.");
     } else if(cocok_(t, ["umkm","usaha","jualan","dagang"])){
       balas("Untuk mendaftarkan usaha/UMKM warga, buka halaman UMKM lalu isi form pendaftaran. Nanti otomatis tampil di galeri UMKM warga.");
     } else if(cocok_(t, ["kas rt","transparansi","saldo","keuangan rt"])){
