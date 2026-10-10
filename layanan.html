@@ -741,6 +741,27 @@ function showToast(msg){
   var MAP={svcSurat:"suratPengantar",svcDomisili:"suratDomisili",svcSuratMenetap:"suratMenetap",svcWargaBaru:"wargaBaru",svcWargaPindah:"wargaPindah",svcMengontrak:"suratMengontrak",svcTamu:"tamuMenginap",svcBanjir:"banjir",svcPinjamFasilitas:"pinjamFasilitas"};
   var ov=document.getElementById("smOverlay"), body=document.getElementById("smBody");
   var logo=null, hasil=null, key=null, dataForm={}, pjId=null, pjBar={}, pjLain="";
+  /* Nomor urut surat diisi OTOMATIS oleh sistem: penghitung per tahun di Firebase ("nomorSurat/TAHUN").
+     Hanya untuk surat bernomor (J.nomor). Satu nomor dipakai ulang selama warga masih mengubah data surat yang sama.
+     Bila Firebase belum aktif / gagal, hasilnya 0 -> bagian nomor dikosongkan untuk diisi pengurus. */
+  var nomorPakai=null;
+  function ambilNomor(k){
+    var J=RTSurat.JENIS[k]; if(!J||!J.nomor) return Promise.resolve(0);
+    if(nomorPakai&&nomorPakai.k===k) return Promise.resolve(nomorPakai.no);
+    return new Promise(function(res){
+      var selesai=false, tm;
+      function akhir(n){ if(selesai) return; selesai=true; clearTimeout(tm); if(n) nomorPakai={k:k,no:n}; res(n||0); }
+      try{
+        var cfg=RT_CONFIG.firebaseConfig||{};
+        if(!(cfg.apiKey&&cfg.databaseURL&&cfg.appId)||typeof firebase==="undefined") return akhir(0);
+        if(!firebase.apps.length) firebase.initializeApp(cfg);
+        tm=setTimeout(function(){ akhir(0); },5000);
+        firebase.database().ref("nomorSurat/"+new Date().getFullYear()).transaction(function(n){ return (n||0)+1; },function(err,ok,snap){
+          akhir(!err&&ok&&snap?snap.val():0);
+        });
+      }catch(e){ akhir(0); }
+    });
+  }
 
   /* --- Pinjam Fasilitas: pilih barang dari inventaris RT + simpan pengajuan ke Firebase --- */
   (function(){ var J=(typeof RTSurat!=="undefined")&&RTSurat.JENIS&&RTSurat.JENIS.pinjamFasilitas; if(!J) return;
@@ -813,7 +834,7 @@ function showToast(msg){
 
   Object.keys(MAP).forEach(function(id){
     var el=document.getElementById(id);
-    if(el) el.addEventListener("click",function(e){ e.preventDefault(); if(MAP[id]==="pinjamFasilitas"){ window.RTInv.sel={}; pjId=null; dataForm={}; } tampilForm(MAP[id]); });
+    if(el) el.addEventListener("click",function(e){ e.preventDefault(); nomorPakai=null; if(MAP[id]==="pinjamFasilitas"){ window.RTInv.sel={}; pjId=null; dataForm={}; } tampilForm(MAP[id]); });
   });
 
   function pengurus(J){ return RT_CONFIG[J.pengurus]||"Pengurus RT"; }
@@ -861,10 +882,14 @@ function showToast(msg){
       }
       var err=RTSurat.validasi(k,d,RT_CONFIG);
       if(err){ showToast(err); return; }
-      try{ hasil=RTSurat.buat(k,d,RT_CONFIG,logo); }
-      catch(ex){ console.error(ex); showToast("Maaf, gagal membuat PDF. Coba lagi."); return; }
-      if(k==="pinjamFasilitas") simpanPengajuan(d);
-      tampilHasil();
+      var tbl=document.querySelector("#smForm button[type=submit]"); if(tbl) tbl.disabled=true;
+      ambilNomor(k).then(function(no){
+        if(tbl) tbl.disabled=false;
+        try{ hasil=RTSurat.buat(k,d,RT_CONFIG,logo,null,null,no); }
+        catch(ex){ console.error(ex); showToast("Maaf, gagal membuat PDF. Coba lagi."); return; }
+        if(k==="pinjamFasilitas") simpanPengajuan(d);
+        tampilHasil();
+      });
     });
   }
 

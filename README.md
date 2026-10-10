@@ -83,3 +83,24 @@ di atas, bukan diedit langsung di kode HTML.
 1. Upload seluruh file (HTML + `config.js`) ke repository, sejajar (satu folder).
 2. Pastikan `index.html` berada di root.
 3. Aktifkan Settings > Pages > Deploy from branch > main / root.
+
+## Nomor & tanggal surat otomatis
+
+- **Tanggal** surat (baris "Bekasi, 10 Oktober 2026") selalu terisi otomatis dari tanggal surat dibuat.
+- **Nomor urut** surat bernomor (Pengantar, Domisili, Banjir, Warga Baru) terisi otomatis dari penghitung per tahun
+  di Firebase (`nomorSurat/TAHUN`), contoh `Nomor : 012 /RT 008/021/ X /2026`. Bulan (angka Romawi) dan tahun juga otomatis.
+  Agar penghitung berjalan, **salin ulang `firebase-rules.json` ke Firebase Console → Realtime Database → Rules → Publish**
+  (ada tambahan node `nomorSurat`). Bila belum, nomor urut dikosongkan (titik-titik) untuk diisi pengurus — surat tetap jadi.
+- Surat **Tinggal Menetap** dan **Tinggal Mengontrak** tidak memuat tanda tangan Ketua RT (hanya "Yang menyatakan").
+  Surat Pindah dan Tamu Menginap tetap memuat blok "Mengetahui, Ketua RT".
+
+## Rekap & Berita Acara Laporan Warga (Admin → tab Laporan)
+
+Kartu **📋 Rekap & Berita Acara Laporan Warga** di atas daftar laporan (`admin.html`, file pendukung `rekap-laporan.js`):
+
+- Saring per **periode** (semua / bulan ini / bulan lalu / pilih bulan), **kategori**, dan **status**. Ringkasan jumlah tampil langsung.
+- **⬇ Download Excel (.xlsx)** — lembar *Rekap Laporan* (tanggal, kode, pelapor, blok, WA, kategori, isi, status, catatan, ada-tidaknya foto;
+  ada filter & baris judul beku) dan lembar *Ringkasan* (jumlah per status & kategori).
+- **📄 Berita Acara (PDF)** — kop RT/RW, nomor otomatis `BA-LAP/TANGGAL-JAM/RT.008.021`, tanggal otomatis, ringkasan,
+  tabel daftar laporan, dan tanda tangan Sekretaris & Ketua RT (nama dari `config.js`).
+- Data diambil real-time dari laporan yang masuk lewat halaman Layanan; hanya admin yang bisa melihatnya.

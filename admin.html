@@ -314,6 +314,7 @@ textarea{min-height:76px;resize:vertical}
 
   <!-- ===== PANEL LAPORAN WARGA ===== -->
   <div class="panel active" id="panel-laporan">
+    <div id="rekapLaporanBox"></div>
     <div class="list-card">
       <div class="list-title">Laporan Masuk (Real-time)</div>
       <p class="sub">Laporan warga dari halaman Layanan langsung muncul di sini, termasuk foto buktinya kalau ada.</p>
@@ -560,6 +561,7 @@ textarea{min-height:76px;resize:vertical}
 <script src="warga-data.js"></script>
 <script src="warga-kontak.js"></script>
 <script src="surat-pdf.js"></script>
+<script src="rekap-laporan.js"></script>
 <script src="iuran-cari.js"></script>
 <script>
 var db = null;
@@ -800,6 +802,7 @@ function initDashboard_(){
     var items = Object.keys(val).map(function(k){ return Object.assign({ id:k }, val[k]); });
     items.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
     lpItems = {}; items.forEach(function(it){ lpItems[it.id] = it; });
+    if (window.RTRekapUI) RTRekapUI.set(items);   /* rekap & berita acara */
     var box = document.getElementById("listLaporan");
     if (items.length === 0) { box.innerHTML = '<div class="empty-note">Belum ada laporan masuk dari warga.</div>'; return; }
     box.innerHTML = items.map(function(it){

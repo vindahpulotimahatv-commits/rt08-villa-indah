@@ -369,12 +369,14 @@
     L.doc.line(x, L.y + size + 2.5, x + wd, L.y + size + 2.5, 0.9);
     L.y += 22;
   }
+  /* Nomor urut surat diisi otomatis (dari penghitung di server); bila tidak tersedia, bagian itu dikosongkan untuk diisi pengurus. */
+  function noUrut(c) { return c.nomorUrut ? ("000" + c.nomorUrut).slice(-3) : ".........."; }
   function nomorSurat(L, c) {
-    L.center("Nomor : ........ / RT." + c.rt + " / RW." + c.rw + " / " + c.bulanRomawi + " / " + c.tahun, "R", 12, 24);
+    L.center("Nomor : " + noUrut(c) + " / RT." + c.rt + " / RW." + c.rw + " / " + c.bulanRomawi + " / " + c.tahun, "R", 12, 24);
   }
   /* Format nomor Surat Pengantar sesuai master: "Nomor :      /RT 008/021/      /2026" (bagian kosong diisi pengurus) */
   function nomorSuratMaster(L, c) {
-    L.center("Nomor :  ..........  /RT " + c.rt3 + "/" + c.rw3 + "/  ..........  /" + c.tahun, "R", 12, 24);
+    L.center("Nomor :  " + noUrut(c) + "  /RT " + c.rt3 + "/" + c.rw3 + "/  " + c.bulanRomawi + "  /" + c.tahun, "R", 12, 24);
   }
   function footer(doc, kode, catatan) {
     var n = doc.pages.length, cur = doc.page;
@@ -461,13 +463,19 @@
     L.rows(denganAnggota === false ? barisIdentitas(d) : barisIdentitas(d).concat(barisAnggota(d)));
     L.space(6);
   }
-  function pernyataanAkhir(L, c, d, kalimat) {
+  /* opsi.tanpaRT = true -> hanya tanda tangan yang menyatakan (tanpa blok "Mengetahui" Ketua RT).
+     Tanggal surat diisi otomatis oleh sistem (tanggal hari surat dibuat). */
+  function pernyataanAkhir(L, c, d, kalimat, opsi) {
     L.space(2);
     L.p(kalimat || "Demikian surat keterangan ini saya buat dengan penuh kesadaran.", { justify: true, after: 14 });
+    var tt = c.tempat + ", " + c.tglHariIni;
+    if (opsi && opsi.tanpaRT) {
+      L.sign(null, { jabatan: "Yang menyatakan,", nama: d.nama }, tt);
+      return;
+    }
     /* Kiri: "Mengetahui" Ketua RT (sesuai master). Kanan: yang menyatakan, sejajar dengan baris "Ketua,". */
     L.sign({ jabatan: ["Mengetahui,", "RUKUN TETANGGA " + c.rt3 + ", RUKUN WARGA " + c.rw3, "PERUMAHAN " + c.kompleks.toUpperCase(), "Ketua,"], nama: c.ketua },
-           { jabatan: ["", "", "", "Yang menyatakan,"], nama: d.nama },
-           c.tempat + ", ......................... " + c.tahun, { size: 11 });
+           { jabatan: ["", "", "", "Yang menyatakan,"], nama: d.nama }, tt, { size: 11 });
   }
   /* Tabel tamu: No | Nama Tamu | Status (Keluarga/Teman), selalu 5 baris seperti master */
   function tabelTamu(L, list) {
@@ -494,7 +502,7 @@
 
   var JENIS = {
     suratPengantar: {
-      kode: "SP", judul: "Surat Pengantar", ikon: "📝", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
+      kode: "SP", nomor: 1, judul: "Surat Pengantar", ikon: "📝", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
       fields: [
         { id: "nama", label: "Nama Lengkap", req: 1, full: 1 },
         { id: "tempatLahir", label: "Tempat Lahir", req: 1 },
@@ -528,14 +536,14 @@
             "kepada Dinas/Instansi/Lembaga/Perusahaan yang terkait agar dapat membantunya.", { justify: true, after: 14 });
         L.sign({ jabatan: "Ketua RT " + c.rt3 + "/RW " + c.rw3, nama: c.ketua, kurung: true },
                { jabatan: "Ketua RW " + c.rw3 + "/Dusun III", nama: c.ketuaRW, kurung: true },
-               c.tempat + ", ......................... " + c.tahun);
+               c.tempat + ", " + c.tglHariIni);
       }
     },
 
     /* Surat Keterangan Domisili — surat resmi dari Ketua RT (pola sama seperti Surat Pengantar):
        ditandatangani Ketua RT, mengetahui Ketua RW. Redaksi baku; sesuaikan bila ada master dari pengurus. */
     suratDomisili: {
-      kode: "SD", judul: "Surat Keterangan Domisili", ikon: "📍", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
+      kode: "SD", nomor: 1, judul: "Surat Keterangan Domisili", ikon: "📍", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
       fields: [
         { id: "nama", label: "Nama Lengkap", req: 1, full: 1 },
         { id: "tempatLahir", label: "Tempat Lahir", req: 1 },
@@ -569,7 +577,7 @@
         L.p("Demikian surat keterangan domisili ini dibuat dengan sebenarnya dan diberikan kepada yang bersangkutan untuk digunakan sebagaimana mestinya.", { justify: true, after: 14 });
         L.sign({ jabatan: "Ketua RT " + c.rt3 + "/RW " + c.rw3, nama: c.ketua, kurung: true },
                { jabatan: "Ketua RW " + c.rw3 + "/Dusun III", nama: c.ketuaRW, kurung: true },
-               c.tempat + ", ......................... " + c.tahun);
+               c.tempat + ", " + c.tglHariIni);
       }
     },
 
@@ -583,7 +591,7 @@
         butir(L, 1, "Tinggal menetap di Blok " + d.blok + " Perumahan " + c.kompleks + " RT " + c.rt3 + " RW " + c.rw3 + " Desa Babelan Kota sejak " + teksTgl(d.tglMulai));
         butir(L, 2, "Taat dan patuh terhadap ketentuan yang tertuang dalam AD/ART");
         butir(L, 3, "Salinan data kependudukan akan saya serahkan kepada Pengurus RT selambat-lambatnya dalam waktu 3 (tiga) hari sejak membuat keterangan ini.");
-        pernyataanAkhir(L, c, d);
+        pernyataanAkhir(L, c, d, null, { tanpaRT: true });
       }
     }, META_PERNYATAAN), META_3HARI),
 
@@ -600,7 +608,7 @@
                     teksTgl(d.tglMulai) + " s/d " + teksTgl(d.tglSelesai));
         butir(L, 2, "Taat dan patuh terhadap ketentuan yang tertuang dalam AD/ART");
         butir(L, 3, "Salinan data kependudukan akan saya serahkan kepada Pengurus RT selambat-lambatnya dalam waktu 3 (tiga) hari sejak membuat keterangan ini.");
-        pernyataanAkhir(L, c, d);
+        pernyataanAkhir(L, c, d, null, { tanpaRT: true });
       }
     }, META_PERNYATAAN), META_3HARI),
 
@@ -628,7 +636,7 @@
     }, META_PERNYATAAN),
 
     banjir: {
-      kode: "BJ", judul: "Surat Keterangan Terdampak Bencana Banjir", ikon: "🌊", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
+      kode: "BJ", nomor: 1, judul: "Surat Keterangan Terdampak Bencana Banjir", ikon: "🌊", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
       fields: [
         { id: "nama", label: "Nama Lengkap", req: 1, full: 1 },
         { id: "jk", label: "Jenis Kelamin", type: "select", opts: JK, req: 1 },
@@ -641,7 +649,7 @@
       /* Redaksi mengikuti MASTER SUKET KEJADIAN BANJIR. Ditandatangani Ketua RW & Ketua RT. */
       render: function (L, d, c) {
         judul(L, "SURAT KETERANGAN TERDAMPAK BENCANA BANJIR");
-        L.center("Nomor :  ..........  /RT." + c.rt3 + ".RW." + c.rw3 + "/  ..........  /" + c.tahun, "R", 12, 24);
+        L.center("Nomor :  " + noUrut(c) + "  /RT." + c.rt3 + ".RW." + c.rw3 + "/  " + c.bulanRomawi + "  /" + c.tahun, "R", 12, 24);
         L.p("Yang bertanda tangan dibawah ini, Ketua RT " + c.rt3 + ", RW " + c.rw3 + " " + "Perumahan " + c.kompleks + ", Desa Babelan Kota, dengan ini menerangkan bahwa :", { justify: true, after: 6 });
         L.rows([
           ["Nama", d.nama], ["Jenis Kelamin", d.jk], ["NIK", d.nik], ["Pekerjaan", d.pekerjaan],
@@ -654,12 +662,12 @@
         L.p("Demikian surat keterangan ini kami buat dengan sebenarnya, dan untuk dipergunakan sebagaimana mestinya.", { justify: true, after: 14 });
         L.sign({ jabatan: ["RUKUN WARGA " + c.rw3, "PERUMAHAN " + c.kompleks.toUpperCase(), "Ketua,"], nama: c.ketuaRW },
                { jabatan: ["RUKUN TETANGGA " + c.rt3 + ", RUKUN WARGA " + c.rw3, "PERUMAHAN " + c.kompleks.toUpperCase(), "Ketua,"], nama: c.ketua },
-               c.tempat + ", ......................... " + c.tahun, { size: 10.5 });
+               c.tempat + ", " + c.tglHariIni, { size: 10.5 });
       }
     },
 
     wargaBaru: {
-      kode: "WB", judul: "Lapor Warga Baru", ikon: "🏠", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
+      kode: "WB", nomor: 1, judul: "Lapor Warga Baru", ikon: "🏠", nomorWA: "waSekretaris", pengurus: "namaSekretaris",
       fields: [
         { id: "nama", label: "Nama Lengkap (kepala keluarga/pemohon)", req: 1, full: 1 },
         { id: "nik", label: "NIK (16 digit)", type: "nik", req: 1 },
@@ -808,6 +816,7 @@
       urlSitus: cfg.urlSitus || "", rt: rt, rw: rw, kompleks: kompleks,
       ketua: cfg.namaKetua || "Ketua RT",
       ketuaRW: cfg.namaKetuaRW || "Ketua RW",
+      sekretaris: cfg.namaSekretaris || "Sekretaris RT",
       rt3: ("000" + rt).slice(-3), rw3: ("000" + rw).slice(-3),
       tempat: cfg.tempatSurat || kompleks,
       kopPemerintah: cfg.kopPemerintah || "PEMERINTAH KABUPATEN BEKASI",
@@ -835,12 +844,114 @@
     return String(s || "").normalize ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 30) : "warga";
   }
 
+  /* ---------- Berita Acara Rekapitulasi Laporan Warga ----------
+     items : array laporan {kode, nama, blok, kategori, keterangan, status, createdAt(ms)}
+     opsi  : { periode: "Oktober 2026", kategori: "Semua", status: "Semua" }
+     Nomor berita acara & tanggal diisi OTOMATIS dari waktu pembuatan. */
+  function p2d(v) { return (v < 10 ? "0" : "") + v; }
+  function tglJam(ms) {
+    if (!ms) return ["-", ""];
+    var d = new Date(ms);
+    return [p2d(d.getDate()) + "/" + p2d(d.getMonth() + 1) + "/" + d.getFullYear(), p2d(d.getHours()) + ":" + p2d(d.getMinutes())];
+  }
+  function hitung(items, kunci) {
+    var m = {}, o = [];
+    items.forEach(function (it) { var k = kunci(it); if (!(k in m)) { m[k] = 0; o.push(k); } m[k]++; });
+    return o.map(function (k) { return [k, m[k]]; });
+  }
+  function buatBeritaAcara(items, opsi, cfg, logo, now) {
+    opsi = opsi || {}; now = now || new Date();
+    items = (items || []).slice().sort(function (a, b) { return (a.createdAt || 0) - (b.createdAt || 0); });
+    var c = ctxDari(cfg, now), doc = new Doc(), L = new Layout(doc);
+    L.ml = 50; L.mr = 50; L.w = PAGE_W - 100;
+    var nomor = "BA-LAP/" + now.getFullYear() + p2d(now.getMonth() + 1) + p2d(now.getDate()) + "-" + p2d(now.getHours()) + p2d(now.getMinutes()) +
+                "/RT." + c.rt3 + "." + c.rw3;
+    kop(L, c, logo);
+    judul(L, "BERITA ACARA REKAPITULASI LAPORAN WARGA");
+    L.center("Nomor : " + nomor, "R", 11, 22);
+    L.p("Pada hari ini, " + HARI[now.getDay()] + " tanggal " + now.getDate() + " bulan " + BULAN[now.getMonth()] + " tahun " + now.getFullYear() +
+        ", pengurus RT " + c.rt + " / RW " + c.rw + " " + c.kompleks + " telah merekapitulasi laporan warga yang masuk melalui aplikasi PANDU " +
+        "(Portal Administrasi Nyata Delapan Dua Satu) dengan rincian sebagai berikut:", { justify: true, size: 11, after: 6 });
+
+    var st = hitung(items, function (it) { return it.status || "Baru"; });
+    var kt = hitung(items, function (it) { return it.kategori || "Lainnya"; });
+    function ringkas(a) { return a.length ? a.map(function (x) { return x[0] + ": " + x[1]; }).join(", ") : "-"; }
+    L.rows([
+      ["Periode laporan", opsi.periode || "Seluruh periode"],
+      ["Kategori", opsi.kategori || "Semua kategori"],
+      ["Jumlah laporan", items.length + " laporan"],
+      ["Menurut status", ringkas(st)],
+      ["Menurut kategori", ringkas(kt)]
+    ], { size: 11, labelW: 112 });
+    L.space(8);
+    L.p("Daftar laporan yang masuk:", { size: 11, font: "B", after: 3 });
+
+    /* ---- tabel ---- */
+    var cols = [["No", 22], ["Tanggal", 52], ["Kode", 74], ["Pelapor", 84], ["Kategori", 54], ["Isi Laporan", 145], ["Status", 64]];
+    var tw = cols.reduce(function (a, k) { return a + k[1]; }, 0), fs = 8.5, lh = 10.5, pad = 3;
+    var x0 = L.ml + (L.w - tw) / 2;
+    function xs() { var a = [x0]; cols.forEach(function (k) { a.push(a[a.length - 1] + k[1]); }); return a; }
+    var X = xs();
+    function kepala() {
+      var h = 18; L.ensure(h + 30);
+      doc.rect(x0, L.y, tw, h, { fill: [0.88, 0.9, 0.94], stroke: [0, 0, 0], lw: 0.6 });
+      cols.forEach(function (k, i) {
+        if (i) doc.line(X[i], L.y, X[i], L.y + h, 0.6);
+        var t = norm(k[0]), w = textWidth(t, "B", fs);
+        doc.text(X[i] + Math.max(2, (k[1] - w) / 2), L.y + 12.5, t, "B", fs);
+      });
+      L.y += h;
+    }
+    kepala();
+    if (!items.length) {
+      doc.rect(x0, L.y, tw, 22, { stroke: [0, 0, 0], lw: 0.6 });
+      doc.text(x0 + pad + 2, L.y + 14, "Tidak ada laporan pada periode ini.", "I", fs + 1);
+      L.y += 22;
+    }
+    items.forEach(function (it, n) {
+      var tj = tglJam(it.createdAt);
+      var isi = wrap(norm(it.keterangan || "-"), "R", fs, cols[5][1] - 2 * pad);
+      if (isi.length > 7) { isi = isi.slice(0, 7); isi[6] = { t: isi[6].t.replace(/\s+$/, "") + " ...", last: true }; }
+      var cells = [
+        [String(n + 1)],
+        [tj[0], tj[1]],
+        wrap(norm(it.kode || "-"), "R", fs, cols[2][1] - 2 * pad).map(function (l) { return l.t; }),
+        wrap(norm((it.nama || "-") + "\nBlok " + (it.blok || "-")), "R", fs, cols[3][1] - 2 * pad).map(function (l) { return l.t; }),
+        wrap(norm(it.kategori || "-"), "R", fs, cols[4][1] - 2 * pad).map(function (l) { return l.t; }),
+        isi.map(function (l) { return l.t; }),
+        wrap(norm(it.status || "Baru"), "R", fs, cols[6][1] - 2 * pad).map(function (l) { return l.t; })
+      ];
+      var maxL = cells.reduce(function (a, cl) { return Math.max(a, cl.length); }, 1), rh = maxL * lh + 2 * pad;
+      if (L.y + rh > L.bottom) { doc.newPage(); L.y = 56; kepala(); }
+      doc.rect(x0, L.y, tw, rh, { stroke: [0, 0, 0], lw: 0.5 });
+      cells.forEach(function (cl, i) {
+        if (i) doc.line(X[i], L.y, X[i], L.y + rh, 0.5);
+        cl.forEach(function (t, r) {
+          if (!t) return;
+          var tx = (i === 0) ? X[i] + Math.max(2, (cols[0][1] - textWidth(t, "R", fs)) / 2) : X[i] + pad;
+          doc.text(tx, L.y + pad + fs + r * lh - 1, t, "R", fs);
+        });
+      });
+      L.y += rh;
+    });
+    L.space(12);
+    L.p("Demikian berita acara ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya.", { justify: true, size: 11, after: 12 });
+    L.sign({ jabatan: ["Dibuat oleh,", "Sekretaris RT " + c.rt3], nama: c.sekretaris, kurung: true },
+           { jabatan: ["Mengetahui,", "Ketua RT " + c.rt3 + " / RW " + c.rw3], nama: c.ketua, kurung: true },
+           c.tempat + ", " + c.tglHariIni);
+    footer(doc, nomor, "Rekap otomatis dari data laporan warga di aplikasi PANDU.");
+    var per = String(opsi.periode || "Semua").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    return { bytes: doc.build("Berita Acara Laporan Warga - " + (opsi.periode || "Semua periode")), nomor: nomor, jumlah: items.length,
+             namaFile: "Berita-Acara-Laporan-Warga_" + per + "_" + now.getFullYear() + p2d(now.getMonth() + 1) + p2d(now.getDate()) + ".pdf" };
+  }
+
   /* Membuat PDF. Mengembalikan { bytes, namaFile, kode, pesan } */
-  function buat(key, data, cfg, logo, now, kodeTetap) {
+  function buat(key, data, cfg, logo, now, kodeTetap, nomorUrut) {
     var J = JENIS[key];
     if (!J) throw new Error("Jenis surat tidak dikenal: " + key);
     now = now || new Date();
     var c = ctxDari(cfg, now), d = bersihkan(J, data || {});
+    c.nomorUrut = nomorUrut || 0;
     var p2 = function (v) { return (v < 10 ? "0" : "") + v; };
     var kode = kodeTetap || (J.kode + "-" + String(now.getFullYear()).slice(2) + p2(now.getMonth() + 1) + p2(now.getDate()) + "-" + (1000 + Math.floor(Math.random() * 9000)));
     var doc = new Doc(), L = new Layout(doc);
@@ -920,7 +1031,7 @@
   }
   function kodeLama(k) { return /^KW-\d{4}-[A-Za-z0-9]+-[A-Za-z0-9]+$/.test(String(k || "")); }
 
-  var API = { JENIS: JENIS, buat: buat, validasi: validasi, muatLogo: muatLogo, kodeInvoice: kodeInvoice, linkInvoice: linkInvoice, kodeLama: kodeLama, _wrap: wrap, _tw: textWidth };
+  var API = { JENIS: JENIS, buat: buat, buatBeritaAcara: buatBeritaAcara, validasi: validasi, muatLogo: muatLogo, kodeInvoice: kodeInvoice, linkInvoice: linkInvoice, kodeLama: kodeLama, _wrap: wrap, _tw: textWidth };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.RTSurat = API;
 })(typeof window !== "undefined" ? window : globalThis);
