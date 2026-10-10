@@ -369,11 +369,13 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
   </div>
 
   <div class="chat-setup" id="chatSetup">
-    <div class="chat-setup-title">👋 Kenalan dulu yuk, supaya Admin tahu ini pesan dari siapa</div>
+    <div class="chat-setup-title">👋 Isi data dulu ya, supaya Admin tahu ini pesan dari siapa (semua kolom wajib diisi)</div>
     <div class="row2">
-      <div class="field"><label>Nama</label><input id="csNama" placeholder="Nama kamu"></div>
-      <div class="field"><label>Blok / No. Rumah (opsional)</label><input id="csRumah" placeholder="Contoh: E2 No.5"></div>
+      <div class="field"><label for="csNama">Nama <span style="color:#b42318">*</span></label><input id="csNama" placeholder="Nama lengkap" autocomplete="name"></div>
+      <div class="field"><label for="csWA">Nomor WhatsApp <span style="color:#b42318">*</span></label><input id="csWA" type="tel" inputmode="tel" placeholder="08xxxxxxxxxx" autocomplete="tel"></div>
     </div>
+    <div class="field"><label>Blok / No. Rumah <span style="color:#b42318">*</span></label><div id="csRumah"></div></div>
+    <div id="csErr" role="alert" style="display:none;color:#b42318;font-weight:700;font-size:.92rem"></div>
     <button class="btn btn-brand" id="csSimpan" style="justify-self:start">✅ Mulai Chat</button>
   </div>
 
@@ -468,22 +470,50 @@ document.addEventListener("DOMContentLoaded", function(){
 
   var setupBox = document.getElementById("chatSetup");
   var inpNama = document.getElementById("csNama");
-  var inpRumah = document.getElementById("csRumah");
+  var inpWA = document.getElementById("csWA");
+  var errBox = document.getElementById("csErr");
+  var inpPesan = document.getElementById("chatInput"), btnKirim = document.getElementById("chatSend");
   var savedNama = localStorage.getItem("rt08_chat_nama") || "";
   var savedRumah = localStorage.getItem("rt08_chat_rumah") || "";
-  inpNama.value = savedNama; inpRumah.value = savedRumah;
-  if(savedNama) setupBox.style.display = "none";
+  var savedWA = localStorage.getItem("rt08_chat_wa") || "";
+  inpNama.value = savedNama; inpWA.value = savedWA;
+  rtRumahPasang("csRumah", savedRumah);
 
+  /* Nomor WhatsApp: terima 08xx / +62xx / 62xx, simpan sebagai 08xx */
+  function normWA_(v){
+    var d = String(v || "").replace(/[^0-9+]/g, "").replace(/^\+/, "");
+    if(d.indexOf("62") === 0) d = "0" + d.slice(2);
+    return d;
+  }
+  function waValid_(d){ return /^08\d{8,12}$/.test(d); }
+  function tampilErr_(t){ errBox.textContent = t || ""; errBox.style.display = t ? "block" : "none"; }
+  /* identitas tersimpan di HP dianggap lengkap bila nama, rumah terdaftar, dan WhatsApp valid semuanya ada */
+  function identitasTersimpan_(){
+    var n = (localStorage.getItem("rt08_chat_nama") || "").trim(), r = localStorage.getItem("rt08_chat_rumah") || "", w = normWA_(localStorage.getItem("rt08_chat_wa"));
+    return (n.length >= 2 && rtCocokRumah(r) && waValid_(w)) ? { nama: n, rumah: rtCocokRumah(r), wa: w } : null;
+  }
+  function kunciChat_(terkunci){
+    inpPesan.disabled = terkunci; btnKirim.disabled = terkunci;
+    inpPesan.placeholder = terkunci ? "Isi nama, nomor rumah & WhatsApp di atas dulu…" : "Tulis pesan...";
+    document.getElementById("chatQuick").style.opacity = terkunci ? ".55" : "";
+  }
   function simpanIdentitas(){
-    var nama = inpNama.value.trim() || "Warga";
-    var rumah = inpRumah.value.trim();
+    var nama = inpNama.value.trim().replace(/\s+/g, " "), rumah = rtRumahNilai("csRumah"), wa = normWA_(inpWA.value);
+    if(nama.length < 2){ tampilErr_("Nama wajib diisi."); inpNama.focus(); return null; }
+    if(!rumah){ tampilErr_("Blok & Nomor Rumah wajib dipilih dari daftar."); return null; }
+    if(!waValid_(wa)){ tampilErr_("Nomor WhatsApp wajib diisi dengan benar, contoh: 08123456789."); inpWA.focus(); return null; }
+    tampilErr_("");
     localStorage.setItem("rt08_chat_nama", nama);
     localStorage.setItem("rt08_chat_rumah", rumah);
-    chatRef.child("info").update({ nama: nama, rumah: rumah, updatedAt: firebase.database.ServerValue.TIMESTAMP });
+    localStorage.setItem("rt08_chat_wa", wa);
+    chatRef.child("info").update({ nama: nama, rumah: rumah, wa: wa, updatedAt: firebase.database.ServerValue.TIMESTAMP }).catch(function(err){ console.error(err); tampilError_(pesanError_(err)); });
     setupBox.style.display = "none";
-    return { nama: nama, rumah: rumah };
+    kunciChat_(false);
+    return { nama: nama, rumah: rumah, wa: wa };
   }
   document.getElementById("csSimpan").addEventListener("click", simpanIdentitas);
+  if(identitasTersimpan_()){ setupBox.style.display = "none"; kunciChat_(false); }
+  else { setupBox.style.display = ""; kunciChat_(true); }
 
   /* ---- render pesan real-time ---- */
   function renderPesan_(items){
@@ -510,20 +540,22 @@ document.addEventListener("DOMContentLoaded", function(){
   function kirimPesan(teks){
     teks = String(teks || "").trim();
     if(!teks) return;
-    var idn = (inpNama.value.trim() || savedNama) ? simpanIdentitasSilent_() : simpanIdentitas();
+    /* nama, nomor rumah, dan WhatsApp WAJIB sebelum pesan terkirim */
+    var idn = identitasTersimpan_() || simpanIdentitas();
+    if(!idn){
+      setupBox.style.display = ""; kunciChat_(true);
+      if(!errBox.textContent) tampilErr_("Lengkapi nama, nomor rumah, dan nomor WhatsApp dulu sebelum mengirim pesan.");
+      setupBox.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     chatRef.child("pesan").push({ sender:"warga", teks: teks, waktu: firebase.database.ServerValue.TIMESTAMP }).catch(function(err){ console.error(err); tampilError_(pesanError_(err)); });
     chatRef.child("info").update({
-      nama: idn.nama, rumah: idn.rumah, lastMsg: teks, lastSender: "warga",
+      nama: idn.nama, rumah: idn.rumah, wa: idn.wa, lastMsg: teks, lastSender: "warga",
       lastAt: firebase.database.ServerValue.TIMESTAMP
     });
     chatRef.child("info/unreadAdmin").transaction(function(cur){ return (cur||0) + 1; });
     document.getElementById("chatInput").value = "";
     jalankanAI_(teks);
-  }
-  function simpanIdentitasSilent_(){
-    var nama = localStorage.getItem("rt08_chat_nama") || inpNama.value.trim() || "Warga";
-    var rumah = localStorage.getItem("rt08_chat_rumah") || inpRumah.value.trim() || "";
-    return { nama: nama, rumah: rumah };
   }
 
   document.getElementById("chatSend").addEventListener("click", function(){ kirimPesan(document.getElementById("chatInput").value); });

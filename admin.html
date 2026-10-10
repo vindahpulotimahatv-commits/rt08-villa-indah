@@ -967,7 +967,7 @@ function initDashboard_(){
       var items = Object.keys(val).map(function(k){
         var info = val[k].info || {};
         return {
-          vid: k, nama: info.nama || "Warga", rumah: info.rumah || "",
+          vid: k, nama: info.nama || "Warga", rumah: info.rumah || "", wa: info.wa || "",
           lastMsg: info.lastMsg || "", lastAt: info.lastAt || 0,
           unread: info.unreadAdmin || 0
         };
@@ -980,9 +980,9 @@ function initDashboard_(){
 
       if(items.length === 0){ lcList.innerHTML = '<div class="empty-note">Belum ada obrolan warga masuk.</div>'; return; }
       lcList.innerHTML = items.map(function(it){
-        return '<div class="lc-item' + (it.unread > 0 ? " unread" : "") + '" data-vid="' + esc_(it.vid) + '">' +
+        return '<div class="lc-item' + (it.unread > 0 ? " unread" : "") + '" data-vid="' + esc_(it.vid) + '" data-nama="' + esc_(it.nama) + '" data-rumah="' + esc_(it.rumah) + '" data-wa="' + esc_(it.wa) + '">' +
           '<div class="lc-item-av">' + (it.unread > 0 ? "🔵" : "💬") + '</div>' +
-          '<div class="lc-item-body"><div class="lc-item-nama">' + esc_(it.nama) + (it.rumah ? ' <span style="color:var(--muted);font-weight:700">· ' + esc_(it.rumah) + '</span>' : "") + '</div>' +
+          '<div class="lc-item-body"><div class="lc-item-nama">' + esc_(it.nama) + (it.rumah ? ' <span style="color:var(--muted);font-weight:700">· ' + esc_(it.rumah) + '</span>' : "") + (it.wa ? ' <span style="color:var(--muted);font-weight:700">· ' + esc_(it.wa) + '</span>' : "") + '</div>' +
           '<div class="lc-item-msg">' + esc_(it.lastMsg) + '</div></div>' +
           '<div style="text-align:right"><div class="lc-item-time">' + fmtJam_(it.lastAt) + '</div>' +
           (it.unread > 0 ? '<div class="lc-badge-un">' + it.unread + '</div>' : '') + '</div>' +
@@ -996,11 +996,11 @@ function initDashboard_(){
         : 'Gagal memuat obrolan. Periksa internet lalu muat ulang halaman.') + '</div>';
     });
 
-    function bukaThread_(vid, nama, rumah){
+    function bukaThread_(vid, nama, rumah, wa){
       activeVid = vid;
       lcThreadCard.style.display = "flex";
       lcThreadNama.textContent = nama || "Warga";
-      lcThreadRumah.textContent = rumah ? "Blok/Rumah: " + rumah : "";
+      lcThreadRumah.innerHTML = (rumah ? "Blok/Rumah: " + esc_(rumah) : "") + (wa ? (rumah ? " · " : "") + 'WhatsApp: <a href="https://wa.me/62' + esc_(String(wa).replace(/^0/, "")) + '" target="_blank" rel="noopener">' + esc_(wa) + '</a>' : "");
       if(msgListener) msgListener();
       var pesanRef = db.ref("obrolan/" + vid + "/pesan");
       var handler = pesanRef.on("value", function(snap){
@@ -1020,8 +1020,8 @@ function initDashboard_(){
     lcList.addEventListener("click", function(e){
       var item = e.target.closest(".lc-item"); if(!item) return;
       var vid = item.getAttribute("data-vid");
-      var nama = item.querySelector(".lc-item-nama").textContent.trim();
-      bukaThread_(vid, nama, "");
+      var nama = item.getAttribute("data-nama") || item.querySelector(".lc-item-nama").textContent.trim();
+      bukaThread_(vid, nama, item.getAttribute("data-rumah") || "", item.getAttribute("data-wa") || "");
     });
     document.getElementById("lcCloseThread").addEventListener("click", function(){
       lcThreadCard.style.display = "none";
