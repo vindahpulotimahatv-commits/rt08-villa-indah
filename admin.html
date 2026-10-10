@@ -803,6 +803,19 @@ function initDashboard_(){
     items.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
     lpItems = {}; items.forEach(function(it){ lpItems[it.id] = it; });
     if (window.RTRekapUI) RTRekapUI.set(items);   /* rekap & berita acara */
+    /* Perbaiki laporan lama: bila kode LP- belum punya data pelacakan publik, buatkan (hanya kategori+status, tanpa data pribadi) */
+    window.lpSudahCek_ = window.lpSudahCek_ || {};
+    items.forEach(function(it){
+      if (!it.kode || window.lpSudahCek_[it.kode]) return;
+      window.lpSudahCek_[it.kode] = 1;
+      db.ref("statusLaporan/" + it.kode).once("value").then(function(sn){
+        if (sn.exists()) return;
+        var o = { kategori: it.kategori || "Laporan", status: it.status || "Baru", createdAt: it.createdAt || Date.now() };
+        if (it.catatan) o.catatan = String(it.catatan).slice(0, 200);
+        if (it.updatedAt) o.updatedAt = it.updatedAt;
+        return db.ref("statusLaporan/" + it.kode).set(o);
+      }).catch(function(e){ console.warn("Backfill statusLaporan:", e && e.message); });
+    });
     var box = document.getElementById("listLaporan");
     if (items.length === 0) { box.innerHTML = '<div class="empty-note">Belum ada laporan masuk dari warga.</div>'; return; }
     box.innerHTML = items.map(function(it){

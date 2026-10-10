@@ -377,7 +377,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <section class="page-hero"><div class="container"><nav class="breadcrumb" aria-label="Breadcrumb"><a href="index.html">Beranda</a><svg class="i" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg><span aria-current="page">Layanan</span></nav><h1>Layanan Warga</h1><p>Butuh layanan warga? Pilih layanan yang tersedia dan ajukan kebutuhan dengan mudah.</p></div></section>
 <section class="section"><div class="container"><p class="svc-hint">Ketuk layanan yang dibutuhkan → isi data → surat PDF jadi → kirim ke WhatsApp pengurus.</p><div class="service-grid">
   <div class="service-card"><div class="icon">📝</div><h3>Surat Pengantar</h3><p>Isi data, langsung jadi surat pengantar PDF siap tanda tangan &amp; stempel Ketua RT dan Ketua RW.</p><a class="btn btn-brand" href="#" id="svcSurat">Ajukan</a></div>
-  <div class="service-card"><div class="icon">📍</div><h3>Surat Keterangan Domisili</h3><p>Isi data, langsung jadi surat keterangan domisili (PDF) siap tanda tangan &amp; stempel Ketua RT dan Ketua RW.</p><a class="btn btn-brand" href="#" id="svcDomisili">Ajukan</a></div>
+  <div class="service-card"><div class="icon">📍</div><h3>Surat Keterangan Domisili Tingkat RT</h3><p>Isi data, langsung jadi surat keterangan domisili tingkat RT (PDF) siap tanda tangan &amp; stempel Ketua RT dan Ketua RW.</p><a class="btn btn-brand" href="#" id="svcDomisili">Ajukan</a></div>
   <div class="service-card"><div class="icon">🚚</div><h3>Surat Keterangan Pindah</h3><p>Isi data, langsung jadi surat keterangan pindah (PDF) untuk ditandatangani sendiri lalu diserahkan ke Pengurus RT.</p><a class="btn btn-brand" href="#" id="svcWargaPindah">Ajukan</a></div>
   <div class="service-card"><div class="icon">🏡</div><h3>Surat Keterangan Tinggal Menetap</h3><p>Isi data, langsung jadi surat pernyataan tinggal menetap (PDF) untuk ditandatangani sendiri lalu diserahkan ke Pengurus RT.</p><a class="btn btn-brand" href="#" id="svcSuratMenetap">Ajukan</a></div>
   <div class="service-card"><div class="icon">🔑</div><h3>Surat Keterangan Tinggal Mengontrak</h3><p>Isi data, langsung jadi surat pernyataan tinggal mengontrak (PDF) untuk ditandatangani sendiri lalu diserahkan ke Pengurus RT.</p><a class="btn btn-brand" href="#" id="svcMengontrak">Ajukan</a></div>
@@ -488,7 +488,10 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
       var d=snap.val();
       if(!d){ box.innerHTML='<div class="stl-err">Kode <b>'+esc(kode)+'</b> tidak ditemukan. Periksa kembali penulisannya.</div>'; return; }
       tampil(kode,d);
-    },function(){ box.innerHTML='<div class="stl-err">Gagal membaca status. Periksa koneksi lalu coba lagi.</div>'; });
+    },function(err){
+      var izin=err&&(err.code==="PERMISSION_DENIED"||/permission/i.test(err.message||""));
+      box.innerHTML='<div class="stl-err">'+(izin?'Pelacakan status belum diaktifkan di server (aturan database belum diperbarui). Hubungi pengurus.':'Gagal membaca status. Periksa koneksi lalu coba lagi.')+'</div>';
+    });
   }
   function daftarSaya(){
     var a=baca(), wrap=$("stSaya"), list=$("stSayaList"); if(!wrap) return;
@@ -499,7 +502,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
     a.forEach(function(x){ db.ref("statusLaporan/"+x.kode+"/status").once("value").then(function(sn){
       var el=list.querySelector('[data-s="'+x.kode+'"]'); if(!el) return; var v=sn.val();
       if(v){ el.className="stl-chip stl-"+v; el.textContent=v==="Baru"?"Diterima":v; } else el.textContent="-";
-    }).catch(function(){}); });
+    }).catch(function(){ var el=list.querySelector('[data-s="'+x.kode+'"]'); if(el) el.textContent="-"; }); });
   }
   document.addEventListener("DOMContentLoaded",function(){
     $("stCari").onclick=function(){ cari($("stKode").value); };
@@ -834,15 +837,42 @@ function showToast(msg){
 
   Object.keys(MAP).forEach(function(id){
     var el=document.getElementById(id);
-    if(el) el.addEventListener("click",function(e){ e.preventDefault(); nomorPakai=null; if(MAP[id]==="pinjamFasilitas"){ window.RTInv.sel={}; pjId=null; dataForm={}; } tampilForm(MAP[id]); });
+    if(el) el.addEventListener("click",function(e){ e.preventDefault(); nomorPakai=null; sesiSurat=null; if(MAP[id]==="pinjamFasilitas"){ window.RTInv.sel={}; pjId=null; dataForm={}; } tampilForm(MAP[id]); });
   });
 
+  function judulLayar(k,J){ return k==="suratDomisili" ? J.judul+" Tingkat RT" : J.judul; }  /* hanya tampilan web/app; isi PDF tetap judul asli */
   function pengurus(J){ return RT_CONFIG[J.pengurus]||"Pengurus RT"; }
   function nomorWA(J){ return String(RT_CONFIG[J.nomorWA]||RT_CONFIG.waKetua||"").replace(/[^0-9]/g,""); }
 
+  /* Pengajuan surat tercatat di Firebase "laporan" (kategori "Layanan Surat") + "statusLaporan" (kode LP-)
+     -> otomatis muncul di Laporan Warga, Rekap Excel & Berita Acara halaman pengurus, dan bisa dilacak warga. */
+  var sesiSurat=null;   /* {k, id, kode, dibuat} satu sesi per pengajuan; ubah data = perbarui, bukan dobel */
+  function catatPengajuanSurat(k,d){
+    try{
+      var cfg=RT_CONFIG.firebaseConfig||{};
+      if(!(cfg.apiKey&&cfg.databaseURL&&cfg.appId)||typeof firebase==="undefined") return null;
+      if(!firebase.apps.length) firebase.initializeApp(cfg);
+      var db=firebase.database(), J=RTSurat.JENIS[k];
+      if(!sesiSurat||sesiSurat.k!==k){ sesiSurat={k:k,id:db.ref("laporan").push().key,kode:buatKodeLaporan_(),dibuat:false}; }
+      var S=sesiSurat, kat="Layanan Surat";
+      var ket="Pengajuan "+J.judul+(d.keperluan?" — keperluan: "+String(d.keperluan).trim():"");
+      var isi={kode:S.kode,nama:d.nama||"",blok:d.blok||"",kategori:kat,wa:d.hp||"",keterangan:ket.slice(0,500),jenis:"surat",suratJenis:k,status:"Baru"};
+      if(!S.dibuat){
+        isi.createdAt=firebase.database.ServerValue.TIMESTAMP;
+        db.ref("laporan/"+S.id).set(isi).catch(function(e){ console.warn("Pengajuan surat belum tercatat:",e&&e.message); });
+        db.ref("statusLaporan/"+S.kode).set({kategori:kat,status:"Baru",createdAt:firebase.database.ServerValue.TIMESTAMP})
+          .catch(function(e){ console.warn("Status pengajuan belum tercatat:",e&&e.message); });
+        S.dibuat=true; lpSimpanSaya_(S.kode,J.judul);
+      } else {
+        db.ref("laporan/"+S.id).update(isi).catch(function(){});
+      }
+      return S.kode;
+    }catch(e){ console.warn(e); return null; }
+  }
+
   function tampilForm(k){
     key=k; var J=RTSurat.JENIS[k];
-    var h='<h2 id="smJudul">'+J.ikon+' '+esc(J.judul)+'</h2>'+
+    var h='<h2 id="smJudul">'+J.ikon+' '+esc(judulLayar(k,J))+'</h2>'+
       '<p class="sm-sub">'+(J.subForm||'Isi data di bawah — sistem membuatkan surat <b>PDF</b> otomatis. Setelah sampai di WhatsApp pengurus, tinggal ditandatangani &amp; distempel.')+'</p>'+
       '<form id="smForm" novalidate><div class="form-grid">';
     J.fields.forEach(function(f){
@@ -888,6 +918,7 @@ function showToast(msg){
         try{ hasil=RTSurat.buat(k,d,RT_CONFIG,logo,null,null,no); }
         catch(ex){ console.error(ex); showToast("Maaf, gagal membuat PDF. Coba lagi."); return; }
         if(k==="pinjamFasilitas") simpanPengajuan(d);
+        hasil.kodeLaporan=catatPengajuanSurat(k,d);
         tampilHasil();
       });
     });
@@ -896,14 +927,16 @@ function showToast(msg){
   function tampilHasil(){
     var J=RTSurat.JENIS[key], nama=pengurus(J);
     body.innerHTML='<h2 id="smJudul">✅ Surat PDF siap</h2>'+
-      '<div class="sm-ok">Surat <b>'+esc(J.judul)+'</b> atas nama <b>'+esc(hasil.data.nama)+'</b> sudah dibuat.<br>'+
+      '<div class="sm-ok">Surat <b>'+esc(judulLayar(key,J))+'</b> atas nama <b>'+esc(hasil.data.nama)+'</b> sudah dibuat.<br>'+
       (J.alur ? J.alur.replace("{pengurus}",esc(nama)) : 'Tekan tombol di bawah untuk mengirimnya ke WhatsApp <b>'+esc(nama)+'</b>. Pengurus akan menandatangani &amp; mencap surat lalu mengirim balik.')+'</div>'+
       '<div class="sm-actions">'+
         '<button class="btn btn-gold" type="button" id="smKirim">📤 Kirim ke WhatsApp '+esc(nama)+'</button>'+
         '<button class="btn sm-btn-line" type="button" id="smUnduh">⬇️ Unduh PDF</button>'+
         '<button class="btn sm-btn-line" type="button" id="smUbah">✏️ Ubah data</button>'+
       '</div>'+
+      (hasil.kodeLaporan?'<p class="sm-file" style="margin-top:10px">🔎 Kode pengajuan: <b>'+esc(hasil.kodeLaporan)+'</b> — cek perkembangannya di <a href="#status-laporan" id="smKeStatus">Cek Status Laporan</a>.</p>':'')+
       '<p class="sm-file">📎 '+esc(hasil.namaFile)+'<br>Surat dibuat di HP Anda dan tidak disimpan di server. '+(J.alur?'Belum sah sebelum ditandatangani.':'Belum sah sebelum ditandatangani &amp; distempel pengurus.')+'</p>';
+    var lk=document.getElementById("smKeStatus"); if(lk) lk.onclick=function(){ tutup(); var i=document.getElementById("stKode"); if(i) i.value=hasil.kodeLaporan; };
     document.getElementById("smKirim").onclick=kirim;
     document.getElementById("smUnduh").onclick=function(){ unduh(); showToast("PDF diunduh."); };
     document.getElementById("smUbah").onclick=function(){ tampilForm(key); };
