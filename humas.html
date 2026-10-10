@@ -1220,7 +1220,7 @@ function kirimReminder_(payload, waPre){
   if (nomor) {
     var pesan = salam_() + " Bpk/Ibu " + (payload.nama || "") + " (" + payload.rumah + "). Kami dari Humas RT 08 tadi berkunjung untuk penarikan *iuran bulanan* " +
       bulanLabel_(bulanKey) + " sebesar " + fmtRp_(payload.jumlah) + ", namun belum bertemu Bapak/Ibu." +
-      "\n\nMohon informasi kapan bisa kami kunjungi kembali" + (rek ? ", atau bisa dibayar via transfer ke:\n*" + rek + "*\n(mohon kirim bukti transfernya di chat ini)" : ".") +
+      "\n\nMohon informasi kapan bisa kami kunjungi kembali" + (rek ? ", atau bisa dibayar via transfer ke:\n*" + rek + "*\n(mohon kirim bukti transfernya di chat ini atau bisa lewat Aplikasi Pandu)" : ".") +
       "\n\nTerima kasih 🙏";
     link = rtWaLink(nomor, pesan);
     judul = "💬 Reminder WhatsApp"; sub = esc_(payload.rumah) + " · " + esc_(payload.nama || "-");
