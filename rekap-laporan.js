@@ -195,11 +195,31 @@
 
   function el(id) { return document.getElementById(id); }
   function toast(m) { if (typeof root.showToast === "function") root.showToast(m); else alert(m); }
-  function unduh(bytes, nama, tipe) {
+  function b64(bytes) {
+    var u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), s = "";
+    for (var i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+    return btoa(s);
+  }
+  function unduhBlob(bytes, nama, tipe) {
     var url = URL.createObjectURL(new Blob([bytes], { type: tipe }));
     var a = document.createElement("a"); a.href = url; a.download = nama;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
+  }
+  /* Di aplikasi Android (WebView) unduhan blob tidak jalan -> pakai jembatan RTAndroid.shareFile (menu Simpan/Bagikan).
+     Di browser: lembar bagikan bila ada, kalau tidak unduh biasa. */
+  function unduh(bytes, nama, tipe) {
+    if (root.RTAndroid && typeof root.RTAndroid.shareFile === "function") {
+      try { if (root.RTAndroid.shareFile(b64(bytes), nama, tipe, "", "", false)) { toast("Pilih tujuan: simpan ke File/Drive atau kirim lewat WhatsApp."); return; } } catch (e) { console.warn(e); }
+    }
+    try {
+      var f = new File([bytes], nama, { type: tipe });
+      if (navigator.canShare && navigator.canShare({ files: [f] }) && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
+        navigator.share({ files: [f], title: nama }).catch(function (e) { if (!e || e.name !== "AbortError") unduhBlob(bytes, nama, tipe); });
+        return;
+      }
+    } catch (e2) { console.warn(e2); }
+    unduhBlob(bytes, nama, tipe);
   }
   function filterSaatIni() {
     return { mode: el("rkpPeriode").value, bulan: el("rkpBulan").value, kategori: el("rkpKategori").value, status: el("rkpStatus").value };
@@ -223,7 +243,7 @@
       var bytes = buatXlsx(s.items, { periode: s.periode, kategori: f.kategori, status: f.status, dicetak: Date.now() });
       var n = new Date();
       unduh(bytes, "Rekap-Laporan-Warga_" + n.getFullYear() + p2(n.getMonth() + 1) + p2(n.getDate()) + ".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-      toast("Excel diunduh (" + s.items.length + " laporan).");
+      toast("Excel siap (" + s.items.length + " laporan).");
     });
     el("rkpPdf").addEventListener("click", function () {
       if (typeof root.RTSurat === "undefined" || !root.RTSurat.buatBeritaAcara) { toast("surat-pdf.js belum termuat / versi lama."); return; }
@@ -231,7 +251,7 @@
       try {
         var r = root.RTSurat.buatBeritaAcara(s.items, { periode: s.periode, kategori: f.kategori === "Semua" ? "Semua kategori" : f.kategori }, (typeof RT_CONFIG !== "undefined" ? RT_CONFIG : {}), null, new Date());
         unduh(r.bytes, r.namaFile, "application/pdf");
-        toast("Berita acara diunduh: " + r.nomor);
+        toast("Berita acara siap: " + r.nomor);
       } catch (e) { console.error(e); toast("Gagal membuat berita acara."); }
     });
     UI.ready = true;
