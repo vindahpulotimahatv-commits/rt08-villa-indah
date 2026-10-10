@@ -378,11 +378,12 @@
   function nomorSuratMaster(L, c) {
     L.center("Nomor :  " + noUrut(c) + "  /RT " + c.rt3 + "/" + c.rw3 + "/  " + c.bulanRomawi + "  /" + c.tahun, "R", 12, 24);
   }
-  function footer(doc, kode, catatan) {
+  function footer(doc, kode, catatan, situs) {
+    situs = String(situs || "").replace(/^https?:\/\//, "").replace(/\/+$/, "");
     var n = doc.pages.length, cur = doc.page;
     for (var i = 0; i < n; i++) {
       doc.page = doc.pages[i];
-      var s = "Dibuat lewat Portal Warga RT 08 • Kode: " + kode + (n > 1 ? " • Hal. " + (i + 1) + "/" + n : "") +
+      var s = "Dibuat lewat Portal Warga RT 08 • Kode: " + kode + (n > 1 ? " • Hal. " + (i + 1) + "/" + n : "") + (situs ? " • " + situs : "") +
               " • " + (catatan || "Surat ini baru sah setelah ditandatangani dan distempel pengurus RT.");
       var lines = wrap(norm(s), "I", 8, PAGE_W - 136);
       doc.line(68, PAGE_H - 62, PAGE_W - 68, PAGE_H - 62, 0.4, 0.6);
@@ -773,8 +774,9 @@
         L.space(14);
         doc.line(x0, L.y, x0 + W, L.y, 0.5, 0.8);
         L.y += 12;
-        var lk = linkInvoice(c, kode);
-        if (lk) L.p("Cek iuran Anda sudah tercatat di Transparansi RT: " + lk.replace(/^https?:\/\//, ""), { size: 9.5, gray: 0.4 });
+        var lk = linkInvoice(c, kode), situs = String(c.urlSitus || "").replace(/^https?:\/\//, "").replace(/\/+$/, "");
+        if (situs) { L.center("Cek iuran Anda di", "R", 10, 15); L.center(situs, "B", 17, 24); L.space(4); }
+        if (lk) L.p("Tautan cek invoice: " + lk.replace(/^https?:\/\//, ""), { size: 9, gray: 0.4 });
         L.p("Terima kasih, iuran Anda sudah kami terima. Kwitansi elektronik ini sah tanpa tanda tangan dan stempel - simpan sebagai bukti pembayaran.", { size: 9.5, gray: 0.4 });
       }
     },
@@ -939,7 +941,7 @@
     L.sign({ jabatan: ["Dibuat oleh,", "Sekretaris RT " + c.rt3], nama: c.sekretaris, kurung: true },
            { jabatan: ["Mengetahui,", "Ketua RT " + c.rt3 + " / RW " + c.rw3], nama: c.ketua, kurung: true },
            c.tempat + ", " + c.tglHariIni);
-    footer(doc, nomor, "Rekap otomatis dari data laporan warga di aplikasi PANDU.");
+    footer(doc, nomor, "Rekap otomatis dari data laporan warga di aplikasi PANDU.", c.urlSitus);
     var per = String(opsi.periode || "Semua").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
     return { bytes: doc.build("Berita Acara Laporan Warga - " + (opsi.periode || "Semua periode")), nomor: nomor, jumlah: items.length,
              namaFile: "Berita-Acara-Laporan-Warga_" + per + "_" + now.getFullYear() + p2d(now.getMonth() + 1) + p2d(now.getDate()) + ".pdf" };
@@ -957,7 +959,7 @@
     var doc = new Doc(), L = new Layout(doc);
     if (!J.ringkas) kop(L, c, logo);   // ringkas = dokumen non-formal (mis. kwitansi elektronik): tanpa kop resmi
     J.render(L, d, c, kode);
-    if (!J.ringkas) footer(doc, kode, J.catatanFile);
+    if (!J.ringkas) footer(doc, kode, J.catatanFile, c.urlSitus);
     var bytes = doc.build(J.judul + " - " + d.nama);
     var namaFile = J.judul.replace(/\s+/g, "-") + "_" + (slug(d.nama) || "warga") + "_" + kode + ".pdf";
     var pesan = "Halo Pengurus RT " + c.rt + ", saya " + d.nama + " (Blok/No. " + d.blok + ") mengajukan *" + J.judul +
