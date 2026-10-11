@@ -67,6 +67,16 @@ button{font:inherit}
 .list-card .list-title{padding:12px 14px 6px;font-size:12px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
 .rumah-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px;border-top:1px solid var(--line);cursor:pointer}
 .rumah-row:first-of-type{border-top:0}
+.rumah-row{border-left:5px solid transparent}
+.rumah-row.w-cash{background:#eaf8f0;border-left-color:#1c8a4e}
+.rumah-row.w-cashsetor{background:#e0f5f3;border-left-color:#0f8f84}
+.rumah-row.w-saldo{background:#f3ecfb;border-left-color:#7b4bb8}
+.rumah-row.w-tfwait{background:#fff6e3;border-left-color:#e0a21a}
+.rumah-row.w-tf{background:#e8f0ff;border-left-color:#2f66d0}
+.rumah-row.w-belum{background:#fdecec;border-left-color:#d23a3a}
+.legend-w{display:flex;flex-wrap:wrap;gap:6px 12px;padding:2px 14px 10px;font-size:11px;color:var(--muted);font-weight:700}
+.legend-w i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+
 .rumah-row:active{background:#f6f8fd}
 .rumah-row h4{margin:0 0 3px;font-size:14.5px}
 .rumah-row p{margin:0;font-size:12px;color:var(--muted)}
@@ -167,6 +177,11 @@ html,body{overflow-x:hidden}
     <div>💵 Uang Cash di Tangan<b id="totalCashTangan">Rp 0</b><small style="display:block;font-weight:600;opacity:.85">Belum disetor ke Pengurus. Tekan Setor setelah selesai menarik.</small><small id="cashKet" style="display:block;font-weight:700;opacity:.95"></small></div>
     <button class="btn btn-gold btn-sm" id="btnSetor" style="width:auto">📤 Setor</button>
   </div>
+  <div id="cekSetorBar" style="display:none;margin:-4px 0 14px;background:#fff;border-radius:16px;padding:12px 14px;box-shadow:var(--shadow-lg)">
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">🔎 Cek dulu sebelum Setor — pastikan uang &amp; daftar rumah cocok</div>
+    <div style="display:flex;gap:8px"><button class="btn btn-line btn-sm" id="btnCekPdf" type="button" style="flex:1">📄 Unduh PDF</button><button class="btn btn-line btn-sm" id="btnCekXls" type="button" style="flex:1">📊 Unduh Excel</button></div>
+    <div id="cekSetorInfo" style="font-size:11.5px;color:var(--muted);margin-top:8px"></div>
+  </div>
 
   <div class="search-wrap" id="searchWrap"><input type="text" class="search-box" id="cariRumah" placeholder="Ketik blok/no rumah atau nama warga..." autocomplete="off" autocapitalize="characters" spellcheck="false"><div class="ac-list" id="acRumah" hidden></div></div>
 
@@ -187,6 +202,14 @@ html,body{overflow-x:hidden}
 
   <div class="list-card">
     <div class="list-title">Daftar Rumah — Ketuk untuk Catat Penarikan</div>
+    <div class="legend-w">
+      <span><i style="background:#1c8a4e"></i>Cash (belum disetor)</span>
+      <span><i style="background:#0f8f84"></i>Cash (sudah disetor)</span>
+      <span><i style="background:#2f66d0"></i>Transfer (lunas)</span>
+      <span><i style="background:#e0a21a"></i>Transfer (menunggu)</span>
+      <span><i style="background:#7b4bb8"></i>Dari saldo titipan</span>
+      <span><i style="background:#d23a3a"></i>Belum bayar</span>
+    </div>
     <div id="listRumah"><div class="empty-note">Memuat data...</div></div>
   </div>
 
@@ -209,7 +232,6 @@ html,body{overflow-x:hidden}
 
   <div class="list-card">
     <div class="list-title">Riwayat Setoran Saya</div>
-    <div style="padding:0 14px 8px"><button class="btn btn-line btn-sm" id="btnPdfMenunggu" type="button" style="width:auto">📄 PDF Semua Setoran Menunggu</button></div>
     <div id="listSetoran"><div class="empty-note">Belum ada setoran.</div></div>
   </div>
 </div></div>
@@ -226,6 +248,7 @@ html,body{overflow-x:hidden}
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="config.js"></script>
 <script src="warga-data.js"></script>
 <script src="warga-kontak.js"></script>
@@ -514,17 +537,8 @@ function initDashboard_(){
 
   document.getElementById("cariRumah").addEventListener("input", renderList_);
   document.getElementById("btnSetor").addEventListener("click", ajukanSetoran_);
-  document.getElementById("btnPdfMenunggu").addEventListener("click", function(){
-    var list = Object.keys(setoranData).map(function(k){ return Object.assign({ id: k }, setoranData[k]); })
-      .filter(function(it){ return it.petugas === petugasNama && it.status !== "diterima"; })
-      .sort(function(a, b){ return String(a.bulanKey).localeCompare(String(b.bulanKey)); });
-    if (!list.length) { showToast("Tidak ada setoran yang menunggu. Pakai tombol PDF di riwayat untuk setoran lama."); return; }
-    try {
-      var pdfM = bangunPdfSetoran_(list.map(function(it){ return { bulan: it.bulanKey, keys: Object.keys(it.rumahKeys || {}), total: it.jumlah }; }),
-        "SET-" + tglWIB_().replace(/-/g, "").slice(2) + "-" + String(list[list.length - 1].id).slice(-4).toUpperCase(), Date.now());
-      tampilLaporanSetoran_(list[0].id, list[0], pdfM, true);
-    } catch (e7) { console.error(e7); showToast("Gagal membuat PDF. Muat ulang halaman lalu coba lagi."); }
-  });
+  document.getElementById("btnCekPdf").addEventListener("click", function(){ cekRincianSetor_("pdf"); });
+  document.getElementById("btnCekXls").addEventListener("click", function(){ cekRincianSetor_("xls"); });
   document.getElementById("listSetoran").addEventListener("click", function(e){
     var bp = e.target.closest(".btn-pdf");
     if (bp) {
@@ -659,9 +673,22 @@ function renderRingkasan_(){
   if (cashDiTangan > 0) {
     banner.style.display = "flex";
     document.getElementById("totalCashTangan").textContent = fmtRp_(cashDiTangan);
+    document.getElementById("cekSetorBar").style.display = "block";
+    var inf = document.getElementById("cekSetorInfo"), nCatat = 0;
+    Object.keys(penarikanSemua || {}).forEach(function(b){ var bl = penarikanSemua[b] || {}; Object.keys(bl).forEach(function(k){ var e = bl[k]; if (e && e.status === "lunas_cash" && !e.setoranId) nCatat++; }); });
+    if (inf) inf.textContent = nCatat + " catatan cash belum disetor · total " + fmtRp_(cashDiTangan) + ". Cocokkan dengan uang di tangan.";
     var ket = document.getElementById("cashKet");
     if (ket) ket.textContent = cashLain > 0 ? ("Termasuk " + fmtRp_(cashLain) + " dari bulan lain (bayar di muka / belum disetor).") : "";
-  } else banner.style.display = "none";
+  } else { banner.style.display = "none"; document.getElementById("cekSetorBar").style.display = "none"; }
+}
+/* Warna baris rumah menurut cara bayar / status. */
+function warnaRow_(e){
+  if (!e) return "";
+  if (e.status === "lunas_cash") return e.setoranId === "saldo" ? "w-saldo" : (e.setoranId ? "w-cashsetor" : "w-cash");
+  if (e.status === "transfer_pending") return "w-tfwait";
+  if (e.status === "lunas_transfer") return "w-tf";
+  if (e.status === "belum") return "w-belum";
+  return "";
 }
 function renderList_(){
   var q = normKey_(document.getElementById("cariRumah").value);
@@ -674,7 +701,7 @@ function renderList_(){
   if (hasil.length === 0) { box.innerHTML = '<div class="empty-note">Tidak ditemukan.</div>'; return; }
   box.innerHTML = hasil.map(function(r){
     var info = statusInfo_(penarikanData[r.key]);
-    return '<div class="rumah-row" data-key="' + r.key + '">' +
+    return '<div class="rumah-row ' + warnaRow_(penarikanData[r.key]) + '" data-key="' + r.key + '">' +
       '<div><h4>' + esc_(r.label) + '</h4><p>' + esc_(r.nama || "-") + '</p></div>' +
       '<span class="status-pill ' + info.cls + '">' + info.text + (penarikanData[r.key] && penarikanData[r.key].paketId ? ' · Bayar di muka ' + penarikanData[r.key].paketKe + '/' + penarikanData[r.key].paketN : '') + '</span>' +
       '</div>';
@@ -821,20 +848,50 @@ async function kirimExcelSetoran_(id, batch){
   } catch (e) { if (e && e.name === "AbortError") return; console.error(e); showToast("Gagal menyiapkan Excel. Coba lagi."); }
 }
 /* ---------- LAPORAN SETOR (PDF) ---------- */
-/* list: [{ bulan, keys, total }] — data diambil dari penarikanSemua (semua bulan). */
-function bangunPdfSetoran_(list, kode, waktu){
+/* Penanda status per catatan: warna (layar/PDF/Excel) + teks (tetap terbaca bila dicetak hitam-putih). */
+var WARNA_STATUS_ = {
+  cash:      { ket: "Cash - belum disetor",           pdf: [0.86, 0.96, 0.90], xl: "FFDDF4E6" },
+  cashsetor: { ket: "Cash - sudah disetor",           pdf: [0.84, 0.95, 0.94], xl: "FFD6F2EF" },
+  saldo:     { ket: "Lunas dari saldo titipan",       pdf: [0.94, 0.91, 0.98], xl: "FFF0E8FA" },
+  tfwait:    { ket: "Transfer - menunggu konfirmasi", pdf: [1, 0.96, 0.88],    xl: "FFFFF3DC" },
+  tf:        { ket: "Transfer - lunas",               pdf: [0.90, 0.94, 1],    xl: "FFE5EDFF" },
+  belum:     { ket: "Belum bayar",                    pdf: [0.99, 0.91, 0.91], xl: "FFFCE8E8" }
+};
+function kodeStatus_(e){
+  return ({ "w-cash": "cash", "w-cashsetor": "cashsetor", "w-saldo": "saldo", "w-tfwait": "tfwait", "w-tf": "tf", "w-belum": "belum" })[warnaRow_(e)] || "";
+}
+/* Bulan terpilih: semua catatan yang BUKAN cash-belum-disetor, supaya Humas bisa mencocokkan seluruh rumah. */
+function infoLainBulan_(){
+  var bln = penarikanSemua[bulanKey] || penarikanData || {}, out = [];
+  Object.keys(bln).forEach(function(k){
+    var e = bln[k], kd = kodeStatus_(e);
+    if (!kd || kd === "cash") return;
+    out.push({ key: k, kode: kd, e: e });
+  });
+  return out;
+}
+function barisDariEntry_(k, e, kd){
+  var w = WARNA_STATUS_[kd] || {};
+  return { rumah: e.rumah || k, nama: e.nama || "-", tambahan: !!e.tambahanKK, rukem: RT_CONFIG.iuranTambahanKK || 7500,
+    jumlah: (kd === "belum" || kd === "saldo") ? (parseFloat(e.jumlah) || 0) : uangEntry_(e), kwt: e.kodeKwitansi || "", ket: w.ket || "", kode: kd, warna: w.pdf };
+}
+function urutRumah_(x, y){ return x.rumah.localeCompare(y.rumah, "id", { numeric: true }); }
+/* list: [{ bulan, keys, total }] — data dari penarikanSemua. withInfo: tambah bagian info rumah lain di bulan terpilih. */
+function bangunPdfSetoran_(list, kode, waktu, extra, withInfo){
   if (!window.RTSurat || !RTSurat.buatLaporanSetoran) throw new Error("Modul PDF belum termuat");
-  var rukem = RT_CONFIG.iuranTambahanKK || 7500;
   var batches = list.map(function(b){
     var bln = penarikanSemua[b.bulan] || {};
     var rows = b.keys.map(function(k){
-      var e = bln[k] || {};
-      return { rumah: e.rumah || k, nama: e.nama || "-", tambahan: !!e.tambahanKK, rukem: rukem, jumlah: uangEntry_(e), kwt: e.kodeKwitansi || "" };
-    }).sort(function(x, y){ return x.rumah.localeCompare(y.rumah, "id", { numeric: true }); });
+      var e = bln[k] || {}, r = barisDariEntry_(k, e, kodeStatus_(e) || "cash"); r.jumlah = uangEntry_(e); return r;
+    }).sort(urutRumah_);
     return { bulanLabel: bulanLabel_(b.bulan), rows: rows, total: rows.reduce(function(a, r){ return a + r.jumlah; }, 0) };
   });
-  var hasil = RTSurat.buatLaporanSetoran(batches, { petugas: petugasNama, kode: kode, waktu: waktu || Date.now() }, RT_CONFIG);
-  hasil.batches = batches;
+  if (withInfo) {
+    var info = infoLainBulan_().map(function(x){ return barisDariEntry_(x.key, x.e, x.kode); }).sort(urutRumah_);
+    if (info.length) batches.push({ info: true, judul: "Info " + bulanLabel_(bulanKey) + ": rumah lain (bukan cash di tangan)", bulanLabel: bulanLabel_(bulanKey), rows: info, total: info.reduce(function(a, r){ return a + r.jumlah; }, 0) });
+  }
+  var hasil = RTSurat.buatLaporanSetoran(batches, Object.assign({ petugas: petugasNama, kode: kode, waktu: waktu || Date.now() }, extra || {}), RT_CONFIG);
+  hasil.batches = batches.filter(function(b){ return !b.info; });
   return hasil;
 }
 function teksSetoranPdf_(pdf, untuk){
@@ -925,6 +982,95 @@ function ajukanSetoran_(){
     });
   }).catch(function(err){ showToast(pesanGagal_(err, "Pengajuan setoran")); })
   .finally(function(){ btnSetor.disabled = false; });
+}
+
+/* ---------- CEK RINCIAN SEBELUM SETOR (PDF / EXCEL) ---------- */
+function cashBelumSetor_(){
+  var out = [];
+  Object.keys(penarikanSemua || {}).filter(function(m){ return /^\d{4}-\d{2}$/.test(m); }).sort().forEach(function(m){
+    var bln = penarikanSemua[m] || {}, ks = [], t = 0;
+    Object.keys(bln).forEach(function(k){ var e = bln[k]; if (e && e.status === "lunas_cash" && !e.setoranId) { ks.push(k); t += uangEntry_(e); } });
+    if (ks.length) out.push({ bulan: m, keys: ks, total: t });
+  });
+  return out;
+}
+function simpanFile_(bytes, namaFile, mime){
+  if (window.RTAndroid && typeof RTAndroid.shareFile === "function") {
+    try { if (RTAndroid.shareFile(b64_(bytes), namaFile, mime, "", "", false)) return; } catch (e) { console.warn(e); }
+  }
+  var url = URL.createObjectURL(new Blob([bytes], { type: mime }));
+  var a = document.createElement("a"); a.href = url; a.download = namaFile;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 30000);
+}
+async function bangunExcelRincian_(list){
+  if (typeof ExcelJS === "undefined") throw new Error("ExcelJS belum termuat");
+  var now = new Date(), gc = { style: "thin", color: { argb: "FFBFBFBF" } }, garis = { top: gc, left: gc, bottom: gc, right: gc };
+  var wb = new ExcelJS.Workbook(), ws = wb.addWorksheet("Rincian Cash", { views: [{ state: "frozen", ySplit: 8 }], pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 } });
+  [5, 14, 18, 30, 30, 16, 16, 15, 20].forEach(function(w, i){ ws.getColumn(i + 1).width = w; });
+  function judul(r, t, size){ ws.mergeCells(r, 1, r, 9); var c = ws.getCell(r, 1); c.value = t; c.font = { bold: true, size: size, color: { argb: "FF1F3A5F" } }; c.alignment = { horizontal: "center" }; }
+  judul(1, "RINCIAN CASH SEBELUM SETOR (PENGECEKAN)", 14);
+  judul(2, "RT " + (String(RT_CONFIG.namaRT || "08").replace(/\D+/g, "") || "08") + " / RW " + (String(RT_CONFIG.namaRW || "021").replace(/\D+/g, "") || "021") + " - " + (RT_CONFIG.namaKompleks || "Villa Indah Pulo Timaha"), 11);
+  ws.getCell(4, 1).value = "Petugas Humas"; ws.getCell(4, 3).value = petugasNama;
+  ws.getCell(5, 1).value = "Dibuat"; ws.getCell(5, 3).value = fmtTgl_(now.getTime()) + " " + ("0" + now.getHours()).slice(-2) + ":" + ("0" + now.getMinutes()).slice(-2) + " WIB";
+  ws.getCell(6, 1).value = "Status"; ws.getCell(6, 3).value = "Belum disetor - untuk pengecekan";
+  [4, 5, 6].forEach(function(r){ ws.getCell(r, 1).font = { bold: true }; });
+  var HDR = 8, hr = ws.getRow(HDR);
+  ["No", "Bulan", "Blok / No. Rumah", "Nama Warga", "Status / Cara Bayar", "Iuran Bulanan (Rp)", "Iuran RUKEM (Rp)", "Total (Rp)", "Kode Kwitansi"].forEach(function(t, i){
+    var c = hr.getCell(i + 1); c.value = t; c.font = { bold: true, color: { argb: "FFFFFFFF" } }; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F3A5F" } };
+    c.alignment = { horizontal: "center", vertical: "middle", wrapText: true }; c.border = garis;
+  });
+  var row = HDR, first = HDR + 1;
+  function tulis(no, bulanLbl, r, formulaTotal){
+    row++;
+    var rukem = r.tambahan ? r.rukem : 0, iuran = r.jumlah - rukem, w = WARNA_STATUS_[r.kode] || WARNA_STATUS_.cash, rw = ws.getRow(row);
+    [no, bulanLbl, r.rumah, r.nama, r.ket + (r.tambahan ? " (+RUKEM)" : ""), iuran, rukem, { formula: "F" + row + "+G" + row, result: iuran + rukem }, r.kwt].forEach(function(v, i){
+      var c = rw.getCell(i + 1); c.value = v; c.border = garis; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: w.xl } };
+      if (i >= 5 && i <= 7) c.numFmt = "#,##0";
+      if (i === 0) c.alignment = { horizontal: "center" };
+    });
+  }
+  var n = 0, tot = 0;
+  list.forEach(function(b){
+    var bln = penarikanSemua[b.bulan] || {};
+    b.keys.map(function(k){ var e = bln[k] || {}, r = barisDariEntry_(k, e, kodeStatus_(e) || "cash"); r.jumlah = uangEntry_(e); return r; }).sort(urutRumah_)
+      .forEach(function(r){ n++; tot += r.jumlah; tulis(n, bulanLabel_(b.bulan), r); });
+  });
+  var last = row; row++;
+  var tr = ws.getRow(row);
+  ["", "", "", "", "TOTAL CASH DI TANGAN (" + n + " catatan)", { formula: "SUM(F" + first + ":F" + last + ")", result: 0 }, { formula: "SUM(G" + first + ":G" + last + ")", result: 0 }, { formula: "SUM(H" + first + ":H" + last + ")", result: tot }, ""].forEach(function(v, i){
+    var c = tr.getCell(i + 1); c.value = v === "" ? null : v; c.font = { bold: true }; c.border = garis; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE8EEF7" } };
+    if (i >= 5 && i <= 7) c.numFmt = "#,##0";
+  });
+  var info = infoLainBulan_().map(function(x){ return barisDariEntry_(x.key, x.e, x.kode); }).sort(urutRumah_);
+  if (info.length) {
+    row += 2; ws.mergeCells(row, 1, row, 9);
+    var ci = ws.getCell(row, 1); ci.value = "INFO " + bulanLabel_(bulanKey).toUpperCase() + ": rumah lain (bukan cash di tangan) - TIDAK masuk total di atas"; ci.font = { bold: true, color: { argb: "FF1F3A5F" } };
+    info.forEach(function(r, i){ tulis(i + 1, bulanLabel_(bulanKey), r); });
+  }
+  row += 2; ws.mergeCells(row, 1, row, 9);
+  var ck = ws.getCell(row, 1); ck.value = "Keterangan: hijau = cash belum disetor | teal = cash sudah disetor | biru = transfer lunas | kuning = transfer menunggu | ungu = saldo titipan | merah = belum bayar";
+  ck.font = { italic: true, size: 9, color: { argb: "FF666666" } };
+  var buf = await wb.xlsx.writeBuffer();
+  return { bytes: new Uint8Array(buf), namaFile: "Rincian-Cash-Sebelum-Setor_" + String(petugasNama || "humas").replace(/[^A-Za-z0-9]+/g, "-") + "_" + tglWIB_().replace(/-/g, "") + ".xlsx" };
+}
+async function cekRincianSetor_(fmt){
+  var list = cashBelumSetor_();
+  if (!list.length) { showToast("Tidak ada uang cash yang belum disetor."); return; }
+  try {
+    if (fmt === "pdf") {
+      var pdf = bangunPdfSetoran_(list, "CEK-" + tglWIB_().replace(/-/g, "").slice(2) + "-" + ("0" + new Date().getHours()).slice(-2) + ("0" + new Date().getMinutes()).slice(-2), Date.now(), {
+        judul: "RINCIAN CASH SEBELUM SETOR", status: "Belum disetor - untuk pengecekan", labelTotal: "Total uang cash di tangan", labelTgl: "Dicetak", labelKode: "Kode rincian",
+        catatan: "Rincian ini untuk pengecekan uang dan daftar rumah sebelum Humas menekan tombol Setor. Belum merupakan setoran resmi. Warna baris: hijau = cash belum disetor, teal = cash sudah disetor, biru = transfer lunas, kuning = transfer menunggu, ungu = saldo titipan, merah = belum bayar."
+      }, true);
+      simpanFile_(pdf.bytes, pdf.namaFile.replace("Laporan-Setoran_", "Rincian-Cash-Sebelum-Setor_"), "application/pdf");
+      showToast("PDF rincian siap: " + fmtRp_(pdf.jumlah) + " dari " + pdf.rumah + " rumah.");
+    } else {
+      var x = await bangunExcelRincian_(list);
+      simpanFile_(x.bytes, x.namaFile, XLSX_MIME);
+      showToast("Excel rincian siap.");
+    }
+  } catch (e) { console.error(e); showToast("Gagal membuat file. Pastikan internet aktif, muat ulang halaman, lalu coba lagi."); }
 }
 
 /* ---------- MODAL TRANSAKSI ---------- */
