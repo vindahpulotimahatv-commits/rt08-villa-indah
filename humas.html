@@ -209,6 +209,7 @@ html,body{overflow-x:hidden}
 
   <div class="list-card">
     <div class="list-title">Riwayat Setoran Saya</div>
+    <div style="padding:0 14px 8px"><button class="btn btn-line btn-sm" id="btnPdfMenunggu" type="button" style="width:auto">📄 PDF Semua Setoran Menunggu</button></div>
     <div id="listSetoran"><div class="empty-note">Belum ada setoran.</div></div>
   </div>
 </div></div>
@@ -513,7 +514,28 @@ function initDashboard_(){
 
   document.getElementById("cariRumah").addEventListener("input", renderList_);
   document.getElementById("btnSetor").addEventListener("click", ajukanSetoran_);
+  document.getElementById("btnPdfMenunggu").addEventListener("click", function(){
+    var list = Object.keys(setoranData).map(function(k){ return Object.assign({ id: k }, setoranData[k]); })
+      .filter(function(it){ return it.petugas === petugasNama && it.status !== "diterima"; })
+      .sort(function(a, b){ return String(a.bulanKey).localeCompare(String(b.bulanKey)); });
+    if (!list.length) { showToast("Tidak ada setoran yang menunggu. Pakai tombol PDF di riwayat untuk setoran lama."); return; }
+    try {
+      var pdfM = bangunPdfSetoran_(list.map(function(it){ return { bulan: it.bulanKey, keys: Object.keys(it.rumahKeys || {}), total: it.jumlah }; }),
+        "SET-" + tglWIB_().replace(/-/g, "").slice(2) + "-" + String(list[list.length - 1].id).slice(-4).toUpperCase(), Date.now());
+      tampilLaporanSetoran_(list[0].id, list[0], pdfM, true);
+    } catch (e7) { console.error(e7); showToast("Gagal membuat PDF. Muat ulang halaman lalu coba lagi."); }
+  });
   document.getElementById("listSetoran").addEventListener("click", function(e){
+    var bp = e.target.closest(".btn-pdf");
+    if (bp) {
+      var idp = bp.getAttribute("data-id"), bt = setoranData[idp];
+      if (!bt) return;
+      try {
+        var pdfUlang = bangunPdfSetoran_([{ bulan: bt.bulanKey, keys: Object.keys(bt.rumahKeys || {}), total: bt.jumlah }], "SET-" + String(idp).slice(-6).toUpperCase(), bt.createdAt);
+        tampilLaporanSetoran_(idp, bt, pdfUlang, true);
+      } catch (e6) { console.error(e6); showToast("Gagal membuat PDF. Muat ulang halaman lalu coba lagi."); }
+      return;
+    }
     var b = e.target.closest(".btn-xls");
     if (!b) return;
     var id = b.getAttribute("data-id"), batch = setoranData[id];
@@ -706,6 +728,7 @@ function renderRiwayatSetoran_(){
     var jumlahRumah = it.rumahKeys ? Object.keys(it.rumahKeys).length : 0;
     return '<div class="setoran-row"><div><h4>' + fmtRp_(it.jumlah) + ' · ' + jumlahRumah + ' rumah</h4>' +
       '<p>' + bulanLabel_(it.bulanKey) + '</p></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end">' + badge +
+      '<button class="btn btn-line btn-sm btn-pdf" data-id="' + it.id + '">📄 PDF</button>' +
       '<button class="btn btn-line btn-sm btn-xls" data-id="' + it.id + '">📥 Excel</button></div></div>';
   }).join("");
 }
@@ -797,14 +820,68 @@ async function kirimExcelSetoran_(id, batch){
     rtOpenWa(RT_CONFIG.waBendahara, pesan, "Nomor WhatsApp Bendahara belum diatur di config.js.");
   } catch (e) { if (e && e.name === "AbortError") return; console.error(e); showToast("Gagal menyiapkan Excel. Coba lagi."); }
 }
-function tampilLaporanSetoran_(id, batch){
+/* ---------- LAPORAN SETOR (PDF) ---------- */
+/* list: [{ bulan, keys, total }] — data diambil dari penarikanSemua (semua bulan). */
+function bangunPdfSetoran_(list, kode, waktu){
+  if (!window.RTSurat || !RTSurat.buatLaporanSetoran) throw new Error("Modul PDF belum termuat");
+  var rukem = RT_CONFIG.iuranTambahanKK || 7500;
+  var batches = list.map(function(b){
+    var bln = penarikanSemua[b.bulan] || {};
+    var rows = b.keys.map(function(k){
+      var e = bln[k] || {};
+      return { rumah: e.rumah || k, nama: e.nama || "-", tambahan: !!e.tambahanKK, rukem: rukem, jumlah: uangEntry_(e), kwt: e.kodeKwitansi || "" };
+    }).sort(function(x, y){ return x.rumah.localeCompare(y.rumah, "id", { numeric: true }); });
+    return { bulanLabel: bulanLabel_(b.bulan), rows: rows, total: rows.reduce(function(a, r){ return a + r.jumlah; }, 0) };
+  });
+  var hasil = RTSurat.buatLaporanSetoran(batches, { petugas: petugasNama, kode: kode, waktu: waktu || Date.now() }, RT_CONFIG);
+  hasil.batches = batches;
+  return hasil;
+}
+function teksSetoranPdf_(pdf, untuk){
+  var periode = pdf.batches.map(function(b){ return b.bulanLabel; }).join(", ");
+  return salam_() + " " + untuk + ", berikut *laporan setoran iuran bulanan* dari Humas (" + petugasNama + "): *" + fmtRp_(pdf.jumlah) + "* dari " + pdf.rumah +
+    " rumah (" + periode + "). Kode: " + pdf.kode + ".\n\nUang cash diserahkan ke Bendahara. Mohon dikonfirmasi di halaman Admin setelah uang fisik diterima. Terima kasih 🙏";
+}
+async function kirimPdfSetoran_(pdf, tujuan){
+  var bendahara = tujuan === "bendahara";
+  var nomor = bendahara ? (nomorWA_(RT_CONFIG.waBendahara) || "") : "";
+  var pesan = teksSetoranPdf_(pdf, bendahara ? "Pak/Bu Bendahara" : "Bapak/Ibu Pengurus");
+  if (window.RTAndroid) {
+    try {
+      if (bendahara && typeof RTAndroid.sharePdf === "function" && nomor && RTAndroid.sharePdf(b64_(pdf.bytes), pdf.namaFile, nomor, pesan)) return;
+      if (typeof RTAndroid.shareFile === "function" && RTAndroid.shareFile(b64_(pdf.bytes), pdf.namaFile, "application/pdf", nomor, pesan, true)) return;
+    } catch (e) { console.warn(e); }
+  }
+  try {
+    var file = new File([pdf.bytes], pdf.namaFile, { type: "application/pdf" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      showToast(bendahara ? "Pilih WhatsApp lalu kontak Bendahara." : "Pilih WhatsApp lalu grup Pengurus.");
+      await navigator.share({ files: [file], text: pesan });
+      return;
+    }
+  } catch (e) { if (e && e.name === "AbortError") return; console.warn(e); }
+  unduhBlob_(pdf.bytes, pdf.namaFile);
+  if (bendahara) rtOpenWa(RT_CONFIG.waBendahara, pesan, "Nomor WhatsApp Bendahara belum diatur di config.js.");
+  showToast("PDF diunduh. Lampirkan ke chat WhatsApp lalu kirim.");
+}
+function tampilLaporanSetoran_(id, batch, pdf, ulang){
+  var tombolPdf = pdf
+    ? '<button class="btn btn-gold" id="btnPdfBendahara" type="button">📤 Kirim PDF ke Bendahara</button>' +
+      '<button class="btn btn-gold" id="btnPdfPengurus" type="button">👥 Bagikan PDF ke Grup Pengurus</button>' +
+      '<button class="btn btn-line" id="btnPdfUnduh" type="button">⬇️ Unduh PDF</button>'
+    : '';
   document.getElementById("modalBody").innerHTML =
-    '<h3>✅ Setoran Diajukan</h3><p class="msub">' + fmtRp_(batch.jumlah) + ' · ' + Object.keys(batch.rumahKeys).length + ' rumah · ' + esc_(bulanLabel_(batch.bulanKey)) + '</p>' +
-    '<div class="status-now">Serahkan uang cash ke Bendahara. Laporan setoran (Excel) bisa dibawa/dikirim sebagai rekap. Setoran baru tercatat di Kas RT setelah Admin mengonfirmasi.</div>' +
-    '<div class="msheet-actions">' +
-      '<button class="btn btn-gold" id="btnXlsUnduh" type="button">📥 Unduh Laporan Setor (Excel)</button>' +
+    '<h3>' + (ulang ? '📄 Laporan Setoran' : '✅ Setoran Diajukan') + '</h3><p class="msub">' + (pdf ? fmtRp_(pdf.jumlah) + ' · ' + pdf.rumah + ' rumah' : fmtRp_(batch.jumlah) + ' · ' + Object.keys(batch.rumahKeys).length + ' rumah') + ' · ' + esc_(bulanLabel_(batch.bulanKey)) + (pdf && pdf.batches.length > 1 ? ' dst.' : '') + '</p>' +
+    '<div class="status-now">Serahkan uang cash ke Bendahara.' + (pdf ? ' Kirim laporan PDF ke Bendahara &amp; Pengurus sebagai bukti setoran.' : ' Laporan PDF tersedia di bagian <b>Riwayat Setoran Saya</b> (tombol PDF).') + ' Setoran baru tercatat di Kas RT setelah Bendahara/Admin mengonfirmasi.</div>' +
+    '<div class="msheet-actions">' + tombolPdf +
+      '<button class="btn btn-line" id="btnXlsUnduh" type="button">📥 Unduh Laporan Setor (Excel)</button>' +
       '<button class="btn btn-line" id="btnXlsKirim" type="button">📤 Kirim Excel ke Bendahara</button>' +
       '<button class="btn btn-brand" id="btnXlsSelesai" type="button">Selesai</button></div>';
+  if (pdf) {
+    document.getElementById("btnPdfBendahara").addEventListener("click", function(){ kirimPdfSetoran_(pdf, "bendahara"); });
+    document.getElementById("btnPdfPengurus").addEventListener("click", function(){ kirimPdfSetoran_(pdf, "pengurus"); });
+    document.getElementById("btnPdfUnduh").addEventListener("click", function(){ unduhBlob_(pdf.bytes, pdf.namaFile); showToast("PDF diunduh."); });
+  }
   document.getElementById("btnXlsUnduh").addEventListener("click", function(){ unduhExcelSetoran_(id, batch); });
   document.getElementById("btnXlsKirim").addEventListener("click", function(){ kirimExcelSetoran_(id, batch); });
   document.getElementById("btnXlsSelesai").addEventListener("click", closeModal_);
@@ -831,7 +908,7 @@ function ajukanSetoran_(){
     batches.forEach(function(b){ grand += b.total; b.keys.forEach(function(k){ rumahSet[k] = true; }); });
     var infoBulan = batches.length > 1
       ? "Periode: " + batches.map(function(b){ return bulanLabel_(b.bulan); }).join(", ") + "\n(termasuk pembayaran bulan di muka — dibuat " + batches.length + " setoran, satu per bulan)"
-      : "Bulan: " + bulanLabel_(bulanKey);
+      : "Bulan: " + bulanLabel_(batches[0].bulan);
     if (!confirm("Setor uang cash ke Pengurus?\n\n" + infoBulan + "\nPetugas: " + petugasNama + "\nJumlah: " + fmtRp_(grand) + " dari " + Object.keys(rumahSet).length + " rumah\n\nSetelah ini catatan rumah-rumah tersebut terkunci sampai Admin menerima uangnya.")) return null;
     var updates = {}, pertama = null, pertamaKey = null;
     batches.forEach(function(b, idx){

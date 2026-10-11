@@ -947,6 +947,100 @@
              namaFile: "Berita-Acara-Laporan-Warga_" + per + "_" + now.getFullYear() + p2d(now.getMonth() + 1) + p2d(now.getDate()) + ".pdf" };
   }
 
+  /* Laporan Setoran Iuran (PDF) — dibuat Humas sekali tekan "Setor", untuk dibagikan ke Bendahara & Pengurus.
+     opsi: { petugas, kode, waktu (ms) }; batches: [{ bulanLabel, rows:[{rumah,nama,tambahan,rukem,jumlah,kwt}], total }] */
+  function rpPdf(n) { return "Rp " + Math.round(n || 0).toLocaleString("id-ID"); }
+  function buatLaporanSetoran(batches, opsi, cfg) {
+    opsi = opsi || {};
+    var now = opsi.waktu ? new Date(opsi.waktu) : new Date();
+    var c = ctxDari(cfg, now), doc = new Doc(), L = new Layout(doc);
+    L.ml = 50; L.mr = 50; L.w = PAGE_W - 100;
+    var navy = [0.07, 0.23, 0.42], hijau = [0.11, 0.54, 0.31], x0 = L.ml;
+    var kode = opsi.kode || ("SET-" + String(now.getFullYear()).slice(2) + p2d(now.getMonth() + 1) + p2d(now.getDate()) + "-" + p2d(now.getHours()) + p2d(now.getMinutes()));
+    var jam = tglJam(now.getTime());
+    var grand = 0, nRumah = 0, rumahSet = {};
+    batches.forEach(function (b) { grand += b.total || 0; b.rows.forEach(function (r) { rumahSet[r.rumah] = 1; }); });
+    nRumah = Object.keys(rumahSet).length;
+
+    L.y = 48;
+    var lg = logoTanam("rt");
+    if (lg) doc.drawImage(doc.addImage(lg.bytes, lg.w, lg.h), x0, L.y, 44, 44);
+    doc.text(x0 + 56, L.y + 19, "LAPORAN SETORAN IURAN BULANAN", "B", 16, { rgb: navy });
+    doc.text(x0 + 56, L.y + 36, "RT " + c.rt + " / RW " + c.rw + " - " + c.kompleks, "R", 10.5, { gray: 0.35 });
+    L.y += 56;
+    doc.line(x0, L.y, x0 + L.w, L.y, 0.8, 0.75);
+    L.y += 12;
+    L.rows([
+      ["Petugas Humas", opsi.petugas || "-"],
+      ["Tanggal setor", jam[0] + " " + jam[1] + " WIB"],
+      ["Kode setoran", kode],
+      ["Periode", batches.map(function (b) { return b.bulanLabel; }).join(", ")],
+      ["Status", "Menunggu konfirmasi Bendahara"]
+    ], { size: 10.5, labelW: 100, indent: 0 });
+    L.space(6);
+    var yb = L.y;
+    doc.rect(x0, yb, L.w, 46, { fill: [0.93, 0.96, 1], stroke: [0.78, 0.85, 0.95], lw: 0.8 });
+    doc.text(x0 + 14, yb + 17, "Total uang cash disetor (" + nRumah + " rumah)", "R", 10, { gray: 0.35 });
+    doc.text(x0 + 14, yb + 38, norm(rpPdf(grand)), "B", 20, { rgb: navy });
+    L.y = yb + 46 + 12;
+
+    var cols = [["No", 24], ["Blok / No. Rumah", 92], ["Nama Warga", 140], ["Rincian", 86], ["Jumlah", 70], ["Kwitansi", 83]];
+    var tw = cols.reduce(function (a, k) { return a + k[1]; }, 0), fs = 8.5, lh = 10.5, pad = 3;
+    var X = [x0]; cols.forEach(function (k) { X.push(X[X.length - 1] + k[1]); });
+    function kepala() {
+      var h = 18; L.ensure(h + 30);
+      doc.rect(x0, L.y, tw, h, { fill: [0.88, 0.9, 0.94], stroke: [0, 0, 0], lw: 0.6 });
+      cols.forEach(function (k, i) {
+        if (i) doc.line(X[i], L.y, X[i], L.y + h, 0.6);
+        var t = norm(k[0]), w = textWidth(t, "B", fs);
+        doc.text(X[i] + Math.max(2, (k[1] - w) / 2), L.y + 12.5, t, "B", fs);
+      });
+      L.y += h;
+    }
+    function sel(cl, i, rh, bold) {
+      cl.forEach(function (t, r) {
+        if (!t) return;
+        var f = bold ? "B" : "R", w = textWidth(t, f, fs), tx;
+        if (i === 0) tx = X[i] + Math.max(2, (cols[0][1] - w) / 2);
+        else if (i === 4) tx = X[i + 1] - pad - w;
+        else tx = X[i] + pad;
+        doc.text(tx, L.y + pad + fs + r * lh - 1, t, f, fs);
+      });
+    }
+    function baris(cells, bold, fill) {
+      var maxL = cells.reduce(function (a, cl) { return Math.max(a, cl.length); }, 1), rh = maxL * lh + 2 * pad;
+      if (L.y + rh > L.bottom) { doc.newPage(); L.y = 56; kepala(); }
+      doc.rect(x0, L.y, tw, rh, fill ? { fill: fill, stroke: [0, 0, 0], lw: 0.5 } : { stroke: [0, 0, 0], lw: 0.5 });
+      cells.forEach(function (cl, i) { if (i) doc.line(X[i], L.y, X[i], L.y + rh, 0.5); sel(cl, i, rh, bold); });
+      L.y += rh;
+    }
+    function w_(t, i) { return wrap(norm(t), "R", fs, cols[i][1] - 2 * pad).map(function (l) { return l.t; }); }
+
+    batches.forEach(function (b) {
+      L.ensure(18 + 18 + 30);
+      L.p("Bulan " + b.bulanLabel + " - " + b.rows.length + " rumah", { font: "B", size: 11, after: 3 });
+      kepala();
+      b.rows.forEach(function (r, n) {
+        baris([[String(n + 1)], w_(r.rumah, 1), w_(r.nama || "-", 2), w_(r.tambahan ? "Iuran + RUKEM" : "Iuran Bulanan", 3), [norm(rpPdf(r.jumlah))], w_(r.kwt || "-", 5)], false);
+      });
+      baris([[""], [""], [""], ["Subtotal"], [norm(rpPdf(b.total))], [""]], true, [0.93, 0.96, 1]);
+      L.space(10);
+    });
+    if (batches.length > 1) {
+      L.ensure(24);
+      L.p("TOTAL SETORAN: " + rpPdf(grand) + " (" + batches.length + " bulan)", { font: "B", size: 11.5, after: 6 });
+    }
+    L.space(6);
+    L.p("Uang cash di atas diserahkan Humas kepada Bendahara. Setoran tercatat di Kas RT setelah Bendahara menerima uang fisik dan mengonfirmasi di aplikasi.", { size: 9.5, gray: 0.35, after: 8 });
+    L.sign({ jabatan: ["Diserahkan oleh,", "Petugas Humas"], nama: opsi.petugas || "", kurung: true },
+           { jabatan: ["Diterima oleh,", "Bendahara RT " + c.rt3], nama: cfg.namaBendahara || "Bendahara", kurung: true },
+           c.tempat + ", " + c.tglHariIni);
+    footer(doc, kode, "Laporan setoran otomatis dari aplikasi PANDU - Humas.", c.urlSitus);
+    var pn = String(opsi.petugas || "humas").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    return { bytes: doc.build("Laporan Setoran Iuran - " + (opsi.petugas || "Humas")), kode: kode, jumlah: grand, rumah: nRumah,
+             namaFile: "Laporan-Setoran_" + pn + "_" + now.getFullYear() + p2d(now.getMonth() + 1) + p2d(now.getDate()) + "-" + p2d(now.getHours()) + p2d(now.getMinutes()) + ".pdf" };
+  }
+
   /* Membuat PDF. Mengembalikan { bytes, namaFile, kode, pesan } */
   function buat(key, data, cfg, logo, now, kodeTetap, nomorUrut) {
     var J = JENIS[key];
@@ -1033,7 +1127,7 @@
   }
   function kodeLama(k) { return /^KW-\d{4}-[A-Za-z0-9]+-[A-Za-z0-9]+$/.test(String(k || "")); }
 
-  var API = { JENIS: JENIS, buat: buat, buatBeritaAcara: buatBeritaAcara, validasi: validasi, muatLogo: muatLogo, kodeInvoice: kodeInvoice, linkInvoice: linkInvoice, kodeLama: kodeLama, _wrap: wrap, _tw: textWidth };
+  var API = { JENIS: JENIS, buat: buat, buatBeritaAcara: buatBeritaAcara, buatLaporanSetoran: buatLaporanSetoran, validasi: validasi, muatLogo: muatLogo, kodeInvoice: kodeInvoice, linkInvoice: linkInvoice, kodeLama: kodeLama, _wrap: wrap, _tw: textWidth };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.RTSurat = API;
 })(typeof window !== "undefined" ? window : globalThis);
