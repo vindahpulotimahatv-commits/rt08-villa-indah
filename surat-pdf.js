@@ -976,11 +976,11 @@
       [opsi.labelKode || "Kode setoran", kode],
       ["Periode", batches.filter(function (b) { return !b.info; }).map(function (b) { return b.bulanLabel; }).join(", ")],
       ["Status", opsi.status || "Menunggu konfirmasi Bendahara"]
-    ], { size: 10.5, labelW: 100, indent: 0 });
+    ].concat(opsi.infoRows || []), { size: 10.5, labelW: 100, indent: 0 });
     L.space(6);
     var yb = L.y;
     doc.rect(x0, yb, L.w, 46, { fill: [0.93, 0.96, 1], stroke: [0.78, 0.85, 0.95], lw: 0.8 });
-    doc.text(x0 + 14, yb + 17, (opsi.labelTotal || "Total uang cash disetor") + " (" + nRumah + " rumah)", "R", 10, { gray: 0.35 });
+    doc.text(x0 + 14, yb + 17, (opsi.totalLabelFull || ((opsi.labelTotal || "Total uang cash disetor") + " (" + nRumah + " rumah)")), "R", 10, { gray: 0.35 });
     doc.text(x0 + 14, yb + 38, norm(rpPdf(grand)), "B", 20, { rgb: navy });
     L.y = yb + 46 + 12;
 
@@ -1021,7 +1021,7 @@
       L.p(b.info ? (b.judul || ("Info bulan " + b.bulanLabel)) + " - " + b.rows.length + " rumah (TIDAK masuk total cash)" : "Bulan " + b.bulanLabel + " - " + b.rows.length + " rumah", { font: "B", size: 11, after: 3 });
       kepala();
       b.rows.forEach(function (r, n) {
-        baris([[String(n + 1)], w_(r.rumah, 1), w_(r.nama || "-", 2), [norm(rpPdf(r.jumlah))], w_((r.ket || "Cash") + (r.tambahan ? " (+RUKEM)" : ""), 4), w_(r.kwt || "-", 5)], false, r.warna || null);
+        baris([[String(n + 1)], w_(r.rumah, 1), w_(r.nama || "-", 2), [r.jumlah == null ? "-" : norm(rpPdf(r.jumlah))], w_((r.ket || "Cash") + (r.tambahan ? " (+RUKEM)" : ""), 4), w_(r.kwt || "-", 5)], false, r.warna || null);
       });
       baris([[""], [""], ["Subtotal"], [norm(rpPdf(b.total))], [""], [""]], true, [0.93, 0.96, 1]);
       L.space(10);
@@ -1032,7 +1032,7 @@
     }
     L.space(6);
     L.p(opsi.catatan || "Uang cash di atas diserahkan Humas kepada Bendahara. Setoran tercatat di Kas RT setelah Bendahara menerima uang fisik dan mengonfirmasi di aplikasi.", { size: 9.5, gray: 0.35, after: 8 });
-    L.sign({ jabatan: ["Diserahkan oleh,", "Petugas Humas"], nama: opsi.petugas || "", kurung: true },
+    if (!opsi.tanpaTtd) L.sign({ jabatan: ["Diserahkan oleh,", "Petugas Humas"], nama: opsi.petugas || "", kurung: true },
            { jabatan: ["Diterima oleh,", "Bendahara RT " + c.rt3], nama: cfg.namaBendahara || "Bendahara", kurung: true },
            c.tempat + ", " + c.tglHariIni);
     footer(doc, kode, "Laporan setoran otomatis dari aplikasi PANDU - Humas.", c.urlSitus);

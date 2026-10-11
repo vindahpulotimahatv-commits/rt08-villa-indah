@@ -231,6 +231,12 @@ html,body{overflow-x:hidden}
   </div>
 
   <div class="list-card">
+    <div class="list-title">Status Pembayaran Semua Rumah</div>
+    <p class="sub" style="padding:0 14px;margin:0 0 8px;color:var(--muted);font-size:12px">Unduh daftar status pembayaran <b>setiap rumah</b> untuk bulan yang dipilih di atas (<span id="statusBulanLabel">-</span>). Baris berwarna sesuai cara bayar.</p>
+    <div style="display:flex;gap:8px;padding:0 14px 14px"><button class="btn btn-gold btn-sm" id="btnStatusPdf" type="button" style="flex:1">📄 Unduh PDF</button><button class="btn btn-line btn-sm" id="btnStatusXls" type="button" style="flex:1">📊 Unduh Excel</button></div>
+  </div>
+
+  <div class="list-card">
     <div class="list-title">Riwayat Setoran Saya</div>
     <div id="listSetoran"><div class="empty-note">Belum ada setoran.</div></div>
   </div>
@@ -537,6 +543,8 @@ function initDashboard_(){
 
   document.getElementById("cariRumah").addEventListener("input", renderList_);
   document.getElementById("btnSetor").addEventListener("click", ajukanSetoran_);
+  document.getElementById("btnStatusPdf").addEventListener("click", function(){ unduhStatusRumah_("pdf"); });
+  document.getElementById("btnStatusXls").addEventListener("click", function(){ unduhStatusRumah_("xls"); });
   document.getElementById("btnCekPdf").addEventListener("click", function(){ cekRincianSetor_("pdf"); });
   document.getElementById("btnCekXls").addEventListener("click", function(){ cekRincianSetor_("xls"); });
   document.getElementById("listSetoran").addEventListener("click", function(e){
@@ -649,6 +657,7 @@ function daftarRumahGabung_(){
 }
 function renderRingkasan_(){
   var all = daftarRumahGabung_();
+  var sbl = document.getElementById("statusBulanLabel"); if (sbl) sbl.textContent = bulanLabel_(bulanKey);
   var lunas = 0, belum = 0, cashDiTangan = 0;
   all.forEach(function(r){
     var e = penarikanData[r.key];
@@ -1082,6 +1091,67 @@ async function cekRincianSetor_(fmt){
       var x = await bangunExcelRincian_(list);
       simpanFile_(x.bytes, x.namaFile, XLSX_MIME);
       showToast("Excel rincian siap.");
+    }
+  } catch (e) { console.error(e); showToast("Gagal membuat file. Pastikan internet aktif, muat ulang halaman, lalu coba lagi."); }
+}
+
+/* ---------- STATUS PEMBAYARAN SEMUA RUMAH (PDF / EXCEL) ---------- */
+var KET_BELUM_TARIK_ = "Belum ditarik";
+function dataStatusRumah_(){
+  var bln = penarikanSemua[bulanKey] || penarikanData || {}, hit = { cash: 0, cashsetor: 0, saldo: 0, tf: 0, tfwait: 0, belum: 0, kosong: 0 }, total = 0;
+  var rows = daftarRumahGabung_().map(function(r){
+    var e = bln[r.key], kd = e ? kodeStatus_(e) : "";
+    var w = WARNA_STATUS_[kd], jumlah = null;
+    if (kd && kd !== "belum") jumlah = parseFloat(e.jumlah) || 0;
+    if (!kd) hit.kosong++; else hit[kd]++;
+    if (jumlah != null) total += jumlah;
+    var ket = w ? w.ket : KET_BELUM_TARIK_;
+    if (kd === "belum" && e.catatan) ket += " (" + e.catatan + ")";
+    return { rumah: r.rumah, nama: r.nama || "-", tambahan: !!(e && e.tambahanKK), rukem: RT_CONFIG.iuranTambahanKK || 7500, jumlah: jumlah, kwt: (e && e.kodeKwitansi) || "", ket: ket, kode: kd, warna: w ? w.pdf : null, petugas: (e && e.petugas) || "" };
+  }).sort(urutRumah_);
+  return { rows: rows, hit: hit, total: total };
+}
+function ringkasStatus_(hit){
+  return [["Total rumah", String(Object.keys(hit).reduce(function(a, k){ return a + hit[k]; }, 0))],
+    ["Cash", (hit.cash + hit.cashsetor) + " rumah (belum disetor " + hit.cash + ", sudah disetor " + hit.cashsetor + ")"],
+    ["Transfer", (hit.tf + hit.tfwait) + " rumah (lunas " + hit.tf + ", menunggu " + hit.tfwait + ")"],
+    ["Saldo titipan", hit.saldo + " rumah"],
+    ["Belum bayar / belum ditarik", (hit.belum + hit.kosong) + " rumah"]];
+}
+async function unduhStatusRumah_(fmt){
+  try {
+    var d = dataStatusRumah_(), bl = bulanLabel_(bulanKey);
+    if (fmt === "pdf") {
+      if (!window.RTSurat || !RTSurat.buatLaporanSetoran) throw new Error("Modul PDF belum termuat");
+      var pdf = RTSurat.buatLaporanSetoran([{ bulanLabel: bl, rows: d.rows, total: d.total }], {
+        petugas: petugasNama, kode: "STS-" + bulanKey.replace("-", "") + "-" + tglWIB_().replace(/-/g, "").slice(4), judul: "STATUS PEMBAYARAN IURAN PER RUMAH", status: "Per " + tglWIB_() + " (data aplikasi)",
+        labelTgl: "Dicetak", labelKode: "Kode laporan", infoRows: ringkasStatus_(d.hit).slice(0, 5), totalLabelFull: "Total iuran tercatat (tidak termasuk belum bayar)", tanpaTtd: true,
+        catatan: "Warna baris: hijau = cash belum disetor, teal = cash sudah disetor, biru = transfer lunas, kuning = transfer menunggu konfirmasi, ungu = lunas dari saldo titipan, merah = belum bayar, putih = belum ditarik."
+      }, RT_CONFIG);
+      simpanFile_(pdf.bytes, "Status-Pembayaran-Rumah_" + bulanKey + ".pdf", "application/pdf");
+      showToast("PDF status pembayaran " + bl + " siap.");
+    } else {
+      if (typeof ExcelJS === "undefined") throw new Error("ExcelJS belum termuat");
+      var gc = { style: "thin", color: { argb: "FFBFBFBF" } }, garis = { top: gc, left: gc, bottom: gc, right: gc };
+      var wb = new ExcelJS.Workbook(), ws = wb.addWorksheet("Status " + bulanKey, { views: [{ state: "frozen", ySplit: 4 }], pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 } });
+      [5, 18, 32, 34, 15, 16, 22].forEach(function(w, i){ ws.getColumn(i + 1).width = w; });
+      ws.mergeCells(1, 1, 1, 7); var t = ws.getCell(1, 1); t.value = "STATUS PEMBAYARAN IURAN PER RUMAH - " + bl.toUpperCase(); t.font = { bold: true, size: 14, color: { argb: "FF1F3A5F" } }; t.alignment = { horizontal: "center" };
+      ws.getCell(2, 1).value = "Dicetak " + tglWIB_() + " oleh " + petugasNama + " | " + ringkasStatus_(d.hit).map(function(x){ return x[0] + ": " + x[1]; }).join(" | ");
+      var hr = ws.getRow(4);
+      ["No", "Blok / No. Rumah", "Nama Warga", "Status / Cara Bayar", "Jumlah (Rp)", "Petugas", "Kode Kwitansi"].forEach(function(h, i){ var c = hr.getCell(i + 1); c.value = h; c.font = { bold: true, color: { argb: "FFFFFFFF" } }; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F3A5F" } }; c.border = garis; c.alignment = { horizontal: "center" }; });
+      var row = 4;
+      d.rows.forEach(function(r, i){
+        row++; var w = WARNA_STATUS_[r.kode];
+        [i + 1, r.rumah, r.nama, r.ket + (r.tambahan ? " (+RUKEM)" : ""), r.jumlah == null ? null : r.jumlah, r.petugas, r.kwt].forEach(function(v, k){
+          var c = ws.getRow(row).getCell(k + 1); c.value = v; c.border = garis; if (w) c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: w.xl } }; if (k === 4) c.numFmt = "#,##0";
+        });
+      });
+      row++; var tr = ws.getRow(row);
+      ["", "", "", "TOTAL IURAN TERCATAT", { formula: "SUM(E5:E" + (row - 1) + ")", result: d.total }, "", ""].forEach(function(v, k){ var c = tr.getCell(k + 1); c.value = v === "" ? null : v; c.font = { bold: true }; c.border = garis; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE8EEF7" } }; if (k === 4) c.numFmt = "#,##0"; });
+      row += 2; ws.mergeCells(row, 1, row, 7); var ck = ws.getCell(row, 1); ck.value = "Warna: hijau = cash belum disetor | teal = cash sudah disetor | biru = transfer lunas | kuning = transfer menunggu | ungu = saldo titipan | merah = belum bayar | putih = belum ditarik"; ck.font = { italic: true, size: 9, color: { argb: "FF666666" } };
+      var buf = await wb.xlsx.writeBuffer();
+      simpanFile_(new Uint8Array(buf), "Status-Pembayaran-Rumah_" + bulanKey + ".xlsx", XLSX_MIME);
+      showToast("Excel status pembayaran " + bl + " siap.");
     }
   } catch (e) { console.error(e); showToast("Gagal membuat file. Pastikan internet aktif, muat ulang halaman, lalu coba lagi."); }
 }
