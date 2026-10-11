@@ -309,6 +309,7 @@ textarea{min-height:76px;resize:vertical}
     <button class="tab-btn" data-tab="umkm" id="tabUmkmBtn" aria-label="UMKM" title="UMKM"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-store"/></svg></span><span class="tb-l">UMKM</span></button>
     <button class="tab-btn" data-tab="inventaris" id="tabInvBtn" aria-label="Inventaris Barang RT" title="Inventaris Barang RT"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-package"/></svg></span><span class="tb-l">Inventaris</span></button>
     <button class="tab-btn" data-tab="pembukuan" aria-label="Pembukuan Bendahara" title="Pembukuan Bendahara"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-wallet"/></svg></span><span class="tb-l">Pembukuan</span></button>
+    <button class="tab-btn" data-tab="bai" id="tabBaiBtn" aria-label="Berita Acara Internal" title="Berita Acara Internal (Humas, Bendahara, Pengurus)"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-file-text"/></svg></span><span class="tb-l">Berita Acara</span></button>
     <button class="tab-btn" data-tab="masukan" aria-label="Masukan Warga" title="Masukan Warga"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-message-circle"/></svg></span><span class="tb-l">Masukan</span></button>
   </div>
 
@@ -496,6 +497,13 @@ textarea{min-height:76px;resize:vertical}
     <div class="list-card"><div class="list-title">50 transaksi terakhir</div><div style="overflow-x:auto"><table class="pb-tbl"><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Masuk</th><th>Keluar</th></tr></thead><tbody id="pbTx"><tr><td colspan="4">Memuat...</td></tr></tbody></table></div></div>
   </div>
 
+  <!-- ===== PANEL BERITA ACARA INTERNAL (Humas · Bendahara · Pengurus) ===== -->
+  <div class="panel" id="panel-bai">
+    <div class="form-card"><h3>📑 Berita Acara Internal</h3>
+      <p class="sub">Riwayat kegiatan antar <b>Humas, Bendahara, dan Pengurus</b> (setoran cash, konfirmasi transfer, serah terima, catatan). Terpisah dari Berita Acara laporan warga. Catatan hanya bisa ditambah, tidak bisa diubah atau dihapus.</p>
+      <div id="baiWadah"></div></div>
+  </div>
+
   <!-- ===== PANEL UMKM ===== -->
   <!-- ===== PANEL MASUKAN WARGA ===== -->
   <div class="panel" id="panel-masukan">
@@ -563,6 +571,7 @@ textarea{min-height:76px;resize:vertical}
 <script src="surat-pdf.js"></script>
 <script src="rekap-laporan.js"></script>
 <script src="iuran-cari.js"></script>
+<script src="berita-acara-internal.js"></script>
 <script>
 var db = null;
 var BULAN_ID = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
@@ -888,7 +897,7 @@ function initDashboard_(){
         var skor = nps.length ? Math.round((pro-det)*100/nps.length) : 0;
         var h = '<div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 14px">' +
           kotak("Responden", n, "orang") +
-          kotak("Membantu", f1(rata(svData.map(function(x){return +x.bantu||0;}))), "dari 5") +
+          kotak("Bintang keseluruhan", f1(rata(svData.map(function(x){return +x.bantu||0;}))), "dari 5") +
           kotak("Tampilan", f1(rata(svData.map(function(x){return +x.tampilan||0;}))), "dari 5") +
           kotak("Tulisan", f1(rata(svData.map(function(x){return +x.tulisan||0;}))), "dari 5") +
           kotak("Skor rekomendasi", skor, "NPS (-100 s/d 100)") + '</div>';
@@ -926,6 +935,7 @@ function initDashboard_(){
     function gagal(id){ return function(err){ var b=document.getElementById(id); if(b) b.innerHTML='<div class="empty-note">Data tidak bisa dimuat ('+esc_(err && err.code || "error")+'). Pastikan aturan Firebase terbaru sudah dipasang.</div>'; }; }
     db.ref("kritikSaran").on("value", function(snap){ ksData = toArr(snap.val()); gambarKS(); }, gagal("listKS"));
     db.ref("surveiApp").on("value", function(snap){ svData = toArr(snap.val()); gambarSurvei(); }, function(e){ gagal("svRingkas")(e); gagal("listSVteks")(e); });
+
 
     document.getElementById("ksCsv").addEventListener("click", function(){
       if (!ksData.length) { showToast("Belum ada data untuk diunduh."); return; }
@@ -1595,6 +1605,9 @@ function initDashboard_(){
       showToast("Usaha diterima dan tampil di halaman UMKM.");
     }).catch(function(){ btn.disabled = false; btn.textContent = "✅ Terima"; showToast("Gagal menerima. Coba lagi."); });
   });
+
+  /* ---- BERITA ACARA INTERNAL (Humas · Bendahara · Pengurus) ---- */
+  if (window.RTBAI) RTBAI.mount({ el: "baiWadah", db: db, peran: "pengurus", pelaku: function(){ var u = firebase.auth().currentUser; return (u && u.email ? u.email.split("@")[0] : "") || "Pengurus"; } });
 
   /* ---- PEMBUKUAN BENDAHARA (hanya lihat) ---- */
   (function(){

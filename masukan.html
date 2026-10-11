@@ -45,6 +45,16 @@ textarea:focus{outline:none;border-color:var(--navy)}
 .msg.err{background:#fff3f3;color:#9b1c1c}.msg.ok{background:#eefaf2;color:#146c3a}
 .thanks{text-align:center;padding:26px 8px}.thanks .big{font-size:46px}.thanks b{display:block;font-size:19px;margin:6px 0}
 .hide{display:none}
+.stars{display:flex;justify-content:center;gap:4px}
+.stars label{cursor:pointer;position:relative;line-height:1}
+.stars input{position:absolute;opacity:0;pointer-events:none}
+.stars span{font-size:40px;color:#d4d9e6;transition:color .12s,transform .12s;display:block;padding:0 2px}
+.stars label.on span{color:#f2b01e;text-shadow:0 1px 4px rgba(196,147,37,.35)}
+.stars label:has(input:focus-visible) span{outline:2px solid var(--navy);border-radius:8px}
+.stars label:active span{transform:scale(1.15)}
+.q.utama{background:#fff8e6;border:1.5px solid #f0d58a;border-radius:16px;padding:16px 12px;margin-bottom:6px}
+.q.utama .stars span{font-size:46px}
+.stcap{text-align:center;font-weight:800;font-size:13px;color:#7a5a05;margin-top:6px;min-height:18px}
 @media(max-width:480px){.scale.s11{grid-template-columns:repeat(6,1fr)}}
 </style></head><body>
 <header><div class="wrap bar"><div><b>Masukan Warga</b><small>Kritik, Saran &amp; Survei</small></div><a class="back" href="index.html">← Beranda</a></div></header>
@@ -52,7 +62,7 @@ textarea:focus{outline:none;border-color:var(--navy)}
 <main class="wrap">
   <div class="tabs" role="tablist">
     <button class="tab on" id="tKS" role="tab" aria-selected="true">Kritik &amp; Saran</button>
-    <button class="tab" id="tSV" role="tab" aria-selected="false">Survei Aplikasi</button>
+    <button class="tab" id="tSV" role="tab" aria-selected="false">⭐ Nilai Aplikasi</button>
   </div>
 
   <!-- ===== KRITIK & SARAN ===== -->
@@ -75,10 +85,10 @@ textarea:focus{outline:none;border-color:var(--navy)}
 
   <!-- ===== SURVEI APLIKASI ===== -->
   <section id="pSV" class="card hide">
-    <h2>Survei Aplikasi PANDU</h2>
-    <p class="sub">Bantu kami menyempurnakan aplikasi sebelum diluncurkan. Hanya sekitar 3 menit, <b>anonim</b>, dan hasilnya hanya dilihat pengurus.</p>
+    <h2>Nilai Aplikasi PANDU ⭐</h2>
+    <p class="sub">Aplikasi PANDU sudah diluncurkan. Ceritakan pengalaman Anda memakainya supaya kami bisa memperbaikinya. Hanya sekitar 2 menit, <b>anonim</b>, dan hasilnya hanya dilihat pengurus.</p>
     <form id="fSV" novalidate></form>
-    <div id="svDone" class="thanks hide"><div class="big">✅</div><b>Survei sudah terkirim</b><span class="sub">Terima kasih. Jawaban Anda sangat membantu menyempurnakan aplikasi ini.</span></div>
+    <div id="svDone" class="thanks hide"><div class="big">✅</div><b>Survei sudah terkirim</b><span class="sub">Terima kasih. Penilaian Anda sangat membantu kami memperbaiki aplikasi ini.</span></div>
   </section>
 </main>
 
@@ -143,35 +153,40 @@ $("ksLagi").onclick = function(){
 };
 
 /* ---------- Survei Aplikasi ---------- */
-var SURVEI_VERSI = "v1";
+var SURVEI_VERSI = "v2";
 var FITUR = [["pengumuman","Pengumuman"],["agenda","Agenda"],["surat","Surat online"],["lapor","Lapor masalah"],["iuran","Bayar iuran"],["kas","Transparansi kas"],["umkm","UMKM"],["galeri","Galeri"],["chat","Chat"],["info","Sholat/cuaca/banjir"]];
 var TANYA = [
-  { bagian: "Kebiasaan sekarang" },
+  { bagian: "Penilaian Anda" },
+  { id: "bantu", t: "Secara keseluruhan, berapa bintang untuk aplikasi PANDU?", bintang: true, utama: true },
+  { id: "tampilan", t: "Tampilan nyaman dan mudah dipahami", bintang: true },
+  { id: "tulisan", t: "Menu dan tulisan mudah dibaca", bintang: true },
+  { bagian: "Kebiasaan Anda" },
   { id: "sumber", t: "Sekarang Anda paling sering mendapat informasi RT dari mana?", o: [["wa","Grup WhatsApp"],["papan","Papan pengumuman"],["tetangga","Dari tetangga"],["pengurus","Langsung dari pengurus"]] },
   { id: "perangkat", t: "Perangkat yang Anda pakai", o: [["android","Android"],["iphone","iPhone"],["keduanya","Keduanya"],["belum","Belum punya smartphone"]] },
-  { bagian: "Harapan" },
-  { id: "bantu", t: "Aplikasi warga seperti ini akan membantu saya.", skala: 5, ujung: ["Sangat tidak setuju","Sangat setuju"] },
-  { id: "fitur", t: "Fitur yang paling Anda butuhkan", em: "boleh pilih lebih dari satu", multi: FITUR },
-  { id: "khawatir", t: "Kekhawatiran Anda saat memakai aplikasi", o: [["teknologi","Kurang paham teknologi"],["privasi","Privasi data"],["error","Takut error"],["wa","Lebih nyaman WhatsApp"],["tidak","Tidak ada"]] },
-  { id: "bersedia", t: "Apakah Anda bersedia memakai aplikasi ini setelah diluncurkan?", o: [["ya","Ya"],["mungkin","Mungkin"],["belum","Belum yakin"],["tidak","Tidak"]] },
-  { id: "bantuan", t: "Bantuan yang Anda butuhkan agar bisa memakainya", o: [["panduan","Panduan singkat"],["sosialisasi","Sosialisasi tatap muka"],["dibantu","Dibantu pengurus"],["tidak","Tidak perlu"]] },
-  { bagian: "Penilaian setelah mencoba" },
-  { id: "tampilan", t: "Tampilan nyaman dan mudah dipahami.", skala: 5, ujung: ["Sangat tidak setuju","Sangat setuju"] },
-  { id: "tulisan", t: "Menu dan tulisan mudah dibaca.", skala: 5, ujung: ["Sangat tidak setuju","Sangat setuju"] },
+  { id: "fitur", t: "Fitur yang paling sering Anda pakai", em: "boleh pilih lebih dari satu", multi: FITUR },
+  { bagian: "Kendala dan harapan" },
+  { id: "khawatir", t: "Kendala atau kekhawatiran Anda saat memakai aplikasi", o: [["teknologi","Kurang paham teknologi"],["privasi","Privasi data"],["error","Takut error"],["wa","Lebih nyaman WhatsApp"],["tidak","Tidak ada"]] },
   { id: "kendala", t: "Bagian yang membingungkan atau kendala yang Anda temui", em: "boleh dikosongkan jika tidak ada", teks: true },
+  { id: "bersedia", t: "Apakah Anda akan terus memakai aplikasi ini?", o: [["ya","Ya"],["mungkin","Mungkin"],["belum","Belum yakin"],["tidak","Tidak"]] },
+  { id: "bantuan", t: "Bantuan yang masih Anda butuhkan", o: [["panduan","Panduan singkat"],["sosialisasi","Sosialisasi tatap muka"],["dibantu","Dibantu pengurus"],["tidak","Tidak perlu"]] },
   { id: "nps", t: "Seberapa besar kemungkinan Anda merekomendasikan aplikasi ini ke tetangga?", skala: 11, mulai: 0, ujung: ["Tidak mungkin","Sangat mungkin"] },
   { id: "saran", t: "Saran untuk aplikasi", em: "boleh dikosongkan", teks: true }
 ];
+var KET_BINTANG = ["", "Kurang", "Cukup", "Baik", "Bagus", "Sangat bagus"];
 
 function bangunSurvei(){
   var h = "";
   TANYA.forEach(function(q){
     if (q.bagian) { h += '<h3>' + esc(q.bagian) + '</h3>'; return; }
-    h += '<div class="q" data-q="' + q.id + '"><p>' + esc(q.t) + (q.em ? ' <em>(' + esc(q.em) + ')</em>' : '') + '</p>';
+    h += '<div class="q' + (q.utama ? ' utama' : '') + '" data-q="' + q.id + '"><p' + (q.utama ? ' style="text-align:center;font-size:15px"' : '') + '>' + esc(q.t) + (q.em ? ' <em>(' + esc(q.em) + ')</em>' : '') + '</p>';
     if (q.o) {
       h += '<div class="opts">' + q.o.map(function(o){ return '<label><input type="radio" name="' + q.id + '" value="' + o[0] + '"><span>' + esc(o[1]) + '</span></label>'; }).join("") + '</div>';
     } else if (q.multi) {
       h += '<div class="opts">' + q.multi.map(function(o){ return '<label><input type="checkbox" name="' + q.id + '" value="' + o[0] + '"><span>' + esc(o[1]) + '</span></label>'; }).join("") + '</div>';
+    } else if (q.bintang) {
+      var st = "";
+      for (var k = 1; k <= 5; k++) st += '<label title="' + k + ' bintang"><input type="radio" name="' + q.id + '" value="' + k + '" aria-label="' + k + ' bintang"><span>★</span></label>';
+      h += '<div class="stars">' + st + '</div><div class="stcap" data-cap="' + q.id + '"></div>';
     } else if (q.skala) {
       var m = (q.mulai != null ? q.mulai : 1), a = "";
       for (var i = m; i < m + q.skala; i++) a += '<label><input type="radio" name="' + q.id + '" value="' + i + '"><span>' + i + '</span></label>';
@@ -185,6 +200,15 @@ function bangunSurvei(){
   $("fSV").innerHTML = h;
 }
 bangunSurvei();
+$("fSV").addEventListener("change", function(e){
+  var inp = e.target;
+  if (!inp || inp.type !== "radio") return;
+  var box = inp.closest(".stars");
+  if (!box) return;
+  var v = +inp.value;
+  Array.prototype.forEach.call(box.querySelectorAll("label"), function(l, i){ l.classList.toggle("on", i < v); });
+  var cap = box.parentNode.querySelector(".stcap"); if (cap) cap.textContent = v + " dari 5 — " + KET_BINTANG[v];
+});
 if (bacaLokal("pandu.survei." + SURVEI_VERSI) === "1") { $("fSV").classList.add("hide"); $("svDone").classList.remove("hide"); }
 
 $("fSV").addEventListener("submit", function(e){
@@ -194,9 +218,9 @@ $("fSV").addEventListener("submit", function(e){
   TANYA.forEach(function(q){
     if (q.bagian) return;
     var el = f.querySelector('.q[data-q="' + q.id + '"]'), ok = true;
-    if (q.o || q.skala) {
+    if (q.o || q.skala || q.bintang) {
       var r = f.querySelector('input[name="' + q.id + '"]:checked');
-      if (r) data[q.id] = q.skala ? +r.value : r.value; else ok = false;
+      if (r) data[q.id] = (q.skala || q.bintang) ? +r.value : r.value; else ok = false;
     } else if (q.multi) {
       var cs = f.querySelectorAll('input[name="' + q.id + '"]:checked');
       if (cs.length) { data[q.id] = {}; Array.prototype.forEach.call(cs, function(c){ data[q.id][c.value] = true; }); } else ok = false;
