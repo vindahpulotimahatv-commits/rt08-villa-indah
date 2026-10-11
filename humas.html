@@ -231,9 +231,21 @@ html,body{overflow-x:hidden}
   </div>
 
   <div class="list-card">
-    <div class="list-title">Status Pembayaran Semua Rumah</div>
-    <p class="sub" style="padding:0 14px;margin:0 0 8px;color:var(--muted);font-size:12px">Unduh daftar status pembayaran <b>setiap rumah</b> untuk bulan yang dipilih di atas (<span id="statusBulanLabel">-</span>). Baris berwarna sesuai cara bayar.</p>
-    <div style="display:flex;gap:8px;padding:0 14px 14px"><button class="btn btn-gold btn-sm" id="btnStatusPdf" type="button" style="flex:1">📄 Unduh PDF</button><button class="btn btn-line btn-sm" id="btnStatusXls" type="button" style="flex:1">📊 Unduh Excel</button></div>
+    <div class="list-title">Download PDF / Excel</div>
+    <div style="padding:0 14px 14px;display:grid;gap:8px">
+      <div><label style="font-size:12px;font-weight:700;color:var(--muted)">Jenis laporan</label>
+        <select id="lapJenis" style="width:100%;min-height:42px;border:1.5px solid var(--line);border-radius:11px;padding:0 10px;font-size:14px;background:#fff">
+          <option value="status">Status semua rumah (bulan yang dipilih di atas)</option>
+          <option value="semua">Semua transaksi (per tanggal penarikan)</option>
+          <option value="cash">Hanya penarikan CASH (per tanggal penarikan)</option>
+        </select></div>
+      <div id="lapTglWrap" style="display:none;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label style="font-size:12px;font-weight:700;color:var(--muted)">Dari tanggal tarik</label><input type="date" id="lapDari" style="width:100%;box-sizing:border-box;min-height:42px;border:1.5px solid var(--line);border-radius:11px;padding:0 8px;font-size:14px"></div>
+        <div><label style="font-size:12px;font-weight:700;color:var(--muted)">Sampai tanggal</label><input type="date" id="lapSampai" style="width:100%;box-sizing:border-box;min-height:42px;border:1.5px solid var(--line);border-radius:11px;padding:0 8px;font-size:14px"></div>
+      </div>
+      <div id="lapKet" style="font-size:11.5px;color:var(--muted)"></div>
+      <div style="display:flex;gap:8px"><button class="btn btn-gold btn-sm" id="btnStatusPdf" type="button" style="flex:1">📄 Unduh PDF</button><button class="btn btn-line btn-sm" id="btnStatusXls" type="button" style="flex:1">📊 Unduh Excel</button></div>
+    </div>
   </div>
 
   <div class="list-card">
@@ -543,8 +555,11 @@ function initDashboard_(){
 
   document.getElementById("cariRumah").addEventListener("input", renderList_);
   document.getElementById("btnSetor").addEventListener("click", ajukanSetoran_);
-  document.getElementById("btnStatusPdf").addEventListener("click", function(){ unduhStatusRumah_("pdf"); });
-  document.getElementById("btnStatusXls").addEventListener("click", function(){ unduhStatusRumah_("xls"); });
+  document.getElementById("btnStatusPdf").addEventListener("click", function(){ unduhLaporan_("pdf"); });
+  document.getElementById("btnStatusXls").addEventListener("click", function(){ unduhLaporan_("xls"); });
+  document.getElementById("lapJenis").addEventListener("change", aturFormLaporan_);
+  document.getElementById("lapDari").value = tglWIB_(); document.getElementById("lapSampai").value = tglWIB_();
+  aturFormLaporan_();
   document.getElementById("btnCekPdf").addEventListener("click", function(){ cekRincianSetor_("pdf"); });
   document.getElementById("btnCekXls").addEventListener("click", function(){ cekRincianSetor_("xls"); });
   document.getElementById("listSetoran").addEventListener("click", function(e){
@@ -657,7 +672,7 @@ function daftarRumahGabung_(){
 }
 function renderRingkasan_(){
   var all = daftarRumahGabung_();
-  var sbl = document.getElementById("statusBulanLabel"); if (sbl) sbl.textContent = bulanLabel_(bulanKey);
+  if (typeof aturFormLaporan_ === "function" && document.getElementById("lapJenis")) aturFormLaporan_();
   var lunas = 0, belum = 0, cashDiTangan = 0;
   all.forEach(function(r){
     var e = penarikanData[r.key];
@@ -1091,6 +1106,84 @@ async function cekRincianSetor_(fmt){
       var x = await bangunExcelRincian_(list);
       simpanFile_(x.bytes, x.namaFile, XLSX_MIME);
       showToast("Excel rincian siap.");
+    }
+  } catch (e) { console.error(e); showToast("Gagal membuat file. Pastikan internet aktif, muat ulang halaman, lalu coba lagi."); }
+}
+
+/* ---------- LAPORAN TRANSAKSI (SEMUA / HANYA CASH) per tanggal penarikan ---------- */
+function aturFormLaporan_(){
+  var j = document.getElementById("lapJenis").value, wrap = document.getElementById("lapTglWrap"), ket = document.getElementById("lapKet");
+  wrap.style.display = j === "status" ? "none" : "grid";
+  ket.textContent = j === "status" ? ("Daftar status pembayaran setiap rumah untuk " + bulanLabel_(bulanKey) + ". Baris berwarna sesuai cara bayar.")
+    : j === "semua" ? "Semua catatan penarikan (cash, transfer, saldo, belum bayar) pada rentang tanggal penarikan, dari semua bulan iuran."
+    : "Hanya catatan penarikan CASH pada rentang tanggal penarikan (patokan: tanggal Humas mencatat penarikan), dari semua bulan iuran.";
+}
+function tglWIBdariMs_(ms){ return new Date(ms + 7 * 3600 * 1000).toISOString().slice(0, 10); }
+function fmtTglPendek_(ymd){ return ymd ? ymd.slice(8, 10) + "/" + ymd.slice(5, 7) + "/" + ymd.slice(0, 4) : "-"; }
+function dataTransaksi_(jenis, dari, sampai){
+  var rows = [], total = 0, cash = 0, tf = 0;
+  Object.keys(penarikanSemua || {}).filter(function(m){ return /^\d{4}-\d{2}$/.test(m); }).forEach(function(m){
+    var bln = penarikanSemua[m] || {};
+    Object.keys(bln).forEach(function(k){
+      var e = bln[k], kd = kodeStatus_(e); if (!kd) return;
+      var isCash = e.status === "lunas_cash" && e.setoranId !== "saldo";
+      if (jenis === "cash" && !isCash) return;
+      var ts = e.createdAt ? tglWIBdariMs_(e.createdAt) : "";
+      if (!ts) return;
+      if (dari && ts < dari) return;
+      if (sampai && ts > sampai) return;
+      var w = WARNA_STATUS_[kd], uang = kd === "belum" ? null : (kd === "saldo" ? 0 : uangEntry_(e));
+      if (uang != null) { total += uang; if (isCash) cash += uang; else if (kd === "tf" || kd === "tfwait") tf += uang; }
+      rows.push({ ts: ts, tgl: fmtTglPendek_(ts), rumah: e.rumah || k, nama: e.nama || "-", bulan: bulanLabel_(m), bulanKey: m, tambahan: !!e.tambahanKK, rukem: RT_CONFIG.iuranTambahanKK || 7500,
+        jumlah: uang, ket: w.ket + (e.petugas ? " · " + e.petugas : ""), kode: kd, warna: w.pdf, kwt: e.kodeKwitansi || "" });
+    });
+  });
+  rows.sort(function(a, b){ return a.ts.localeCompare(b.ts) || urutRumah_(a, b); });
+  return { rows: rows, total: total, cash: cash, tf: tf };
+}
+async function unduhLaporan_(fmt){
+  var j = document.getElementById("lapJenis").value;
+  if (j === "status") return unduhStatusRumah_(fmt);
+  var dari = document.getElementById("lapDari").value, sampai = document.getElementById("lapSampai").value;
+  if (dari && sampai && dari > sampai) { showToast("Tanggal 'Dari' tidak boleh lebih besar dari 'Sampai'."); return; }
+  var d = dataTransaksi_(j, dari, sampai);
+  if (!d.rows.length) { showToast("Tidak ada transaksi pada rentang tanggal itu."); return; }
+  var judul = j === "cash" ? "LAPORAN PENARIKAN CASH HUMAS" : "LAPORAN SEMUA TRANSAKSI PENARIKAN";
+  var rentang = (dari ? fmtTglPendek_(dari) : "awal") + " s.d. " + (sampai ? fmtTglPendek_(sampai) : "sekarang");
+  var tag = (dari || "awal").replace(/-/g, "") + "-" + (sampai || "akhir").replace(/-/g, "");
+  try {
+    if (fmt === "pdf") {
+      if (!window.RTSurat || !RTSurat.buatLaporanSetoran) throw new Error("Modul PDF belum termuat");
+      var pdf = RTSurat.buatLaporanSetoran([{ bulanLabel: "Tanggal tarik " + rentang, rows: d.rows, total: d.total }], {
+        petugas: petugasNama, kode: (j === "cash" ? "CSH-" : "TRX-") + tglWIB_().replace(/-/g, "").slice(2), judul: judul, status: "Tanggal penarikan: " + rentang,
+        labelTgl: "Dicetak", labelKode: "Kode laporan", kolomTransaksi: true, tanpaTtd: j !== "cash",
+        infoRows: [["Jumlah transaksi", d.rows.length + " catatan"], ["Total cash", fmtRp_(d.cash)]].concat(j === "semua" ? [["Total transfer", fmtRp_(d.tf)]] : []),
+        totalLabelFull: (j === "cash" ? "Total cash ditarik" : "Total semua transaksi") + " (" + d.rows.length + " catatan)",
+        catatan: "Patokan tanggal = tanggal Humas mencatat penarikan di aplikasi. Warna baris: hijau = cash belum disetor, teal = cash sudah disetor, biru = transfer lunas, kuning = transfer menunggu, ungu = saldo titipan, merah = belum bayar."
+      }, RT_CONFIG);
+      simpanFile_(pdf.bytes, (j === "cash" ? "Penarikan-Cash_" : "Semua-Transaksi_") + tag + ".pdf", "application/pdf");
+      showToast("PDF siap: " + d.rows.length + " catatan.");
+    } else {
+      if (typeof ExcelJS === "undefined") throw new Error("ExcelJS belum termuat");
+      var gc = { style: "thin", color: { argb: "FFBFBFBF" } }, garis = { top: gc, left: gc, bottom: gc, right: gc };
+      var wb = new ExcelJS.Workbook(), ws = wb.addWorksheet("Transaksi", { views: [{ state: "frozen", ySplit: 4 }], pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 } });
+      [5, 13, 17, 30, 16, 15, 34, 20].forEach(function(w, i){ ws.getColumn(i + 1).width = w; });
+      ws.mergeCells(1, 1, 1, 8); var t = ws.getCell(1, 1); t.value = judul + " (" + rentang + ")"; t.font = { bold: true, size: 14, color: { argb: "FF1F3A5F" } }; t.alignment = { horizontal: "center" };
+      ws.getCell(2, 1).value = "Dicetak " + tglWIB_() + " oleh " + petugasNama + " | Total cash " + fmtRp_(d.cash) + (j === "semua" ? " | Total transfer " + fmtRp_(d.tf) : "");
+      var hr = ws.getRow(4);
+      ["No", "Tgl Tarik", "Blok / No. Rumah", "Nama Warga", "Bulan Iuran", "Jumlah (Rp)", "Status / Cara Bayar · Petugas", "Kode Kwitansi"].forEach(function(h, i){ var c = hr.getCell(i + 1); c.value = h; c.font = { bold: true, color: { argb: "FFFFFFFF" } }; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F3A5F" } }; c.border = garis; c.alignment = { horizontal: "center", wrapText: true }; });
+      var row = 4;
+      d.rows.forEach(function(r, i){
+        row++; var w = WARNA_STATUS_[r.kode];
+        [i + 1, r.tgl, r.rumah, r.nama, r.bulan, r.jumlah, r.ket + (r.tambahan ? " (+RUKEM)" : ""), r.kwt].forEach(function(v, k){
+          var c = ws.getRow(row).getCell(k + 1); c.value = v; c.border = garis; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: w.xl } }; if (k === 5) c.numFmt = "#,##0";
+        });
+      });
+      row++; var tr = ws.getRow(row);
+      ["", "", "", "", "TOTAL", { formula: "SUM(F5:F" + (row - 1) + ")", result: d.total }, "", ""].forEach(function(v, k){ var c = tr.getCell(k + 1); c.value = v === "" ? null : v; c.font = { bold: true }; c.border = garis; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE8EEF7" } }; if (k === 5) c.numFmt = "#,##0"; });
+      var buf = await wb.xlsx.writeBuffer();
+      simpanFile_(new Uint8Array(buf), (j === "cash" ? "Penarikan-Cash_" : "Semua-Transaksi_") + tag + ".xlsx", XLSX_MIME);
+      showToast("Excel siap: " + d.rows.length + " catatan.");
     }
   } catch (e) { console.error(e); showToast("Gagal membuat file. Pastikan internet aktif, muat ulang halaman, lalu coba lagi."); }
 }

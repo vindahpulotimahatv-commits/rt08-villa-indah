@@ -984,7 +984,10 @@
     doc.text(x0 + 14, yb + 38, norm(rpPdf(grand)), "B", 20, { rgb: navy });
     L.y = yb + 46 + 12;
 
-    var cols = [["No", 22], ["Blok / No. Rumah", 78], ["Nama Warga", 128], ["Jumlah", 64], ["Status / Cara Bayar", 118], ["Kwitansi", 85]];
+    var T = !!opsi.kolomTransaksi;   // mode transaksi: ada kolom tanggal tarik & bulan iuran (tanpa kode kwitansi)
+    var idxJ = T ? 5 : 3;
+    var cols = T ? [["No", 22], ["Tgl Tarik", 56], ["Blok / No.", 66], ["Nama Warga", 100], ["Bulan Iuran", 62], ["Jumlah", 62], ["Status / Cara Bayar", 127]]
+                 : [["No", 22], ["Blok / No. Rumah", 78], ["Nama Warga", 128], ["Jumlah", 64], ["Status / Cara Bayar", 118], ["Kwitansi", 85]];
     var tw = cols.reduce(function (a, k) { return a + k[1]; }, 0), fs = 8.5, lh = 10.5, pad = 3;
     var X = [x0]; cols.forEach(function (k) { X.push(X[X.length - 1] + k[1]); });
     function kepala() {
@@ -1002,7 +1005,7 @@
         if (!t) return;
         var f = bold ? "B" : "R", w = textWidth(t, f, fs), tx;
         if (i === 0) tx = X[i] + Math.max(2, (cols[0][1] - w) / 2);
-        else if (i === 3) tx = X[i + 1] - pad - w;
+        else if (i === idxJ) tx = X[i + 1] - pad - w;
         else tx = X[i] + pad;
         doc.text(tx, L.y + pad + fs + r * lh - 1, t, f, fs);
       });
@@ -1018,12 +1021,14 @@
 
     batches.forEach(function (b) {
       L.ensure(18 + 18 + 30);
-      L.p(b.info ? (b.judul || ("Info bulan " + b.bulanLabel)) + " - " + b.rows.length + " rumah (TIDAK masuk total cash)" : "Bulan " + b.bulanLabel + " - " + b.rows.length + " rumah", { font: "B", size: 11, after: 3 });
+      L.p(b.info ? (b.judul || ("Info bulan " + b.bulanLabel)) + " - " + b.rows.length + " rumah (TIDAK masuk total cash)" : (T ? b.bulanLabel + " - " + b.rows.length + " catatan" : "Bulan " + b.bulanLabel + " - " + b.rows.length + " rumah"), { font: "B", size: 11, after: 3 });
       kepala();
       b.rows.forEach(function (r, n) {
-        baris([[String(n + 1)], w_(r.rumah, 1), w_(r.nama || "-", 2), [r.jumlah == null ? "-" : norm(rpPdf(r.jumlah))], w_((r.ket || "Cash") + (r.tambahan ? " (+RUKEM)" : ""), 4), w_(r.kwt || "-", 5)], false, r.warna || null);
+        var jm = [r.jumlah == null ? "-" : norm(rpPdf(r.jumlah))], kt = (r.ket || "Cash") + (r.tambahan ? " (+RUKEM)" : "");
+        baris(T ? [[String(n + 1)], w_(r.tgl || "-", 1), w_(r.rumah, 2), w_(r.nama || "-", 3), w_(r.bulan || "-", 4), jm, w_(kt, 6)]
+                : [[String(n + 1)], w_(r.rumah, 1), w_(r.nama || "-", 2), jm, w_(kt, 4), w_(r.kwt || "-", 5)], false, r.warna || null);
       });
-      baris([[""], [""], ["Subtotal"], [norm(rpPdf(b.total))], [""], [""]], true, [0.93, 0.96, 1]);
+      baris(T ? [[""], [""], [""], ["Subtotal"], [""], [norm(rpPdf(b.total))], [""]] : [[""], [""], ["Subtotal"], [norm(rpPdf(b.total))], [""], [""]], true, [0.93, 0.96, 1]);
       L.space(10);
     });
     if (batches.length > 1) {
