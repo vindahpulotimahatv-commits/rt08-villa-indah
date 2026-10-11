@@ -164,7 +164,7 @@ html,body{overflow-x:hidden}
   <div class="summary-grid" id="ringkasan"></div>
 
   <div class="setor-banner" id="setorBanner" style="display:none">
-    <div>💵 Uang Cash di Tangan<b id="totalCashTangan">Rp 0</b><small style="display:block;font-weight:600;opacity:.85">Belum disetor ke Pengurus. Tekan Setor setelah selesai menarik.</small></div>
+    <div>💵 Uang Cash di Tangan<b id="totalCashTangan">Rp 0</b><small style="display:block;font-weight:600;opacity:.85">Belum disetor ke Pengurus. Tekan Setor setelah selesai menarik.</small><small id="cashKet" style="display:block;font-weight:700;opacity:.95"></small></div>
     <button class="btn btn-gold btn-sm" id="btnSetor" style="width:auto">📤 Setor</button>
   </div>
 
@@ -479,7 +479,7 @@ function initDashboard_(){
   if (window.RTIuranCari) RTIuranCari.pasang(document.getElementById("cariIuranWadah"), { getData: function(){ return penarikanSemua; }, getKontak: function(){ return kontakData; } });
   db.ref("penarikan").on("value", function(snap){
     penarikanSemua = snap.val() || {};
-    renderTunggakan_();
+    renderTunggakan_(); renderRingkasan_();
     if (window.RTIuranCari) RTIuranCari.render();
   }, function(){ document.getElementById("listTunggakan").innerHTML = '<div class="empty-note">Gagal memuat data tunggakan.</div>'; });
   document.getElementById("listTunggakan").addEventListener("click", function(ev){
@@ -618,7 +618,16 @@ function renderRingkasan_(){
     var e = penarikanData[r.key];
     var st = statusInfo_(e).cls;
     if (st === "lunas") lunas++; else belum++;
-    if (e && e.status === "lunas_cash" && !e.setoranId) cashDiTangan += uangEntry_(e);
+  });
+  /* Cash di tangan = semua catatan cash yang belum disetor di SEMUA bulan (termasuk bayar di muka & sisa bulan lalu),
+     bukan hanya bulan yang sedang dipilih. */
+  var cashLain = 0;
+  Object.keys(penarikanSemua || {}).forEach(function(b){
+    var bln = penarikanSemua[b] || {};
+    Object.keys(bln).forEach(function(k){
+      var e = bln[k];
+      if (e && e.status === "lunas_cash" && !e.setoranId) { var u = uangEntry_(e); cashDiTangan += u; if (b !== bulanKey) cashLain += u; }
+    });
   });
   document.getElementById("ringkasan").innerHTML =
     '<div class="sg-item"><span>Total Rumah</span><strong>' + all.length + '</strong></div>' +
@@ -628,6 +637,8 @@ function renderRingkasan_(){
   if (cashDiTangan > 0) {
     banner.style.display = "flex";
     document.getElementById("totalCashTangan").textContent = fmtRp_(cashDiTangan);
+    var ket = document.getElementById("cashKet");
+    if (ket) ket.textContent = cashLain > 0 ? ("Termasuk " + fmtRp_(cashLain) + " dari bulan lain (bayar di muka / belum disetor).") : "";
   } else banner.style.display = "none";
 }
 function renderList_(){
@@ -802,32 +813,20 @@ function tampilLaporanSetoran_(id, batch){
 
 /* ---------- SETOR CASH ---------- */
 function ajukanSetoran_(){
-  var keys = [], total = 0;
-  Object.keys(penarikanData).forEach(function(k){
-    var e = penarikanData[k];
-    if (e && e.status === "lunas_cash" && !e.setoranId) { keys.push(k); total += uangEntry_(e); }
-  });
-  if (keys.length === 0) { showToast("Tidak ada uang cash yang perlu disetor."); return; }
-  /* Pembayaran beberapa bulan sekaligus: uangnya diserahkan bersamaan, jadi bulan-bulan lain dalam paket
-     ikut disetor (dibuat satu setoran per bulan supaya laporan & kas tetap per bulan). */
-  var sib = {};
-  keys.forEach(function(k){
-    var e = penarikanData[k];
-    if (e.paketId && e.paketBulan) String(e.paketBulan).split(",").forEach(function(m){ if (m && m !== bulanKey) (sib[m] = sib[m] || {})[k] = e.paketId; });
-  });
-  var bulanLain = Object.keys(sib);
+  /* Setor SEMUA cash yang belum disetor di semua bulan (satu setoran per bulan supaya laporan & kas tetap per bulan). */
   var btnSetor = document.getElementById("btnSetor");
-  btnSetor.disabled = true;
-  (bulanLain.length ? Promise.all(bulanLain.map(function(m){ return db.ref("penarikan/" + m).once("value"); })) : Promise.resolve([])).then(function(snaps){
-    var batches = [{ bulan: bulanKey, keys: keys, total: total }];
-    snaps.forEach(function(sn, i){
-      var m = bulanLain[i], data = sn.val() || {}, ks = [], t = 0;
-      Object.keys(sib[m]).forEach(function(k){
-        var e = data[k];
-        if (e && e.status === "lunas_cash" && !e.setoranId && e.paketId === sib[m][k]) { ks.push(k); t += uangEntry_(e); }
-      });
-      if (ks.length) batches.push({ bulan: m, keys: ks, total: t });
+  var batches = [];
+  Object.keys(penarikanSemua || {}).filter(function(m){ return /^\d{4}-\d{2}$/.test(m); }).sort().forEach(function(m){
+    var bln = penarikanSemua[m] || {}, ks = [], t = 0;
+    Object.keys(bln).forEach(function(k){
+      var e = bln[k];
+      if (e && e.status === "lunas_cash" && !e.setoranId) { ks.push(k); t += uangEntry_(e); }
     });
+    if (ks.length) batches.push({ bulan: m, keys: ks, total: t });
+  });
+  if (batches.length === 0) { showToast("Tidak ada uang cash yang perlu disetor."); return; }
+  btnSetor.disabled = true;
+  Promise.resolve().then(function(){
     var grand = 0, rumahSet = {};
     batches.forEach(function(b){ grand += b.total; b.keys.forEach(function(k){ rumahSet[k] = true; }); });
     var infoBulan = batches.length > 1
