@@ -177,7 +177,7 @@ html,body{overflow-x:hidden}
     <div>💵 Uang Cash di Tangan<b id="totalCashTangan">Rp 0</b><small style="display:block;font-weight:600;opacity:.85">Belum disetor ke Pengurus. Tekan Setor setelah selesai menarik.</small><small id="cashKet" style="display:block;font-weight:700;opacity:.95"></small></div>
     <button class="btn btn-gold btn-sm" id="btnSetor" style="width:auto">📤 Setor</button>
   </div>
-  <div id="cekSetorBar" style="display:none;margin:-4px 0 14px;background:#fff;border-radius:16px;padding:12px 14px;box-shadow:var(--shadow-lg)">
+  <div id="cekSetorBar" style="display:block;margin:-4px 0 14px;background:#fff;border-radius:16px;padding:12px 14px;box-shadow:var(--shadow-lg)">
     <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">🔎 Cek dulu sebelum Setor — pastikan uang &amp; daftar rumah cocok</div>
     <div style="display:flex;gap:8px"><button class="btn btn-line btn-sm" id="btnCekPdf" type="button" style="flex:1">📄 Unduh PDF</button><button class="btn btn-line btn-sm" id="btnCekXls" type="button" style="flex:1">📊 Unduh Excel</button></div>
     <div id="cekSetorInfo" style="font-size:11.5px;color:var(--muted);margin-top:8px"></div>
@@ -679,7 +679,12 @@ function renderRingkasan_(){
     if (inf) inf.textContent = nCatat + " catatan cash belum disetor · total " + fmtRp_(cashDiTangan) + ". Cocokkan dengan uang di tangan.";
     var ket = document.getElementById("cashKet");
     if (ket) ket.textContent = cashLain > 0 ? ("Termasuk " + fmtRp_(cashLain) + " dari bulan lain (bayar di muka / belum disetor).") : "";
-  } else { banner.style.display = "none"; document.getElementById("cekSetorBar").style.display = "none"; }
+  } else {
+    banner.style.display = "none";
+    document.getElementById("cekSetorBar").style.display = "block";
+    var inf2 = document.getElementById("cekSetorInfo");
+    if (inf2) inf2.textContent = "Tidak ada cash yang belum disetor. Tombol di atas membuat rincian dari setoran Anda yang masih menunggu diterima Bendahara.";
+  }
 }
 /* Warna baris rumah menurut cara bayar / status. */
 function warnaRow_(e){
@@ -1055,12 +1060,20 @@ async function bangunExcelRincian_(list){
   return { bytes: new Uint8Array(buf), namaFile: "Rincian-Cash-Sebelum-Setor_" + String(petugasNama || "humas").replace(/[^A-Za-z0-9]+/g, "-") + "_" + tglWIB_().replace(/-/g, "") + ".xlsx" };
 }
 async function cekRincianSetor_(fmt){
-  var list = cashBelumSetor_();
-  if (!list.length) { showToast("Tidak ada uang cash yang belum disetor."); return; }
+  var list = cashBelumSetor_(), sudahSetor = false;
+  if (!list.length) {
+    /* Semua cash sudah diajukan setor: buat rincian dari setoran Anda yang masih menunggu. */
+    list = Object.keys(setoranData || {}).map(function(k){ return Object.assign({ id: k }, setoranData[k]); })
+      .filter(function(it){ return it.petugas === petugasNama && it.status !== "diterima"; })
+      .sort(function(a, b){ return String(a.bulanKey).localeCompare(String(b.bulanKey)); })
+      .map(function(it){ return { bulan: it.bulanKey, keys: Object.keys(it.rumahKeys || {}), total: it.jumlah }; });
+    sudahSetor = true;
+  }
+  if (!list.length) { showToast("Tidak ada cash belum disetor maupun setoran yang menunggu."); return; }
   try {
     if (fmt === "pdf") {
       var pdf = bangunPdfSetoran_(list, "CEK-" + tglWIB_().replace(/-/g, "").slice(2) + "-" + ("0" + new Date().getHours()).slice(-2) + ("0" + new Date().getMinutes()).slice(-2), Date.now(), {
-        judul: "RINCIAN CASH SEBELUM SETOR", status: "Belum disetor - untuk pengecekan", labelTotal: "Total uang cash di tangan", labelTgl: "Dicetak", labelKode: "Kode rincian",
+        judul: sudahSetor ? "RINCIAN SETORAN MENUNGGU" : "RINCIAN CASH SEBELUM SETOR", status: sudahSetor ? "Sudah diajukan setor - menunggu Bendahara" : "Belum disetor - untuk pengecekan", labelTotal: sudahSetor ? "Total setoran menunggu" : "Total uang cash di tangan", labelTgl: "Dicetak", labelKode: "Kode rincian",
         catatan: "Rincian ini untuk pengecekan uang dan daftar rumah sebelum Humas menekan tombol Setor. Belum merupakan setoran resmi. Warna baris: hijau = cash belum disetor, teal = cash sudah disetor, biru = transfer lunas, kuning = transfer menunggu, ungu = saldo titipan, merah = belum bayar."
       }, true);
       simpanFile_(pdf.bytes, pdf.namaFile.replace("Laporan-Setoran_", "Rincian-Cash-Sebelum-Setor_"), "application/pdf");
@@ -1253,6 +1266,13 @@ function simpanTransaksi_(){
     saldoSaja_ = (metode === "cash" && dt_ === 0);
     if (kelebihan_ > 0 && !confirm("Warga membayar " + fmtRp_(dt_) + ", iuran " + fmtRp_(perlu_) + ".\nKelebihan " + fmtRp_(kelebihan_) + " akan disimpan sebagai saldo iuran bulan depan. Lanjutkan?")) return;
   }
+  /* Simpan ulang catatan yang sudah ada (kolom "uang diterima" disembunyikan): JANGAN hilangkan uang yang sudah tercatat
+     (kelebihan bayar / saldo dipakai), kalau tidak uang fisik di tangan jadi lebih besar dari catatan. */
+  if (uangMasuk_ == null && metode === "cash" && existing.status === "lunas_cash" && existing.uangMasuk != null) {
+    uangMasuk_ = Math.max(0, (parseFloat(existing.uangMasuk) || 0) + (jumlah - (parseFloat(existing.jumlah) || jumlah)));
+    kelebihan_ = parseFloat(existing.kelebihan) || 0;
+    saldoDipakai_ = parseFloat(existing.saldoDipakai) || 0;
+  }
   var payload = {
     blok: currentRumah.blok, no: currentRumah.no, rumah: currentRumah.rumah, nama: currentRumah.nama || "",
     tambahanKK: tambahan, jumlah: jumlah, metode: metode, catatan: catatan, status: status,
@@ -1263,6 +1283,8 @@ function simpanTransaksi_(){
     createdAt: existing.createdAt || firebase.database.ServerValue.TIMESTAMP,
     updatedAt: firebase.database.ServerValue.TIMESTAMP
   };
+  if (existing.status === "lunas_cash" && existing.uangMasuk != null && payload.uangMasuk != null && existing.saldoSetelah != null) payload.saldoSetelah = existing.saldoSetelah;
+  if (existing.paketId) ["paketId", "paketKe", "paketN", "paketBulan", "paketTotal", "periodeLabel"].forEach(function(f){ if (existing[f] != null) payload[f] = existing[f]; });
 
   var btn = document.getElementById("btnSimpanTransaksi");
   var teksTombol_ = btn.innerHTML;
