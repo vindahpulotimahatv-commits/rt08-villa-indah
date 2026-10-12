@@ -274,6 +274,7 @@ textarea{min-height:76px;resize:vertical}
   #dashboard .tabs .tab-btn .tb-ic{width:38px;height:38px;border-radius:12px}
   #dashboard .tabs .tab-btn .pill,#dashboard .tabs .tab-btn .tab-dot{position:static;margin-left:auto;box-shadow:none}
 }
+#dashboard .tabs .tab-btn.ik-hide{display:none!important}
 .hdr-right{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
 .hdr-acct{align-items:center;gap:6px}
 .hdr-acct[style*="flex"]{display:flex}
@@ -314,7 +315,7 @@ textarea{min-height:76px;resize:vertical}
   <div class="tabs tabs-scroll">
     <button class="tab-btn active" data-tab="keuangan" aria-label="Keuangan" title="Keuangan"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-wallet"/></svg></span><span class="tb-l">Keuangan</span></button>
     <button class="tab-btn" data-tab="iuran" id="tabIuranBtn" aria-label="Iuran Bulanan" title="Iuran Bulanan"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-receipt"/></svg></span><span class="tb-l">Iuran</span></button>
-    <button class="tab-btn" data-tab="ikhusus" id="tabIKBtn" aria-label="Iuran Tambahan" title="Iuran Tambahan"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-wallet"/></svg></span><span class="tb-l">Iuran Tambahan</span></button>
+    <button class="tab-btn ik-hide" data-tab="ikhusus" id="tabIKBtn" aria-label="Iuran Tambahan" title="Iuran Tambahan"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-wallet"/></svg></span><span class="tb-l">Iuran Tambahan</span></button>
     
   </div>
 
@@ -1827,6 +1828,7 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
     var laporData_ = {}, laporAktif_ = null, infoEl_ = document.getElementById("lgLaporInfo");
     function geserBulan_(k, d){ var m = /^(\d{4})-(\d{2})$/.exec(k || ""); if (!m) return k; var idx = parseInt(m[1], 10) * 12 + parseInt(m[2], 10) - 1 + d; return Math.floor(idx / 12) + "-" + ("0" + ((idx % 12) + 1)).slice(-2); }
     function laporBulanTeks_(it){ var n = it.jmlBulan || 1; return n > 1 ? fmtBulanID_(it.bulanKey) + " s/d " + fmtBulanID_(geserBulan_(it.bulanKey, n - 1)) + " (" + n + " bulan)" : fmtBulanID_(it.bulanKey); }
+    function laporUntukTeks_(it){ return it.jenis === "tambahan" ? (it.ikJudul || "Iuran Tambahan") : (it.jenis === "gabungan" ? laporBulanTeks_(it) + " + " + (it.ikJudul || "Iuran Tambahan") : laporBulanTeks_(it)); }
     function laporTglTeks_(t){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t || ""); return m ? parseInt(m[3], 10) + " " + fmtBulanID_(m[1] + "-" + m[2]) : "-"; }
     function laporSembunyiInfo_(){ laporAktif_ = null; infoEl_.style.display = "none"; infoEl_.innerHTML = ""; }
     function renderLapor_(){
@@ -1842,18 +1844,19 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
         var r = cari_(it.rumah), judul = r ? r.rumah + " — " + r.nama : it.rumah;
         var selisih = it.jumlahSeharusnya != null && it.jumlah !== it.jumlahSeharusnya;
         return '<div class="entry-row"><div class="entry-body"><h4>' + esc_(judul) + '</h4>' +
-          '<p>' + esc_(laporBulanTeks_(it)) + ' • <b>' + fmtRp_(it.jumlah) + '</b>' + (selisih ? ' • ⚠️ seharusnya ' + fmtRp_(it.jumlahSeharusnya) : '') +
-          (it.nama ? ' • Pengirim: ' + esc_(it.nama) : '') + ' • Transfer: ' + esc_(laporTglTeks_(it.tglTransfer)) + (it.tambahanKK ? ' • +KK' : '') + (it.catatan ? ' • “' + esc_(it.catatan) + '”' : '') + '</p></div>' +
+          '<p>' + esc_(laporUntukTeks_(it)) + ' • <b>' + fmtRp_(it.jumlah) + '</b>' + (selisih ? ' • ⚠️ seharusnya ' + fmtRp_(it.jumlahSeharusnya) : '') +
+          (it.nama ? ' • Pengirim: ' + esc_(it.nama) : '') + ' • Transfer: ' + esc_(laporTglTeks_(it.tglTransfer)) + (it.tambahanKK ? ' • +KK' : '') + (it.jenis === "gabungan" ? ' • 💠 Gabungan' + (it.bulananOk ? ' (bulanan ✅)' : '') + (it.tambahanOk ? ' (tambahan ✅)' : '') : (it.jenis === "tambahan" ? ' • 💠 Iuran Tambahan' : '')) + (it.catatan ? ' • “' + esc_(it.catatan) + '”' : '') + '</p></div>' +
           '<div style="display:flex;gap:6px;flex-direction:column">' +
           '<button class="btn btn-gold btn-sm lapor-btn" data-act="bukti" data-id="' + esc_(it.id) + '">🧾 Lihat Bukti</button>' +
-          '<button class="btn btn-brand btn-sm lapor-btn" data-act="isi" data-id="' + esc_(it.id) + '">✍️ Isi ke Form</button>' +
+          (it.jenis !== "tambahan" && !it.bulananOk ? '<button class="btn btn-brand btn-sm lapor-btn" data-act="isi" data-id="' + esc_(it.id) + '">✍️ ' + (it.jenis === "gabungan" ? "Isi Iuran Bulanan" : "Isi ke Form") + '</button>' : '') +
+          ((it.jenis === "tambahan" || it.jenis === "gabungan") && !it.tambahanOk ? '<button class="btn btn-brand btn-sm lapor-btn" data-act="isiik" data-id="' + esc_(it.id) + '">💠 Isi Iuran Tambahan</button>' : '') +
           '<button class="btn btn-tolak btn-sm lapor-btn" data-act="tolak" data-id="' + esc_(it.id) + '">✖ Tolak</button></div></div>';
       }).join("") : '<div class="empty-note">Belum ada laporan transfer baru dari warga.</div>';
       if (selesai.length) {
         html += '<details style="padding:6px 14px 12px"><summary style="cursor:pointer;font-size:12px;font-weight:800;color:var(--muted)">Sudah diproses (' + selesai.length + ') — tampil 10 terbaru</summary>' +
           selesai.slice(0, 10).map(function(it){
             var r = cari_(it.rumah), ok = it.status === "dicatat";
-            return '<div style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--line)">' + (ok ? "✅" : "✖") + ' ' + esc_(r ? r.rumah : it.rumah) + ' • ' + esc_(laporBulanTeks_(it)) + ' • ' + fmtRp_(it.jumlah) + ' • ' + (ok ? "dicatat lunas" : "ditolak" + (it.alasanTolak ? ": " + esc_(it.alasanTolak) : "")) + '</div>';
+            return '<div style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--line)">' + (ok ? "✅" : "✖") + ' ' + esc_(r ? r.rumah : it.rumah) + ' • ' + esc_(laporUntukTeks_(it)) + ' • ' + fmtRp_(it.jumlah) + ' • ' + (ok ? "dicatat lunas" : "ditolak" + (it.alasanTolak ? ": " + esc_(it.alasanTolak) : "")) + '</div>';
           }).join("") + '</details>';
       }
       box.innerHTML = html;
@@ -1864,7 +1867,7 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
       var it = laporData_[id] || {}, r = cari_(it.rumah);
       var ov = document.createElement("div");
       ov.style.cssText = "position:fixed;inset:0;background:rgba(6,14,32,.85);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:12px";
-      ov.innerHTML = '<div style="color:#fff;font-size:13px;text-align:center;font-weight:800">' + esc_(r ? r.rumah + " — " + r.nama : (it.rumah || "")) + '<br>' + fmtRp_(it.jumlah) + ' • ' + esc_(laporBulanTeks_(it)) + '</div>' +
+      ov.innerHTML = '<div style="color:#fff;font-size:13px;text-align:center;font-weight:800">' + esc_(r ? r.rumah + " — " + r.nama : (it.rumah || "")) + '<br>' + fmtRp_(it.jumlah) + ' • ' + esc_(laporUntukTeks_(it)) + '</div>' +
         '<div id="buktiLaporIsi" style="color:#fff;font-size:13px">Memuat bukti...</div><button class="btn btn-gold btn-sm" id="buktiLaporTutup" style="width:auto">✕ Tutup</button>';
       document.body.appendChild(ov);
       ov.addEventListener("click", function(ev){ if (ev.target === ov || ev.target.id === "buktiLaporTutup") ov.remove(); });
@@ -1887,14 +1890,19 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
         document.getElementById("lgJml").value = n;
         document.getElementById("lgKK").checked = !!it.tambahanKK;
         document.getElementById("lgCatatan").value = "Lapor warga via aplikasi" + (it.catatan ? " — " + it.catatan : "");
-        document.getElementById("lgUang").value = (n === 1 && it.jumlahSeharusnya != null && it.jumlah !== it.jumlahSeharusnya) ? it.jumlah : "";
+        document.getElementById("lgUang").value = (it.jenis !== "gabungan" && n === 1 && it.jumlahSeharusnya != null && it.jumlah !== it.jumlahSeharusnya) ? it.jumlah : "";
         showPicked_(); hitung_();
         laporAktif_ = id;
-        infoEl_.innerHTML = '📥 Mengisi dari laporan warga: ' + esc_(r.rumah) + ' — transfer ' + fmtRp_(it.jumlah) + ' (' + esc_(laporTglTeks_(it.tglTransfer)) + '). Cek mutasi rekening dulu. <a href="#" id="lgLaporBatal" style="font-weight:900;margin-left:6px">Batalkan</a>';
+        infoEl_.innerHTML = '📥 Mengisi dari laporan warga: ' + esc_(r.rumah) + ' — transfer ' + fmtRp_(it.jumlah) + (it.jenis === "gabungan" ? ' (gabungan: bagian iuran bulanan ' + fmtRp_(it.jumlahBulanan || 0) + ' + ' + esc_(it.ikJudul || "Iuran Tambahan") + ' ' + fmtRp_(it.ikJumlah || 0) + ')' : '') + ' (' + esc_(laporTglTeks_(it.tglTransfer)) + '). Cek mutasi rekening dulu. <a href="#" id="lgLaporBatal" style="font-weight:900;margin-left:6px">Batalkan</a>';
         infoEl_.style.display = "block";
         document.getElementById("lgLaporBatal").addEventListener("click", function(ev){ ev.preventDefault(); laporSembunyiInfo_(); });
         document.getElementById("cardLangsung").scrollIntoView({ behavior: "smooth", block: "start" });
         showToast("Form terisi dari laporan warga. Cek mutasi rekening, lalu tekan Simpan sebagai Lunas.");
+        return;
+      }
+      if (act === "isiik") {
+        var r2 = cari_(it.rumah); if (!r2) { showToast("Rumah tidak dikenali di data warga: " + it.rumah); return; }
+        if (window.__ikIsi_) window.__ikIsi_(r2.blok + " No." + r2.no, Object.assign({ id: id }, it));
         return;
       }
       if (act === "tolak") {
@@ -1913,9 +1921,18 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
       var id = laporAktif_, it = laporData_[id], r = it && cari_(it.rumah);
       laporSembunyiInfo_();
       if (!it || !r || r.key !== rKey || it.bulanKey !== b0) return;
-      db.ref("laporTransfer/" + id).update({ status: "dicatat", diprosesAt: firebase.database.ServerValue.TIMESTAMP })
-        .catch(function(){ showToast("Lunas tersimpan, tapi status laporan warga gagal diperbarui. Periksa aturan Firebase (laporTransfer)."); });
+      selesaiBagian_(id, "bulananOk");
     };
+    /* Laporan gabungan baru berstatus "dicatat" setelah iuran bulanan DAN iuran tambahannya sama-sama dicatat. */
+    function selesaiBagian_(id, bagian){
+      var it = laporData_[id]; if (!it) return;
+      var u = {}, lain = bagian === "bulananOk" ? "tambahanOk" : "bulananOk";
+      if (it.jenis === "gabungan") u[bagian] = true;
+      if (it.jenis !== "gabungan" || it[lain]) { u.status = "dicatat"; u.diprosesAt = firebase.database.ServerValue.TIMESTAMP; }
+      else showToast("Bagian ini tercatat. Laporan tetap menunggu bagian " + (bagian === "bulananOk" ? "Iuran Tambahan" : "Iuran Bulanan") + ".");
+      db.ref("laporTransfer/" + id).update(u).catch(function(){ showToast("Tersimpan, tapi status laporan warga gagal diperbarui. Periksa aturan Firebase (laporTransfer)."); });
+    }
+    window.__laporIkSelesai_ = function(id){ selesaiBagian_(id, "tambahanOk"); };
   })();
 
   /* ---- PUBLIKASI RINGKASAN KE TRANSPARANSI ---- */
@@ -1992,6 +2009,15 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
   au.onAuthStateChanged(function(u){
     var ok = !!(u && RT_CONFIG.bendaharaUid && u.uid === RT_CONFIG.bendaharaUid);
     document.getElementById("bBar").style.display = ok ? "flex" : "none";
+    if (ok && !window.__ikWatch_) {
+      window.__ikWatch_ = true;
+      firebase.database().ref("iuranKhusus").on("value", function(sn){
+        var d = sn.val() || {}, ada = Object.keys(d).some(function(id){ return d[id] && d[id].aktif === true; });
+        var tb = document.getElementById("tabIKBtn");
+        tb.classList.toggle("ik-hide", !ada);
+        if (!ada && tb.classList.contains("active")) document.querySelector('.tab-btn[data-tab="keuangan"]').click();
+      }, function(){});
+    }
     if (ok) {
       document.getElementById("bWho").textContent = u.email;
       if (!localStorage.getItem("bPwGanti_" + u.uid)) setTimeout(function(){ showToast("Jika masih memakai password awal, segera ganti lewat 🔑 Ganti Password."); }, 1500);
@@ -2028,7 +2054,7 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
 /* ---------------- TAB IURAN TAMBAHAN (bendahara) ---------------- */
 (function(){
   var $ = function(id){ return document.getElementById(id); }, E = IK.esc;
-  var ikData = {}, pm = {}, mulai = false, rumah = null, hasil = null;
+  var ikData = {}, pm = {}, mulai = false, rumah = null, hasil = null, pendingJenis = null;
   IK.pasangCss();
   function ts(){ return firebase.database.ServerValue.TIMESTAMP; }
 
@@ -2040,9 +2066,22 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
     opts.push('<option value="Tunggakan iuran bulanan">Tunggakan iuran bulanan</option>', '<option value="__lain">Lainnya (tulis sendiri)</option>');
     sel.innerHTML = opts.join("");
     if (cur) sel.value = cur;
+    if (pendingJenis) { sel.value = pendingJenis; if (sel.value === pendingJenis) pendingJenis = null; }
     if (sel.selectedIndex < 0) sel.selectedIndex = 0;
     aturJenis();
   }
+  /* Dipanggil dari daftar laporan warga: isi form Iuran Tambahan dari laporan transfer. */
+  window.__ikIsi_ = function(label, lap){
+    var r = daftar().filter(function(x){ return x.key === IK.nk(label); })[0];
+    var tb = document.querySelector('.tab-btn[data-tab="ikhusus"]'); if (tb) tb.click();
+    if (r) { rumah = r; inp.value = r.rumah; $("ikPilih").textContent = "✔ " + r.rumah + " · " + (r.nama || "-"); var k = (typeof WARGA_KONTAK !== "undefined" && WARGA_KONTAK) ? (WARGA_KONTAK[r.wkey] || "") : ""; if (k) $("ikWa").value = k; }
+    $("ikMetode").value = "transfer"; $("ikTgl").value = lap.tglTransfer || tglWIB_(); $("ikKet").value = "Lapor warga via aplikasi";
+    pendingJenis = "ik:" + lap.ikId; var sel = $("ikJenis"); sel.value = pendingJenis; if (sel.value === pendingJenis) pendingJenis = null;
+    aturJenis();
+    window.__laporIk_ = { id: lap.id || null, ikId: lap.ikId, rumah: label };
+    showToast("Form Iuran Tambahan terisi dari laporan warga. Cek mutasi rekening, lalu Simpan.");
+    var f = $("ikSimpan"); if (f && f.scrollIntoView) f.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
   function aturJenis(){
     var v = $("ikJenis").value, ik = v.indexOf("ik:") === 0 ? ikData[v.slice(3)] : null, j = $("ikJumlah");
     $("ikJenisLainWrap").style.display = v === "__lain" ? "" : "none";
@@ -2118,6 +2157,8 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
     var btn = $("ikSimpan"); btn.disabled = true;
     db.ref("pemasukanLain").push().set(rec).then(function(){
       $("ikJumlah").value = ""; $("ikKet").value = ""; $("ikRumah").value = ""; $("ikPilih").textContent = ""; rumah = null; aturJenis();
+      var lk = window.__laporIk_;
+      if (lk && lk.id && lk.ikId === ikId && IK.nk(lk.rumah) === IK.nk(rec.rumah)) { window.__laporIkSelesai_ && window.__laporIkSelesai_(lk.id); window.__laporIk_ = null; }
       if (h) tampilHasil(rec, h); else showToast("Tersimpan, tapi PDF kwitansi gagal dibuat. Coba lewat Riwayat.");
     }).catch(function(e){ showToast(pesanGagal_(e, "Penyimpanan")); }).then(function(){ btn.disabled = false; });
   }

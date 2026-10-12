@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="id"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0A1B32"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="assets/icon-192.png"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="RT08 Villa Indah"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Bayar Iuran Bulanan | PANDU</title><style>
+<title>Bayar Iuran | PANDU</title><style>
 :root{
   --green:#123a6b;
   --green2:#1c4a86;
@@ -160,6 +160,7 @@ select.sel,input[type=date]{width:100%;border:1px solid var(--line);background:#
     <p>Transfer ke rekening Bendahara RT, lalu lapor di sini beserta foto bukti. Bendahara akan mengecek mutasi rekening, mencatat lunas, dan mengirim kwitansi lewat WhatsApp.</p>
     <div class="chip-row">
       <span class="info-chip">💰 <span id="hTarif">-</span> / bulan</span>
+      <span class="info-chip" id="chipIk" style="display:none">💠 <span id="hIk">-</span></span>
     </div>
   </div>
 </section>
@@ -187,11 +188,17 @@ select.sel,input[type=date]{width:100%;border:1px solid var(--line);background:#
     <form id="bayarForm" novalidate>
       <div class="h3s"><span class="step">2</span>Isi data pembayaran</div>
       <div class="field"><label>Blok / No. Rumah</label><div id="bRumah"></div></div>
+      <div id="ikBox" style="display:none">
+        <div class="field"><label>Pembayaran untuk</label><select id="bJenis" class="sel"></select></div>
+        <div class="field" id="ikPilihWrap" style="display:none"><label>Pilih iuran tambahan</label><select id="bIk" class="sel"></select></div>
+      </div>
+      <div id="bulanWrap">
       <div class="row2">
         <div class="field"><label>Bulan mulai</label><select id="bBulan" class="sel"></select></div>
         <div class="field"><label>Jumlah bulan</label><select id="bJml" class="sel"></select></div>
       </div>
       <label class="chk"><input type="checkbox" id="bKK"><span>Ada KK tambahan di rumah ini (+<span id="hTambah">-</span> per bulan)</span></label>
+      </div>
 
       <div class="total-box">
         <div class="lb">Total yang perlu ditransfer</div>
@@ -247,7 +254,30 @@ select.sel,input[type=date]{width:100%;border:1px solid var(--line);background:#
   function tglHariIni(){ var d = wib(); return ymKey(d.getUTCFullYear(), d.getUTCMonth()+1) + "-" + ("0"+d.getUTCDate()).slice(-2); }
   function perBulan(){ return TARIF + ($("bKK").checked ? TAMBAH : 0); }
   function jmlBulan(){ return Math.max(1, Math.min(12, parseInt($("bJml").value, 10) || 1)); }
-  function totalBayar(){ return perBulan() * jmlBulan(); }
+  /* ---- iuran tambahan (aktif dari Admin) ---- */
+  var ikAktif = [];
+  function ikDipilih(){
+    if (!ikAktif.length) return null;
+    var id = ikAktif.length > 1 ? $("bIk").value : ikAktif[0].id;
+    return ikAktif.filter(function(x){ return x.id === id; })[0] || ikAktif[0];
+  }
+  function jenisBayar(){ return ikAktif.length ? ($("bJenis").value || "bulanan") : "bulanan"; }
+  function bagianBulanan(){ return jenisBayar() === "tambahan" ? 0 : perBulan() * jmlBulan(); }
+  function bagianTambahan(){ var ik = ikDipilih(); return (ik && jenisBayar() !== "bulanan") ? ik.jumlah : 0; }
+  function totalBayar(){ return bagianBulanan() + bagianTambahan(); }
+  function isiPilihanJenis(){
+    var ik = ikDipilih(), box = $("ikBox");
+    if (!ik) { box.style.display = "none"; $("chipIk").style.display = "none"; $("bulanWrap").style.display = ""; return; }
+    box.style.display = "";
+    var cur = $("bJenis").value;
+    $("bJenis").innerHTML = '<option value="bulanan">Iuran Bulanan saja</option>' +
+      '<option value="gabungan">Iuran Bulanan + ' + esc(ik.judul) + '</option>' +
+      '<option value="tambahan">' + esc(ik.judul) + ' saja</option>';
+    if (cur) $("bJenis").value = cur;
+    $("hIk").textContent = ik.judul + " " + fmtRp(ik.jumlah) + " / rumah"; $("chipIk").style.display = "";
+    hitung();
+  }
+  function esc(t){ return String(t == null ? "" : t).replace(/[&<>"']/g, function(c){ return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function geser(k, d){
     var m = /^(\d{4})-(\d{2})$/.exec(k); if (!m) return k;
     var idx = parseInt(m[1],10) * 12 + (parseInt(m[2],10) - 1) + d;
@@ -289,12 +319,16 @@ select.sel,input[type=date]{width:100%;border:1px solid var(--line);background:#
   $("bTgl").value = tglHariIni(); $("bTgl").max = tglHariIni();
 
   function hitung(){
-    var n = jmlBulan(), tot = totalBayar();
+    var n = jmlBulan(), tot = totalBayar(), jn = jenisBayar(), ik = ikDipilih();
+    $("bulanWrap").style.display = jn === "tambahan" ? "none" : "";
     $("bTotal").textContent = fmtRp(tot);
     var b0 = $("bBulan").value, b1 = bulanSampai(b0, n);
-    $("bTotalDt").textContent = fmtRp(perBulan()) + " × " + n + " bulan • " + (n > 1 ? bulanLabel(b0) + " s/d " + bulanLabel(b1) : bulanLabel(b0));
+    var tB = fmtRp(perBulan()) + " × " + n + " bulan • " + (n > 1 ? bulanLabel(b0) + " s/d " + bulanLabel(b1) : bulanLabel(b0));
+    $("bTotalDt").textContent = jn === "tambahan" ? ik.judul + " • " + fmtRp(ik.jumlah) + " per rumah"
+      : jn === "gabungan" ? tB + " + " + ik.judul + " " + fmtRp(ik.jumlah) + " = " + fmtRp(tot) : tB;
   }
-  ["bKK","bJml","bBulan"].forEach(function(id){ $(id).addEventListener("change", hitung); });
+  ["bKK","bJml","bBulan","bJenis"].forEach(function(id){ $(id).addEventListener("change", hitung); });
+  $("bIk").addEventListener("change", isiPilihanJenis);
   hitung();
 
   $("btnSalinRek").addEventListener("click", function(){ if (REK.nomor) salin(String(REK.nomor), "Nomor rekening disalin"); });
@@ -337,6 +371,22 @@ select.sel,input[type=date]{width:100%;border:1px solid var(--line);background:#
   var cfg = RT_CONFIG.firebaseConfig || {}, siap = !!(cfg.apiKey && cfg.databaseURL && cfg.appId);
   if (!siap) { $("warnCard").style.display = "block"; $("btnKirim").disabled = true; }
   else if (!firebase.apps.length) firebase.initializeApp(cfg);
+  /* Iuran tambahan aktif dari Admin: pilihan pembayaran muncul otomatis. Gagal baca = pilihan tidak ditampilkan (hanya bulanan). */
+  if (siap) {
+    try {
+      firebase.database().ref("iuranKhusus").on("value", function(sn){
+        var d = sn.val() || {};
+        ikAktif = Object.keys(d).filter(function(id){ return d[id] && d[id].aktif === true && d[id].jumlah > 0; })
+          .map(function(id){ return { id: id, judul: d[id].judul || "Iuran Tambahan", jumlah: d[id].jumlah, createdAt: d[id].createdAt || 0 }; })
+          .sort(function(a, b){ return b.createdAt - a.createdAt; });
+        var curIk = $("bIk").value;
+        $("bIk").innerHTML = ikAktif.map(function(x){ return '<option value="' + esc(x.id) + '">' + esc(x.judul) + ' — ' + fmtRp(x.jumlah) + '</option>'; }).join("");
+        if (curIk) $("bIk").value = curIk;
+        $("ikPilihWrap").style.display = ikAktif.length > 1 ? "" : "none";
+        isiPilihanJenis(); hitung();
+      }, function(){ ikAktif = []; isiPilihanJenis(); hitung(); });
+    } catch (e) {}
+  }
 
   $("bayarForm").addEventListener("submit", function(ev){
     ev.preventDefault();
@@ -353,19 +403,22 @@ select.sel,input[type=date]{width:100%;border:1px solid var(--line);background:#
 
     var btn = $("btnKirim"); btn.disabled = true; btn.textContent = "Mengirim…";
     var db = firebase.database(), id = db.ref("laporTransfer").push().key, up = {};
+    var jn = jenisBayar(), ik = ikDipilih();
     var data = {
       rumah: t.blok + " " + t.no, jumlah: nominal, jumlahSeharusnya: seharusnya,
-      bulanKey: $("bBulan").value, jmlBulan: jmlBulan(), tambahanKK: $("bKK").checked, tglTransfer: tgl,
+      bulanKey: jn === "tambahan" ? kini : $("bBulan").value, jmlBulan: jn === "tambahan" ? 1 : jmlBulan(), tambahanKK: jn === "tambahan" ? false : $("bKK").checked, tglTransfer: tgl,
       status: "menunggu", createdAt: firebase.database.ServerValue.TIMESTAMP
     };
+    if (jn !== "bulanan" && ik) { data.jenis = jn; data.ikId = ik.id; data.ikJudul = ik.judul; data.ikJumlah = ik.jumlah; data.jumlahBulanan = bagianBulanan(); }
     var cat = $("bCatatan").value.trim(); if (cat) data.catatan = cat;
     up["laporTransfer/" + id] = data;
     up["laporTransferBukti/" + id + "/foto"] = fotoData;
     db.ref().update(up).then(function(){
       try { localStorage.setItem("rt08_lapor_bayar_ts", String(Date.now())); } catch(e){}
-      terakhir = { rumah: rumahNilai, nominal: nominal, b0: data.bulanKey, n: data.jmlBulan, tgl: tgl };
+      terakhir = { rumah: rumahNilai, nominal: nominal, b0: data.bulanKey, n: data.jmlBulan, tgl: tgl, jenis: data.jenis || "bulanan", ikJudul: data.ikJudul || "" };
       $("dRumah").textContent = "🏠 " + rumahNilai;
-      $("dInfo").textContent = "Laporan transfer " + fmtRp(nominal) + " untuk " + (data.jmlBulan > 1 ? bulanLabel(data.bulanKey) + " s/d " + bulanLabel(bulanSampai(data.bulanKey, data.jmlBulan)) : bulanLabel(data.bulanKey)) + " sudah masuk. Bendahara akan mengecek mutasi rekening, lalu mencatat lunas dan mengirim kwitansi lewat WhatsApp.";
+      var untukTeks = (data.jenis === "tambahan" ? data.ikJudul : (data.jmlBulan > 1 ? bulanLabel(data.bulanKey) + " s/d " + bulanLabel(bulanSampai(data.bulanKey, data.jmlBulan)) : bulanLabel(data.bulanKey)) + (data.jenis === "gabungan" ? " + " + data.ikJudul : ""));
+      $("dInfo").textContent = "Laporan transfer " + fmtRp(nominal) + " untuk " + untukTeks + " sudah masuk. Bendahara akan mengecek mutasi rekening, lalu mencatat lunas dan mengirim kwitansi lewat WhatsApp.";
       $("formCard").style.display = "none"; $("doneCard").style.display = "block"; $("doneCard").scrollIntoView({ behavior: "smooth", block: "start" });
     }).catch(function(err){
       var s = String(err && (err.code || err.message) || "");
@@ -375,14 +428,16 @@ select.sel,input[type=date]{width:100%;border:1px solid var(--line);background:#
 
   $("btnWA").addEventListener("click", function(){
     if (!terakhir) return;
-    var pesan = "Halo Bendahara RT 08, saya sudah transfer iuran bulanan.\nRumah: " + terakhir.rumah + "\nNominal: " + fmtRp(terakhir.nominal) + "\nBulan: " + bulanLabel(terakhir.b0) + (terakhir.n > 1 ? " (" + terakhir.n + " bulan)" : "") + "\nTanggal transfer: " + terakhir.tgl + "\nBukti sudah saya unggah di menu Bayar Iuran. Mohon dikonfirmasi 🙏";
+    var jt = terakhir.jenis, bagBulan = "\nBulan: " + bulanLabel(terakhir.b0) + (terakhir.n > 1 ? " (" + terakhir.n + " bulan)" : "");
+    var untuk = jt === "tambahan" ? "iuran " + terakhir.ikJudul : (jt === "gabungan" ? "iuran bulanan + " + terakhir.ikJudul : "iuran bulanan");
+    var pesan = "Halo Bendahara RT 08, saya sudah transfer " + untuk + ".\nRumah: " + terakhir.rumah + "\nNominal: " + fmtRp(terakhir.nominal) + (jt === "tambahan" ? "" : bagBulan) + "\nTanggal transfer: " + terakhir.tgl + "\nBukti sudah saya unggah di menu Bayar Iuran. Mohon dikonfirmasi 🙏";
     rtOpenWa(RT_CONFIG.waBendahara || RT_CONFIG.waKetua, pesan, "Nomor WhatsApp Bendahara belum diatur admin di config.js.");
   });
   $("btnLagi").addEventListener("click", function(e){
     e.preventDefault();
     $("doneCard").style.display = "none"; $("formCard").style.display = "block";
     $("bayarForm").reset(); rtRumahReset("bRumah"); fotoData = null; $("bPrev").style.display = "none";
-    $("bBulan").value = (kini >= awal ? kini : awal); $("bTgl").value = tglHariIni(); hitung(); window.scrollTo({ top: 0, behavior: "smooth" });
+    $("bBulan").value = (kini >= awal ? kini : awal); $("bTgl").value = tglHariIni(); isiPilihanJenis(); hitung(); window.scrollTo({ top: 0, behavior: "smooth" });
   });
 })();
 </script>
