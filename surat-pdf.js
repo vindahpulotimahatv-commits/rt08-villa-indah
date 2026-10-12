@@ -724,7 +724,9 @@
         { id: "saldoPakai", label: "Saldo Dipakai" },
         { id: "saldoSisa", label: "Sisa Saldo Bulan Depan" },
         { id: "metode", label: "Cara Pembayaran" },
-        { id: "petugas", label: "Petugas Penarik" }
+        { id: "petugas", label: "Petugas Penarik" },
+        { id: "judulKw", label: "Judul Kwitansi" },
+        { id: "untukLabel", label: "Label Untuk" }
       ],
       /* Kwitansi elektronik ringkas: tanpa kop resmi & tanpa tanda tangan RT. */
       render: function (L, d, c, kode) {
@@ -732,7 +734,7 @@
         L.y = 52;
         var lg = logoTanam("rt");
         if (lg) doc.drawImage(doc.addImage(lg.bytes, lg.w, lg.h), x0, L.y, 46, 46);
-        doc.text(x0 + 58, L.y + 20, "KWITANSI IURAN BULANAN", "B", 17, { rgb: navy });
+        doc.text(x0 + 58, L.y + 20, norm(d.judulKw || "KWITANSI IURAN BULANAN"), "B", 17, { rgb: navy });
         doc.text(x0 + 58, L.y + 38, "RT " + c.rt + " / RW " + c.rw + " - " + c.kompleks, "R", 10.5, { gray: 0.35 });
         var bw = 76, bx = PAGE_W - L.mr - bw, by = L.y + 8;
         doc.rect(bx, by, bw, 28, { stroke: hijau, lw: 1.6 });
@@ -754,7 +756,7 @@
         var baris = [
           ["Diterima dari", d.nama],
           ["Alamat", alamatRumah(d, c)],
-          ["Untuk bulan", d.bulan],
+          [d.untukLabel || "Untuk bulan", d.bulan],
           ["Rincian", d.rincian || "Iuran Bulanan"]
         ];
         if (adaSaldo) {
@@ -1131,6 +1133,9 @@
     return u ? u + "/transparansi.html?inv=" + encodeURIComponent(kode) : "";
   }
   function kodeLama(k) { return /^KW-\d{4}-[A-Za-z0-9]+-[A-Za-z0-9]+$/.test(String(k || "")); }
+
+  /* Kwitansi pembayaran di luar iuran bulanan (tunggakan, 17 Agustusan, dll) — memakai tata letak kwitansi iuran. */
+  JENIS.kwitansiLain = Object.assign({}, JENIS.kwitansiIuran, { judul: "Kwitansi Pembayaran" });
 
   var API = { JENIS: JENIS, buat: buat, buatBeritaAcara: buatBeritaAcara, buatLaporanSetoran: buatLaporanSetoran, validasi: validasi, muatLogo: muatLogo, kodeInvoice: kodeInvoice, linkInvoice: linkInvoice, kodeLama: kodeLama, _wrap: wrap, _tw: textWidth };
   if (typeof module !== "undefined" && module.exports) module.exports = API;

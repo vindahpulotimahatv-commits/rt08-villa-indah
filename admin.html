@@ -312,6 +312,7 @@ textarea{min-height:76px;resize:vertical}
     <button class="tab-btn" data-tab="bai" id="tabBaiBtn" aria-label="Berita Acara Internal" title="Berita Acara Internal (Humas, Bendahara, Pengurus)"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-file-text"/></svg></span><span class="tb-l">Berita Acara</span></button>
     <button class="tab-btn" data-tab="masukan" aria-label="Masukan Warga" title="Masukan Warga"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-message-circle"/></svg></span><span class="tb-l">Masukan</span></button>
     <button class="tab-btn" data-tab="polling" aria-label="Polling Warga" title="Polling Warga"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-clipboard-list"/></svg></span><span class="tb-l">Polling</span></button>
+    <button class="tab-btn" data-tab="ikhusus" id="tabIKBtn" aria-label="Iuran Tambahan" title="Iuran Tambahan"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-receipt"/></svg></span><span class="tb-l">Iuran Tambahan</span></button>
   </div>
 
   <!-- ===== PANEL LAPORAN WARGA ===== -->
@@ -506,6 +507,24 @@ textarea{min-height:76px;resize:vertical}
   </div>
 
   <!-- ===== PANEL UMKM ===== -->
+  <!-- ===== PANEL IURAN TAMBAHAN ===== -->
+  <div class="panel" id="panel-ikhusus">
+    <div class="list-card">
+      <div class="list-title" id="ikFormJudul">Buat Iuran Tambahan</div>
+      <p class="sub" style="padding:0 14px 6px;margin:0">Iuran di luar iuran bulanan (misalnya 17 Agustusan). Judul dan nominal per rumah ditetapkan di sini. Hanya iuran yang <b>AKTIF</b> muncul di halaman Humas dan Bendahara untuk menerima uang. Iuran baru dibuat dalam keadaan nonaktif.</p>
+      <div style="padding:6px 14px 14px">
+        <div class="ik-f"><label for="ikJudul">Judul iuran</label><input type="text" id="ikJudul" maxlength="60" placeholder="Contoh: Iuran 17 Agustusan 2027"></div>
+        <div class="ik-f"><label for="ikJumlah">Nominal per rumah (Rp)</label><input type="text" id="ikJumlah" inputmode="numeric" placeholder="Contoh: 50000" autocomplete="off"></div>
+        <div class="ik-f"><label for="ikKet">Keterangan (boleh kosong)</label><input type="text" id="ikKet" maxlength="200" placeholder="Contoh: Untuk lomba dan konsumsi"></div>
+        <button type="button" class="ik-b" id="ikSimpan">Simpan iuran</button><button type="button" class="ik-b alt" id="ikBatal" style="display:none">Batal ubah</button>
+      </div>
+    </div>
+    <div class="list-card">
+      <div class="list-title">Daftar Iuran Tambahan</div>
+      <div id="ikDaftar"><div class="empty-note">Buka tab ini untuk memuat data...</div></div>
+    </div>
+  </div>
+
   <!-- ===== PANEL POLLING WARGA ===== -->
   <div class="panel" id="panel-polling">
     <div class="list-card">
@@ -578,6 +597,7 @@ textarea{min-height:76px;resize:vertical}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="config.js"></script>
+<script src="iuran-khusus.js"></script>
 <script src="warga-data.js"></script>
 <script src="warga-kontak.js"></script>
 <script src="surat-pdf.js"></script>
@@ -1690,5 +1710,70 @@ function initDashboard_(){
   });
 }
 </script>
+<script>
+/* ---------------- TAB IURAN TAMBAHAN (admin) ---------------- */
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var ikData = {}, pmData = {}, editId = null, mulai = false;
+  IK.pasangCss();
+  function gambar(){
+    var list = IK.rekap(ikData, pmData, RT_CONFIG.daftarRumah);
+    if (!list.length) { $("ikDaftar").innerHTML = '<div class="empty-note">Belum ada iuran tambahan.</div>'; return; }
+    $("ikDaftar").innerHTML = list.map(function(r){
+      var aksi = '<div style="margin-top:8px">' +
+        '<button type="button" class="ik-b" data-act="tog" data-id="' + IK.esc(r.id) + '">' + (r.aktif ? "Nonaktifkan" : "Aktifkan") + '</button>' +
+        '<button type="button" class="ik-b alt" data-act="ubah" data-id="' + IK.esc(r.id) + '">Ubah</button>' +
+        '<button type="button" class="ik-b red" data-act="hapus" data-id="' + IK.esc(r.id) + '">Hapus</button></div>';
+      return IK.kartuHtml(r, { aksi: aksi });
+    }).join("");
+  }
+  function resetForm(){
+    editId = null; $("ikJudul").value = ""; $("ikJumlah").value = ""; $("ikKet").value = "";
+    $("ikSimpan").textContent = "Simpan iuran"; $("ikBatal").style.display = "none"; $("ikFormJudul").textContent = "Buat Iuran Tambahan";
+  }
+  $("tabIKBtn").addEventListener("click", function(){
+    if (mulai || !db) return; mulai = true;
+    db.ref("iuranKhusus").on("value", function(s){ ikData = s.val() || {}; gambar(); },
+      function(e){ $("ikDaftar").innerHTML = '<div class="empty-note">' + IK.esc(pesanGagal_(e, "Membaca iuran")) + '</div>'; });
+    db.ref("pemasukanLain").limitToLast(1000).on("value", function(s){ pmData = s.val() || {}; gambar(); }, function(){});
+  });
+  $("ikBatal").addEventListener("click", resetForm);
+  $("ikSimpan").addEventListener("click", function(){
+    if (!db) return;
+    var judul = $("ikJudul").value.trim(), jumlah = parseInt(String($("ikJumlah").value).replace(/[^\d]/g, ""), 10), ket = $("ikKet").value.trim();
+    if (!judul) { showToast("Isi judul iuran."); return; }
+    if (!jumlah || jumlah <= 0 || jumlah > 100000000) { showToast("Isi nominal per rumah dengan benar."); return; }
+    var btn = this; btn.disabled = true;
+    var data = { judul: judul, jumlah: jumlah, updatedAt: firebase.database.ServerValue.TIMESTAMP };
+    var p;
+    if (editId) { data.keterangan = ket || null; p = db.ref("iuranKhusus/" + editId).update(data); }
+    else { data.aktif = false; data.createdAt = firebase.database.ServerValue.TIMESTAMP; if (ket) data.keterangan = ket; p = db.ref("iuranKhusus").push().set(data); }
+    p.then(function(){ showToast(editId ? "Perubahan tersimpan." : "Iuran tersimpan (nonaktif). Klik Aktifkan bila siap dipakai."); resetForm(); })
+      .catch(function(e){ showToast(pesanGagal_(e, "Menyimpan iuran")); })
+      .then(function(){ btn.disabled = false; });
+  });
+  $("ikDaftar").addEventListener("click", function(e){
+    var b = e.target.closest ? e.target.closest("button[data-act]") : null; if (!b) return;
+    var id = b.getAttribute("data-id"), act = b.getAttribute("data-act"), ik = ikData[id]; if (!ik) return;
+    var r = IK.rekap(ikData, pmData, RT_CONFIG.daftarRumah).filter(function(x){ return x.id === id; })[0] || { n: 0 };
+    if (act === "tog") {
+      var aktif = ik.aktif !== true;
+      if (!confirm((aktif ? "Aktifkan" : "Nonaktifkan") + ' iuran "' + ik.judul + '"?\n' + (aktif ? "Humas dan Bendahara bisa mulai menerima uang untuk iuran ini." : "Humas dan Bendahara tidak bisa lagi mencatat iuran ini. Data yang sudah masuk tetap tersimpan."))) return;
+      b.disabled = true;
+      db.ref("iuranKhusus/" + id).update({ aktif: aktif, updatedAt: firebase.database.ServerValue.TIMESTAMP }).catch(function(er){ showToast(pesanGagal_(er, "Mengubah status")); b.disabled = false; });
+    } else if (act === "ubah") {
+      if (r.n > 0) { showToast("Sudah ada pembayaran masuk, jadi tidak bisa diubah. Nonaktifkan lalu buat iuran baru."); return; }
+      editId = id; $("ikJudul").value = ik.judul || ""; $("ikJumlah").value = ik.jumlah || ""; $("ikKet").value = ik.keterangan || "";
+      $("ikSimpan").textContent = "Simpan perubahan"; $("ikBatal").style.display = ""; $("ikFormJudul").textContent = "Ubah Iuran Tambahan";
+      try { $("ikJudul").scrollIntoView({ behavior: "smooth", block: "center" }); } catch (x) {}
+    } else if (act === "hapus") {
+      if (r.n > 0) { showToast("Sudah ada pembayaran masuk, jadi tidak bisa dihapus. Cukup nonaktifkan."); return; }
+      if (!confirm('Hapus iuran "' + ik.judul + '"? Tidak bisa dibatalkan.')) return;
+      db.ref("iuranKhusus/" + id).remove().catch(function(er){ showToast(pesanGagal_(er, "Menghapus iuran")); });
+    }
+  });
+})();
+</script>
+
 <script src="assets/siaga-ui.js?v=1"></script>
 </body></html>

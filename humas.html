@@ -135,6 +135,12 @@ html,body{overflow-x:hidden}
 .ac-item em{font-style:normal;font-size:10px;font-weight:900;padding:3px 8px;border-radius:999px;background:#eef1f9;color:var(--muted);white-space:nowrap}
 .ac-item em.lunas{background:#e3f6ec;color:#1c8a4e}
 .rumah-row>div:first-child{min-width:0;overflow-wrap:anywhere}
+.seg{display:flex;gap:6px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:5px;margin-bottom:12px}
+.seg button{flex:1;border:0;background:transparent;padding:11px 8px;border-radius:12px;font-weight:900;font-size:13px;color:var(--muted);cursor:pointer;font-family:inherit}
+.seg button.on{background:var(--green);color:#fff}
+.ln-ac{border:1px solid var(--line);border-radius:12px;max-height:220px;overflow:auto;background:#fff}
+.ln-ac div{padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer;font-size:13px}
+.ln-ac div:last-child{border-bottom:0}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,500;0,600;0,700;0,800;1,600&display=swap">
@@ -165,6 +171,12 @@ html,body{overflow-x:hidden}
     <span>Petugas: <b id="namaPetugasTampil">-</b></span>
     <button class="btn btn-line btn-sm" id="btnGantiPetugas">🔁 Ganti</button>
   </div>
+
+  <div class="seg" id="segTab">
+    <button type="button" class="on" data-pn="bulanan">🧾 Iuran Bulanan</button>
+    <button type="button" data-pn="lain">📒 Tunggakan &amp; Iuran Khusus</button>
+  </div>
+  <div id="panelBulanan">
 
   <div class="bulan-bar">
     <label>Bulan Penarikan</label>
@@ -252,6 +264,55 @@ html,body{overflow-x:hidden}
     <div class="list-title">Riwayat Setoran Saya</div>
     <div id="listSetoran"><div class="empty-note">Belum ada setoran.</div></div>
   </div>
+  </div><!-- /panelBulanan -->
+
+  <div id="panelLain" style="display:none">
+    <div class="summary-grid">
+      <div class="sg-item"><span>Total tercatat</span><strong id="lnTotal">Rp 0</strong></div>
+      <div class="sg-item lunas"><span>Cash di tangan</span><strong id="lnCash">Rp 0</strong></div>
+      <div class="sg-item"><span>Jumlah catatan</span><strong id="lnJml">0</strong></div>
+    </div>
+
+    <div class="setor-banner" id="lnSetorBar" style="display:none">
+      <div>💵 Cash Tunggakan di Tangan<b id="lnCashBanner">Rp 0</b><small style="display:block;font-weight:600;opacity:.85">Belum diserahkan ke Bendahara. Tekan Serahkan setelah uangnya diserahkan.</small></div>
+      <button class="btn btn-gold btn-sm" id="lnBtnSerah" type="button" style="width:auto">📤 Serahkan</button>
+    </div>
+
+    <div id="lnIkRekap"></div>
+
+    <div class="list-card">
+      <div class="list-title">➕ Catat Pembayaran Tunggakan / Iuran Khusus</div>
+      <div style="padding:4px 14px 14px">
+        <p style="margin:0 0 12px;color:var(--muted);font-size:12px;line-height:1.5">Untuk warga yang membayar tunggakan atau iuran khusus (misalnya 17 Agustusan) yang selama ini dicatat di buku. Setiap pembayaran tetap mendapat kwitansi.</p>
+        <div class="mfield"><label>Rumah (ketik blok/no atau nama)</label>
+          <input type="text" id="lnRumah" placeholder="Contoh: E2 No.10" autocomplete="off" autocapitalize="characters" spellcheck="false">
+          <div class="ln-ac" id="lnAc" hidden></div>
+          <div id="lnPilih" style="font-size:12.5px;font-weight:800;color:#1c8a4e"></div>
+        </div>
+        <div class="mfield"><label>Pembayaran untuk</label>
+          <select id="lnJenis">
+            <option value="Tunggakan iuran bulanan">Tunggakan iuran bulanan</option>
+            <option value="__lain">Lainnya (tulis sendiri)</option>
+          </select>
+          <div id="lnIkInfo" style="font-size:12px;font-weight:800;color:#146c3a"></div>
+        </div>
+        <div class="mfield" id="lnJenisLainWrap" style="display:none"><label>Nama iuran / keperluan</label><input type="text" id="lnJenisLain" maxlength="60" placeholder="Contoh: Iuran kerja bakti"></div>
+        <div class="mfield"><label>Keterangan (boleh kosong)</label><textarea id="lnKet" maxlength="300" placeholder="Contoh: Tunggakan Januari–Maret 2026 · sesuai buku hal. 12"></textarea></div>
+        <div class="mfield"><label>Uang diterima (Rp)</label><input type="text" id="lnJumlah" inputmode="numeric" placeholder="Contoh: 180000" autocomplete="off"></div>
+        <div class="mfield"><label>Tanggal bayar</label><input type="date" id="lnTgl"></div>
+        <div class="mfield"><label>Cara bayar</label>
+          <select id="lnMetode"><option value="cash">Tunai (Cash)</option><option value="transfer">Transfer</option></select>
+        </div>
+        <div class="mfield"><label>WhatsApp warga (opsional, untuk kirim kwitansi)</label><input type="tel" id="lnWa" placeholder="08xxxxxxxxxx" autocomplete="off"></div>
+        <button class="btn btn-gold" id="lnSimpan" type="button">✅ Simpan &amp; Buat Kwitansi</button>
+      </div>
+    </div>
+
+    <div class="list-card">
+      <div class="list-title">📒 Riwayat Pencatatan</div>
+      <div id="lnList"><div class="empty-note">Belum ada catatan.</div></div>
+    </div>
+  </div>
 </div></div>
 
 <div class="toast" id="toast"></div>
@@ -268,6 +329,7 @@ html,body{overflow-x:hidden}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="config.js"></script>
+<script src="iuran-khusus.js"></script>
 <script src="warga-data.js"></script>
 <script src="warga-kontak.js"></script>
 <script src="surat-pdf.js"></script>
@@ -1718,6 +1780,9 @@ function tampilHasilKwitansi_(){
 
 function modeAPK_(){ return !!(window.RTAndroid && typeof window.RTAndroid.sharePdf === "function"); }
 function teksKwitansi_(payload, hasil, tujuan){
+  if (payload.lain) return tujuan.label === "Warga"
+    ? (salam_() + " Bpk/Ibu " + (payload.nama || "") + ", pembayaran *" + payload.jenis + "* untuk rumah " + payload.rumah + " sebesar *" + fmtRp_(payload.jumlah) + "* (" + (payload.metode === "transfer" ? "Transfer" : "Tunai") + ") sudah kami terima. Kwitansi terlampir. Terima kasih 🙏\nNo. Invoice: " + hasil.kode)
+    : (salam_() + " Pak/Bu Bendahara, berikut kwitansi " + payload.jenis + " a.n. " + (payload.nama || "-") + " (" + payload.rumah + ") sebesar " + fmtRp_(payload.jumlah) + ". Nomor WA warga ini belum ada di data, jadi untuk sementara dikirim ke Bendahara. (No. Invoice: " + hasil.kode + ")");
   return tujuan.label === "Warga"
     ? (salam_() + " Bpk/Ibu " + (payload.nama || "") + ", iuran RT 08 (" + payload.rumah + ") " + (payload.periodeLabel || bulanLabel_(bulanKey)) +
        " *" + fmtRp_(payload.jumlah) + "* (Tunai) sudah kami terima. Kwitansi terlampir. Terima kasih 🙏" + catatSaldo_(payload) + "\nNo. Invoice: " + hasil.kode + linkCekInvoice_(hasil.kode))
@@ -1748,6 +1813,178 @@ async function kirimKwitansi_(){
   rtOpenWa(tujuan.nomor, pesan);
   showToast("Chat WhatsApp ke " + tujuan.label + " dibuka. Tinggal lampirkan PDF lalu kirim.");
 }
+
+/* ============ TAB: TUNGGAKAN & IURAN KHUSUS (pembayaran di luar iuran bulanan) ============
+   Disimpan di node "pemasukanLain". Terpisah dari "penarikan" supaya rekap iuran bulanan tidak berubah. */
+var lainData = {}, lainRumah = null, lainMulai_ = false, ikData = {};
+function lnEl_(id){ return document.getElementById(id); }
+function tglIndo_(s){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ""); return m ? m[3] + "/" + m[2] + "/" + m[1] : (s || "-"); }
+function bukaSheet_(){ document.getElementById("modalScrim").classList.add("open"); document.getElementById("modalSheet").classList.add("open"); }
+
+function isiJenisLain_(){
+  var sel = lnEl_("lnJenis"), cur = sel.value;
+  var opts = Object.keys(ikData).filter(function(id){ return ikData[id] && ikData[id].aktif === true; })
+    .sort(function(a, b){ return (ikData[b].createdAt || 0) - (ikData[a].createdAt || 0); })
+    .map(function(id){ return '<option value="ik:' + esc_(id) + '">' + esc_(ikData[id].judul) + ' — ' + fmtRp_(ikData[id].jumlah) + ' / rumah</option>'; });
+  opts.push('<option value="Tunggakan iuran bulanan">Tunggakan iuran bulanan</option>', '<option value="__lain">Lainnya (tulis sendiri)</option>');
+  sel.innerHTML = opts.join("");
+  if (cur) sel.value = cur;
+  if (sel.selectedIndex < 0) sel.selectedIndex = 0;
+  aturJenisLain_();
+}
+function aturJenisLain_(){
+  var v = lnEl_("lnJenis").value, ik = v.indexOf("ik:") === 0 ? ikData[v.slice(3)] : null, j = lnEl_("lnJumlah");
+  lnEl_("lnJenisLainWrap").style.display = v === "__lain" ? "" : "none";
+  if (ik) { j.value = ik.jumlah; j.readOnly = true; lnEl_("lnIkInfo").textContent = "Nominal ditetapkan Admin: " + fmtRp_(ik.jumlah) + " per rumah."; }
+  else { if (j.readOnly) j.value = ""; j.readOnly = false; lnEl_("lnIkInfo").textContent = ""; }
+}
+
+function pasangTabLain_(){
+  IK.pasangCss();
+  var btns = document.querySelectorAll("#segTab button");
+  Array.prototype.forEach.call(btns, function(b){
+    b.addEventListener("click", function(){
+      Array.prototype.forEach.call(btns, function(x){ x.classList.toggle("on", x === b); });
+      var lain = b.getAttribute("data-pn") === "lain";
+      lnEl_("panelBulanan").style.display = lain ? "none" : "";
+      lnEl_("panelLain").style.display = lain ? "" : "none";
+      if (lain) mulaiLain_();
+    });
+  });
+  lnEl_("lnJenis").addEventListener("change", aturJenisLain_);
+  var inp = lnEl_("lnRumah"), ac = lnEl_("lnAc");
+  inp.addEventListener("input", function(){
+    lainRumah = null; lnEl_("lnPilih").textContent = "";
+    var raw = inp.value.trim(), q = normKey_(raw), qn = raw.toLowerCase();
+    if (!q) { ac.hidden = true; ac.innerHTML = ""; return; }
+    var hasil = daftarRumahGabung_().filter(function(r){ return normKey_(r.label).indexOf(q) !== -1 || String(r.nama || "").toLowerCase().indexOf(qn) !== -1; }).slice(0, 30);
+    ac.innerHTML = hasil.length ? hasil.map(function(r){ return '<div data-key="' + esc_(r.key) + '"><b>' + esc_(r.label) + '</b> · ' + esc_(r.nama || "-") + '</div>'; }).join("") : '<div>Tidak ada rumah yang cocok</div>';
+    ac.hidden = false;
+  });
+  ac.addEventListener("click", function(e){
+    var it = e.target.closest ? e.target.closest("[data-key]") : null; if (!it) return;
+    var key = it.getAttribute("data-key");
+    var r = daftarRumahGabung_().filter(function(x){ return x.key === key; })[0]; if (!r) return;
+    lainRumah = r; inp.value = r.label; ac.hidden = true;
+    lnEl_("lnPilih").textContent = "✔ " + r.label + " · " + (r.nama || "-");
+    lnEl_("lnWa").value = (typeof nomorWargaTersimpan_ === "function" ? nomorWargaTersimpan_(r.key) : "") || "";
+  });
+  lnEl_("lnSimpan").addEventListener("click", simpanLain_);
+  lnEl_("lnBtnSerah").addEventListener("click", serahkanLain_);
+  lnEl_("lnList").addEventListener("click", function(e){
+    var b = e.target.closest ? e.target.closest(".ln-kw") : null; if (!b) return;
+    var rec = lainData[b.getAttribute("data-id")]; if (rec) tampilKwitansiLain_(rec, b.getAttribute("data-id"));
+  });
+}
+
+function mulaiLain_(){
+  if (!db) { showToast("Firebase belum siap."); return; }
+  if (!lnEl_("lnTgl").value) lnEl_("lnTgl").value = tglWIB_();
+  if (lainMulai_) return;
+  lainMulai_ = true;
+  db.ref("iuranKhusus").on("value", function(s){ ikData = s.val() || {}; isiJenisLain_(); gambarLain_(); }, function(){});
+  db.ref("pemasukanLain").limitToLast(1000).on("value", function(s){ lainData = s.val() || {}; gambarLain_(); },
+    function(e){ lnEl_("lnList").innerHTML = '<div class="empty-note">' + esc_(pesanGagal_(e, "Membaca catatan")) + '</div>'; });
+}
+
+function gambarLain_(){
+  var items = Object.keys(lainData).map(function(k){ return Object.assign({ id: k }, lainData[k]); })
+    .sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
+  var total = 0, cash = 0;
+  items.forEach(function(it){ total += it.jumlah || 0; if (it.metode === "cash" && !it.disetor && it.petugas === petugasNama) cash += it.jumlah || 0; });
+  lnEl_("lnTotal").textContent = fmtRp_(total); lnEl_("lnCash").textContent = fmtRp_(cash); lnEl_("lnJml").textContent = items.length;
+  lnEl_("lnCashBanner").textContent = fmtRp_(cash);
+  lnEl_("lnSetorBar").style.display = cash > 0 ? "" : "none";
+  if (!items.length) { lnEl_("lnList").innerHTML = '<div class="empty-note">Belum ada catatan.</div>'; return; }
+  var aktifIk = {}; Object.keys(ikData).forEach(function(id){ if (ikData[id] && ikData[id].aktif === true) aktifIk[id] = ikData[id]; });
+  var rk = IK.rekap(aktifIk, lainData, RT_CONFIG.daftarRumah);
+  lnEl_("lnIkRekap").innerHTML = rk.length ? '<div class="list-card"><div class="list-title">💠 Iuran Tambahan Aktif</div>' + rk.map(function(r){ return IK.kartuHtml(r); }).join("") + '</div>' : "";
+  lnEl_("lnList").innerHTML = items.slice(0, 80).map(function(it){
+    var badge = it.diterima ? '<span class="status-pill lunas">✅ Diterima Bendahara</span>' : it.metode === "transfer" ? '<span class="status-pill proses">🏦 Transfer</span>'
+      : (it.disetor ? '<span class="status-pill lunas">✅ Diserahkan</span>' : '<span class="status-pill proses">💵 Di tangan</span>');
+    return '<div class="setoran-row"><div><h4>' + esc_(it.rumah) + ' · ' + fmtRp_(it.jumlah) + '</h4>' +
+      '<p>' + esc_(it.jenis) + (it.keterangan ? ' — ' + esc_(it.keterangan) : '') + '<br>' + esc_(tglIndo_(it.tglBayar)) + ' · ' + esc_(it.nama || "-") + ' · ' + esc_(it.petugas || "") + '</p></div>' +
+      '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end">' + badge +
+      '<button class="btn btn-line btn-sm ln-kw" type="button" data-id="' + esc_(it.id) + '">🧾 Kwitansi</button></div></div>';
+  }).join("");
+}
+
+function pdfLain_(rec, kode){
+  if (typeof RTSurat === "undefined") throw new Error("surat-pdf.js belum termuat");
+  var rincian = (rec.keterangan || rec.jenis) + ((rec.tglBayar && rec.tglBayar !== tglWIB_()) ? " (dibayar " + tglIndo_(rec.tglBayar) + ")" : "");
+  return RTSurat.buat("kwitansiLain", {
+    nama: rec.nama || "-", blok: rec.rumah, bulan: rec.jenis, untukLabel: "Untuk", judulKw: "KWITANSI PEMBAYARAN",
+    rincian: rincian, jumlah: fmtRp_(rec.jumlah), metode: rec.metode === "transfer" ? "Transfer" : "Tunai (Cash)", petugas: rec.petugas
+  }, RT_CONFIG, null, new Date(), kode);
+}
+function kodeKwSemua_(){
+  var semua = [];
+  Object.keys(penarikanSemua || {}).forEach(function(b){ var bln = penarikanSemua[b] || {}; Object.keys(bln).forEach(function(rk){ if (bln[rk] && bln[rk].kodeKwitansi) semua.push(bln[rk].kodeKwitansi); }); });
+  Object.keys(lainData || {}).forEach(function(k){ if (lainData[k] && lainData[k].kodeKwitansi) semua.push(lainData[k].kodeKwitansi); });
+  return semua;
+}
+function tampilKwitansiLain_(rec, id){
+  var hasil;
+  try { hasil = pdfLain_(rec, rec.kodeKwitansi || RTSurat.kodeInvoice((rec.tglBayar || tglWIB_()).slice(0, 7), kodeKwSemua_())); }
+  catch (e) { console.error(e); showToast("Gagal membuat PDF kwitansi."); return; }
+  hasilKwitansi = { hasil: hasil, payload: { lain: true, nama: rec.nama, rumah: rec.rumah, jumlah: rec.jumlah, jenis: rec.jenis, metode: rec.metode, teleponWarga: rec.teleponWarga || "", periodeLabel: rec.jenis } };
+  tampilHasilKwitansi_();
+  bukaSheet_();
+}
+
+function simpanLain_(){
+  if (!db) return;
+  if (!lainRumah) { showToast("Pilih rumah dari daftar saran dulu."); return; }
+  var sel = lnEl_("lnJenis").value, ikId = sel.indexOf("ik:") === 0 ? sel.slice(3) : "", ik = ikId ? ikData[ikId] : null;
+  if (ikId && !(ik && ik.aktif === true)) { showToast("Iuran ini sudah tidak aktif."); return; }
+  var jenis = ik ? ik.judul : (sel === "__lain" ? lnEl_("lnJenisLain").value.trim() : sel);
+  if (!jenis) { showToast("Isi nama iuran / keperluannya."); return; }
+  if (ikId) {
+    var sudah = Object.keys(lainData).some(function(k){ var x = lainData[k]; return x && x.iuranId === ikId && normKey_(x.rumah) === normKey_(lainRumah.rumah); });
+    if (sudah) { showToast(lainRumah.label + " sudah tercatat membayar iuran ini."); return; }
+  }
+  var jumlah = ik ? ik.jumlah : parseInt(String(lnEl_("lnJumlah").value).replace(/[^\d]/g, ""), 10);
+  if (!jumlah || jumlah <= 0) { showToast("Isi jumlah uang yang diterima."); return; }
+  if (jumlah > 100000000) { showToast("Jumlah terlalu besar."); return; }
+  var tgl = lnEl_("lnTgl").value || tglWIB_(), ket = lnEl_("lnKet").value.trim().slice(0, 300);
+  var metode = lnEl_("lnMetode").value === "transfer" ? "transfer" : "cash", telp = lnEl_("lnWa").value.trim();
+  if (!confirm("Simpan pembayaran " + fmtRp_(jumlah) + " dari " + lainRumah.label + " untuk " + jenis + "?")) return;
+  var rec = { rumah: lainRumah.rumah, nama: lainRumah.nama || "", jenis: jenis, jumlah: jumlah, metode: metode, petugas: petugasNama, tglBayar: tgl, createdAt: firebase.database.ServerValue.TIMESTAMP };
+  if (ket) rec.keterangan = ket;
+  if (ikId) rec.iuranId = ikId;
+  if (telp) rec.teleponWarga = telp;
+  var hasil = null;
+  try { var kode = RTSurat.kodeInvoice(tgl.slice(0, 7), kodeKwSemua_()); hasil = pdfLain_(rec, kode); rec.kodeKwitansi = kode; } catch (e) { console.error(e); }
+  var btn = lnEl_("lnSimpan"); btn.disabled = true; btn.textContent = "Menyimpan...";
+  var id = db.ref("pemasukanLain").push().key;
+  db.ref("pemasukanLain/" + id).set(rec).then(function(){
+    lnEl_("lnJumlah").value = ""; lnEl_("lnKet").value = ""; lnEl_("lnRumah").value = ""; lnEl_("lnPilih").textContent = ""; lainRumah = null;
+    if (hasil) {
+      hasilKwitansi = { hasil: hasil, payload: { lain: true, nama: rec.nama, rumah: rec.rumah, jumlah: rec.jumlah, jenis: rec.jenis, metode: rec.metode, teleponWarga: rec.teleponWarga || "", periodeLabel: rec.jenis } };
+      tampilHasilKwitansi_(); bukaSheet_();
+    } else showToast("Tersimpan, tapi gagal membuat PDF kwitansi. Coba lewat tombol Kwitansi di riwayat.");
+  }).catch(function(err){
+    console.error(err); showToast(pesanGagal_(err, "Penyimpanan"));
+  }).then(function(){ btn.disabled = false; btn.innerHTML = "✅ Simpan &amp; Buat Kwitansi"; });
+}
+
+function serahkanLain_(){
+  var up = {}, n = 0, total = 0;
+  Object.keys(lainData).forEach(function(id){
+    var it = lainData[id];
+    if (it && it.metode === "cash" && !it.disetor && it.petugas === petugasNama) {
+      up["pemasukanLain/" + id + "/disetor"] = true;
+      up["pemasukanLain/" + id + "/setorAt"] = firebase.database.ServerValue.TIMESTAMP;
+      up["pemasukanLain/" + id + "/setorOleh"] = petugasNama;
+      n++; total += it.jumlah || 0;
+    }
+  });
+  if (!n) { showToast("Tidak ada cash yang belum diserahkan."); return; }
+  if (!confirm("Tandai " + n + " catatan (" + fmtRp_(total) + ") sudah diserahkan ke Bendahara?\nSetelah ditandai tidak bisa diubah.")) return;
+  db.ref().update(up).then(function(){ showToast("Ditandai sudah diserahkan: " + fmtRp_(total)); })
+    .catch(function(e){ showToast(pesanGagal_(e, "Penandaan serah")); });
+}
+pasangTabLain_();
 })();
 </script>
 
