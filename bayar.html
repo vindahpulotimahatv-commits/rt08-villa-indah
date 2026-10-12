@@ -255,7 +255,7 @@ select.sel,input[type=date]{width:100%;border:1px solid var(--line);background:#
   function perBulan(){ return TARIF + ($("bKK").checked ? TAMBAH : 0); }
   function jmlBulan(){ return Math.max(1, Math.min(12, parseInt($("bJml").value, 10) || 1)); }
   /* ---- iuran tambahan (aktif dari Admin) ---- */
-  var ikAktif = [];
+  var ikAktif = [], DEBUG_ = /[?&]cek=1/.test(location.search);
   function ikDipilih(){
     if (!ikAktif.length) return null;
     var id = ikAktif.length > 1 ? $("bIk").value : ikAktif[0].id;
@@ -384,7 +384,8 @@ select.sel,input[type=date]{width:100%;border:1px solid var(--line);background:#
         if (curIk) $("bIk").value = curIk;
         $("ikPilihWrap").style.display = ikAktif.length > 1 ? "" : "none";
         isiPilihanJenis(); hitung();
-      }, function(){ ikAktif = []; isiPilihanJenis(); hitung(); });
+        if (DEBUG_) showToast("CEK: terbaca " + Object.keys(d).length + " iuran, aktif " + ikAktif.length + (ikAktif.length ? " (" + ikAktif[0].judul + ")" : "") + ".");
+      }, function(err){ ikAktif = []; isiPilihanJenis(); hitung(); console.warn("iuranKhusus gagal dibaca:", err); if (DEBUG_) showToast("CEK: GAGAL baca iuranKhusus — " + (err && (err.code || err.message) || "tidak diketahui") + ". Aturan Firebase belum dipublish / belum benar."); });
     } catch (e) {}
   }
 
