@@ -304,3 +304,69 @@ const RT_PESAN_RUMAH = "Pilih Blok & Nomor Rumah dulu. Tanpa nomor rumah yang te
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", pasang);
   else pasang();
 })();
+
+
+/* ============================================================
+   MENU "POLLING WARGA" — muncul di menu HANYA jika pengurus
+   mengaktifkannya (saklar di polling-admin.html). Jika dinonaktifkan,
+   menu hilang dari semua halaman. Tidak perlu mengubah file HTML.
+   Status dibaca dari Firebase (node pollingMenu), disimpan sementara
+   di HP supaya menu tidak berkedip.
+   ============================================================ */
+(function () {
+  if (typeof document === "undefined") return;
+  var KUNCI = "pollingMenuAktif";
+
+  function hapusMenu() {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-polling-menu]"), function (e) { e.parentNode.removeChild(e); });
+  }
+
+  function pasangMenu() {
+    if (document.querySelector("[data-polling-menu]")) return;
+    var isi = '<span class="sg-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-clipboard-list"/></svg></span>' +
+              '<span>Polling Warga<small>Ikut memilih, 1 rumah 1 suara</small></span>';
+    var chev = '<svg class="i sg-chev" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg>';
+    Array.prototype.forEach.call(document.querySelectorAll('a[href="hiburan.html"]'), function (a) {
+      var induk = a.parentNode;
+      var dropdown = induk && induk.classList && induk.classList.contains("sg-dd");
+      var laci = !!a.querySelector(".sg-chev") && induk && induk.tagName === "LI";
+      if (!dropdown && !laci) return;
+      var acuan = laci ? induk : a;
+      var nxt = acuan.nextElementSibling;
+      if (nxt && (nxt.getAttribute("href") === "masukan.html" || (nxt.querySelector && nxt.querySelector('a[href="masukan.html"]')))) acuan = nxt;
+      var baru;
+      if (laci) {
+        baru = document.createElement("li");
+        baru.innerHTML = '<a href="polling.html">' + isi + chev + '</a>';
+      } else {
+        baru = document.createElement("a");
+        baru.setAttribute("href", "polling.html");
+        baru.innerHTML = isi;
+      }
+      baru.setAttribute("data-polling-menu", "1");
+      acuan.parentNode.insertBefore(baru, acuan.nextSibling);
+    });
+  }
+
+  function terapkan(aktif) { if (aktif) pasangMenu(); else hapusMenu(); }
+
+  function mulai() {
+    var cache = null;
+    try { cache = localStorage.getItem(KUNCI); } catch (e) {}
+    if (cache === "1") terapkan(true);
+    var c = (typeof RT_CONFIG !== "undefined" && RT_CONFIG.firebaseConfig) || {};
+    if (!c.databaseURL || typeof fetch !== "function") return;
+    fetch(String(c.databaseURL).replace(/\/+$/, "") + "/pollingMenu.json", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (v) {
+        if (v === null && cache === null) return;   // belum pernah diatur: menu tidak tampil
+        var aktif = (v === true);
+        try { localStorage.setItem(KUNCI, aktif ? "1" : "0"); } catch (e) {}
+        terapkan(aktif);
+      })
+      .catch(function () { /* offline: pakai status terakhir yang tersimpan */ });
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mulai);
+  else mulai();
+})();

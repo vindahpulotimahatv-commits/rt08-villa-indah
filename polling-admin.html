@@ -56,6 +56,12 @@ td.k{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:800;letter-sp
   </div></div>
 
   <div id="dashboard">
+    <div class="card" id="kartuMenu">
+      <h2>Menu Polling di aplikasi warga</h2>
+      <p class="sub">Saklar ini mengatur apakah tombol <b>Polling Warga</b> muncul di menu aplikasi warga. <b>Aktif</b> = menu tampil. <b>Nonaktif</b> = menu hilang dari semua halaman. Saklar ini tidak membuka atau menutup polling. Buka/tutup polling diatur di kartu polling di bawah.</p>
+      <div id="menuStatus" class="msg warn">Memuat status…</div>
+      <button class="btn" id="btnMenu" type="button" disabled>…</button>
+    </div>
     <div class="card">
       <h2>Buat polling baru</h2>
       <p class="sub">Polling dibuat dulu sebagai <b>Draft</b>. Setelah itu buat kode rumah, lalu buka polling. Setelah dibuka, pertanyaan dan jawaban tidak bisa diubah.</p>
@@ -166,6 +172,19 @@ function mulai(){
       msgBuat("Polling tersimpan sebagai Draft. Lanjut: buat kode rumah di bawah.", true);
       $("nJudul").value = ""; $("nKet").value = ""; document.querySelectorAll(".pil").forEach(function(i){ i.value = ""; });
     }).catch(function(e){ msgBuat(pesanGagal(e, "Menyimpan polling")); }).finally(function(){ b.disabled = false; });
+  });
+  db.ref("pollingMenu").on("value", function(s){
+    var aktif = s.val() === true, st = $("menuStatus"), b = $("btnMenu");
+    st.className = "msg " + (aktif ? "ok" : "warn");
+    st.textContent = aktif ? "Menu Polling sedang AKTIF: warga melihat tombol Polling Warga di menu." : "Menu Polling sedang NONAKTIF: tombol Polling Warga tidak tampil di menu warga.";
+    b.textContent = aktif ? "Nonaktifkan menu Polling" : "Aktifkan menu Polling";
+    b.className = "btn" + (aktif ? " bahaya" : "");
+    b.disabled = false; b.setAttribute("data-aktif", aktif ? "1" : "0");
+  }, function(e){ $("menuStatus").className = "msg err"; $("menuStatus").textContent = pesanGagal(e, "Membaca status menu"); });
+  $("btnMenu").addEventListener("click", function(){
+    var b = this, aktifSekarang = b.getAttribute("data-aktif") === "1";
+    b.disabled = true;
+    db.ref("pollingMenu").set(!aktifSekarang).catch(function(e){ $("menuStatus").className = "msg err"; $("menuStatus").textContent = pesanGagal(e, "Mengubah menu"); b.disabled = false; });
   });
   db.ref("pollingStatus").on("value", function(s){ daftarStatus = s.val() || {}; gambarDaftar(); });
 }
