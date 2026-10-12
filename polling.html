@@ -1,0 +1,172 @@
+<!DOCTYPE html><html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0A1B32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="icon-192.png">
+<title>Polling Warga | PANDU</title>
+<style>
+:root{--navy:#123a6b;--gold:#d5a62b;--ink:#12213f;--muted:#59657f;--line:#dbe2f0;--red:#c74444;--ok:#1f8a4c}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  background:linear-gradient(180deg,rgba(6,16,36,.78),rgba(8,20,44,.6) 40%,rgba(10,25,56,.9)),url("assets/bg-navy.jpg") center top/cover no-repeat fixed,#0a1b32;padding-bottom:40px}
+a{color:inherit;text-decoration:none}button,input{font:inherit}
+.wrap{width:min(760px,calc(100% - 28px));margin:auto}
+header{position:sticky;top:0;z-index:50;background:rgba(8,20,44,.94);backdrop-filter:blur(14px);border-bottom:1px solid rgba(213,166,43,.28)}
+.bar{display:flex;align-items:center;justify-content:space-between;min-height:58px;gap:10px;color:#fff}
+.bar b{font-size:17px}.bar small{display:block;color:var(--gold);font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:800}
+.back{border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:8px 14px;font-weight:800;font-size:13px;color:#fff}
+.card{background:#fff;border-radius:20px;padding:18px;box-shadow:0 14px 40px rgba(3,10,26,.3);margin:16px 0}
+h2{margin:0 0 4px;font-size:18px}h3{margin:0 0 6px;font-size:13px;letter-spacing:.8px;text-transform:uppercase;color:#d9e3f5}
+.sub{margin:0 0 14px;color:var(--muted);font-size:13.5px;line-height:1.55}
+.badge{display:inline-block;border-radius:99px;padding:3px 10px;font-size:11px;font-weight:900;letter-spacing:.4px;text-transform:uppercase}
+.badge.buka{background:#eefaf2;color:#146c3a}.badge.tutup{background:#eef1f8;color:#445}
+.opt{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);border-radius:14px;padding:13px 14px;margin:8px 0;cursor:pointer;font-weight:700;font-size:15px}
+.opt:has(input:checked){border-color:var(--gold);background:#fff8e6;color:#5a4306}
+.opt input{width:20px;height:20px;accent-color:#c49325;flex:none}
+label.f{display:block;font-weight:800;font-size:14px;margin:16px 0 6px}
+.kode{width:100%;padding:14px;border:1.5px solid var(--line);border-radius:14px;font-size:20px;letter-spacing:3px;text-transform:uppercase;text-align:center;font-weight:800}
+.kode:focus{outline:none;border-color:var(--navy)}
+.btn{border:0;border-radius:14px;padding:14px 18px;font-weight:900;font-size:15px;cursor:pointer;width:100%;margin-top:16px;background:linear-gradient(135deg,#e8c05a,#c49325);color:#0b2144}
+.btn:disabled{opacity:.6;cursor:default}
+.msg{padding:12px 14px;border-radius:12px;font-size:13.5px;line-height:1.5;margin-top:12px}
+.msg.err{background:#fff3f3;color:#9b1c1c}.msg.ok{background:#eefaf2;color:#146c3a}
+.note{font-size:12px;color:var(--muted);margin:12px 0 0;line-height:1.55}
+.hasil{margin:10px 0}.hasil .r{display:flex;justify-content:space-between;font-weight:800;font-size:14px;margin-bottom:4px}
+.hasil .bar2{height:14px;border-radius:99px;background:#eef1f8;overflow:hidden}.hasil .bar2 i{display:block;height:100%;background:linear-gradient(90deg,#e8c05a,#c49325)}
+.hasil.menang .r{color:#146c3a}
+.thanks{text-align:center;padding:18px 8px}.thanks .big{font-size:44px}.thanks b{display:block;font-size:18px;margin:6px 0}
+.kosong{color:#d9e3f5;text-align:center;padding:30px 10px;font-size:14px}
+</style></head><body>
+<header><div class="wrap bar"><div><b>Polling Warga</b><small>Satu rumah, satu suara</small></div><a class="back" href="index.html">← Beranda</a></div></header>
+
+<main class="wrap">
+  <div id="daftar"><div class="kosong">Memuat polling…</div></div>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="config.js"></script>
+<script>
+var CFG = (typeof RT_CONFIG !== "undefined" && RT_CONFIG) ? RT_CONFIG : {};
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function simpanLokal(k, v){ try { localStorage.setItem(k, v); } catch (e) {} }
+function bacaLokal(k){ try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+var db = null;
+(function(){
+  var c = CFG.firebaseConfig || {};
+  if (!(c.apiKey && c.databaseURL && c.appId) || typeof firebase === "undefined") return;
+  try { if (!firebase.apps.length) firebase.initializeApp(c); db = firebase.database(); } catch (e) { db = null; }
+})();
+
+/* Kode -> dua "kunci rahasia" (hash). Kode asli TIDAK pernah dikirim ke server. */
+function normKode(s){ return String(s || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); }
+function sha256hex(teks){
+  return crypto.subtle.digest("SHA-256", new TextEncoder().encode(teks)).then(function(buf){
+    return Array.prototype.map.call(new Uint8Array(buf), function(b){ return ("0" + b.toString(16)).slice(-2); }).join("");
+  });
+}
+
+var cache = {};   // id -> {data, status}
+var sudahLokal = function(id){ return bacaLokal("polling_sudah_" + id) === "1"; };
+
+function muatSemua(){
+  if (!db) { $("daftar").innerHTML = '<div class="card"><div class="msg err">Firebase belum dikonfigurasi.</div></div>'; return; }
+  if (!window.crypto || !crypto.subtle) {
+    $("daftar").innerHTML = '<div class="card"><div class="msg err">Browser ini tidak mendukung pemungutan suara yang aman. Buka lewat alamat https:// atau pakai browser yang lebih baru.</div></div>';
+    return;
+  }
+  db.ref("pollingStatus").on("value", function(snap){
+    var st = snap.val() || {}, ids = Object.keys(st).filter(function(i){ return st[i] === "buka" || st[i] === "tutup"; });
+    if (!ids.length) { $("daftar").innerHTML = '<div class="kosong">Belum ada polling saat ini.</div>'; return; }
+    ids.sort().reverse();
+    Promise.all(ids.map(function(id){
+      return db.ref("pollingData/" + id).once("value").then(function(s){ return { id: id, status: st[id], data: s.val() }; }).catch(function(){ return null; });
+    })).then(function(list){
+      list = list.filter(function(x){ return x && x.data; });
+      list.forEach(function(x){ cache[x.id] = x; });
+      gambar(list);
+    });
+  }, function(){ $("daftar").innerHTML = '<div class="card"><div class="msg err">Polling tidak bisa dimuat. Cek sinyal lalu muat ulang halaman.</div></div>'; });
+}
+
+function gambar(list){
+  var buka = list.filter(function(x){ return x.status === "buka"; });
+  var tutup = list.filter(function(x){ return x.status === "tutup"; });
+  var h = "";
+  if (buka.length) h += "<h3 style='margin-top:18px'>Sedang dibuka</h3>" + buka.map(kartuBuka).join("");
+  if (tutup.length) h += "<h3 style='margin-top:18px'>Sudah ditutup (hasil)</h3>" + tutup.map(function(x){ return '<div class="card" id="k_' + x.id + '"><h2>' + esc(x.data.judul) + '</h2><span class="badge tutup">Ditutup</span><div id="h_' + x.id + '" class="sub" style="margin-top:12px">Memuat hasil…</div></div>'; }).join("");
+  if (!h) h = '<div class="kosong">Belum ada polling saat ini.</div>';
+  $("daftar").innerHTML = h;
+  buka.forEach(function(x){ pasangForm(x); });
+  tutup.forEach(function(x){ muatHasil(x); });
+}
+
+function urutPilihan(p){ return Object.keys(p || {}).sort(); }
+
+function kartuBuka(x){
+  var d = x.data;
+  var h = '<div class="card" id="k_' + x.id + '"><h2>' + esc(d.judul) + '</h2><span class="badge buka">Dibuka</span>';
+  if (d.keterangan) h += '<p class="sub" style="margin-top:10px">' + esc(d.keterangan) + '</p>';
+  if (sudahLokal(x.id)) return h + '<div class="thanks"><div class="big">✅</div><b>Suara dari HP ini sudah terkirim</b><span class="sub">Terima kasih. Satu kode hanya bisa dipakai satu kali.</span></div></div>';
+  h += '<div id="f_' + x.id + '" style="margin-top:12px">';
+  urutPilihan(d.pilihan).forEach(function(k){
+    h += '<label class="opt"><input type="radio" name="p_' + x.id + '" value="' + esc(k) + '"><span>' + esc(d.pilihan[k]) + '</span></label>';
+  });
+  h += '<label class="f" for="c_' + x.id + '">Kode suara rumah Anda</label>' +
+       '<input class="kode" id="c_' + x.id + '" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXXX-XXXXX">' +
+       '<button class="btn" id="b_' + x.id + '" type="button">Kirim suara</button>' +
+       '<div id="m_' + x.id + '"></div>' +
+       '<p class="note">Suara bersifat <b>rahasia</b>: pengurus hanya tahu rumah mana sudah memilih, bukan pilihannya. Suara <b>tidak bisa diubah</b> setelah dikirim. Jangan berikan kode ke orang lain.</p></div></div>';
+  return h;
+}
+
+function pasangForm(x){
+  var b = $("b_" + x.id);
+  if (!b) return;
+  b.addEventListener("click", function(){ kirim(x.id); });
+}
+
+function pesan(id, teks, ok){ var m = $("m_" + id); if (m) m.innerHTML = '<div class="msg ' + (ok ? "ok" : "err") + '">' + esc(teks) + '</div>'; }
+
+function kirim(id){
+  var pil = document.querySelector('input[name="p_' + id + '"]:checked');
+  var kode = normKode($("c_" + id).value);
+  if (!pil) return pesan(id, "Pilih salah satu jawaban dulu.");
+  if (kode.length !== 10) return pesan(id, "Kode suara harus 10 huruf/angka. Cek lagi kode yang Anda terima.");
+  if (!confirm("Suara tidak bisa diubah setelah dikirim.\n\nJawaban Anda: " + cache[id].data.pilihan[pil.value] + "\n\nKirim sekarang?")) return;
+  var btn = $("b_" + id); btn.disabled = true; btn.textContent = "Mengirim…";
+  Promise.all([sha256hex("S|" + id + "|" + kode), sha256hex("B|" + id + "|" + kode)]).then(function(hh){
+    var up = {};
+    up["pollingSudah/" + id + "/" + hh[0]] = true;
+    up["pollingSuara/" + id + "/" + hh[1]] = { pilihan: pil.value };
+    return db.ref().update(up);
+  }).then(function(){
+    simpanLokal("polling_sudah_" + id, "1");
+    var k = $("k_" + id);
+    if (k) k.innerHTML = '<h2>' + esc(cache[id].data.judul) + '</h2><div class="thanks"><div class="big">✅</div><b>Suara Anda sudah tercatat</b><span class="sub">Terima kasih sudah ikut memilih. Hasil akan tampil di sini setelah polling ditutup.</span></div>';
+  }).catch(function(err){
+    btn.disabled = false; btn.textContent = "Kirim suara";
+    if (err && /permission/i.test(String(err.code || err.message))) pesan(id, "Suara ditolak. Kemungkinan: kode salah, kode sudah dipakai, atau polling sudah ditutup. Cek kode Anda dan coba lagi.");
+    else pesan(id, "Gagal mengirim. Cek sinyal internet lalu coba lagi. Jika ragu apakah suara sudah masuk, tanyakan ke pengurus sebelum mencoba lagi.");
+  });
+}
+
+function muatHasil(x){
+  var box = $("h_" + x.id);
+  db.ref("pollingSuara/" + x.id).once("value").then(function(s){
+    var v = s.val() || {}, hit = {}, total = 0;
+    Object.keys(x.data.pilihan || {}).forEach(function(k){ hit[k] = 0; });
+    Object.keys(v).forEach(function(h){ var p = v[h] && v[h].pilihan; if (p in hit) { hit[p]++; total++; } });
+    var maks = 0; Object.keys(hit).forEach(function(k){ if (hit[k] > maks) maks = hit[k]; });
+    var out = '<p class="sub" style="margin:0 0 6px">Total suara masuk: <b>' + total + '</b></p>';
+    urutPilihan(x.data.pilihan).forEach(function(k){
+      var pct = total ? Math.round(hit[k] * 100 / total) : 0;
+      out += '<div class="hasil' + (total && hit[k] === maks ? " menang" : "") + '"><div class="r"><span>' + esc(x.data.pilihan[k]) + '</span><span>' + hit[k] + ' suara (' + pct + '%)</span></div><div class="bar2"><i style="width:' + pct + '%"></i></div></div>';
+    });
+    box.innerHTML = out;
+  }).catch(function(){ box.textContent = "Hasil belum bisa dimuat. Coba muat ulang halaman."; });
+}
+
+muatSemua();
+</script>
+</body></html>

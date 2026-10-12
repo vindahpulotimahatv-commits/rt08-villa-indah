@@ -1,0 +1,324 @@
+<!DOCTYPE html><html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0A1B32">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="robots" content="noindex">
+<title>Admin Polling | PANDU</title>
+<style>
+:root{--navy:#123a6b;--gold:#d5a62b;--ink:#12213f;--muted:#59657f;--line:#dbe2f0;--red:#c74444;--ok:#1f8a4c}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:#eef1f8;padding-bottom:50px}
+button,input,textarea{font:inherit}
+header{background:#0a1b32;color:#fff;border-bottom:3px solid var(--gold)}
+.wrap{width:min(860px,calc(100% - 28px));margin:auto}
+.bar{display:flex;align-items:center;justify-content:space-between;min-height:58px;gap:10px}
+.bar b{font-size:17px}.bar small{display:block;color:var(--gold);font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:800}
+.bar a,.bar button{border:1px solid rgba(255,255,255,.3);background:none;border-radius:12px;padding:8px 14px;font-weight:800;font-size:13px;color:#fff;cursor:pointer;text-decoration:none}
+.card{background:#fff;border-radius:18px;padding:18px;box-shadow:0 6px 24px rgba(10,27,50,.08);margin:16px 0}
+h2{margin:0 0 6px;font-size:18px}h3{margin:18px 0 6px;font-size:13px;letter-spacing:.6px;text-transform:uppercase;color:var(--navy)}
+.sub{margin:0 0 12px;color:var(--muted);font-size:13.5px;line-height:1.55}
+input[type=text],input[type=email],input[type=password],textarea{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;font-size:15px;margin:4px 0 8px}
+textarea{min-height:70px;resize:vertical}
+label.f{display:block;font-weight:800;font-size:13.5px;margin-top:8px}
+.btn{border:0;border-radius:12px;padding:11px 16px;font-weight:900;font-size:14px;cursor:pointer;background:linear-gradient(135deg,#e8c05a,#c49325);color:#0b2144;margin:4px 6px 4px 0}
+.btn.alt{background:#fff;border:1.5px solid var(--navy);color:var(--navy)}
+.btn.bahaya{background:#fff;border:1.5px solid var(--red);color:var(--red)}
+.btn:disabled{opacity:.5;cursor:default}
+.badge{display:inline-block;border-radius:99px;padding:3px 10px;font-size:11px;font-weight:900;letter-spacing:.4px;text-transform:uppercase;margin-left:6px}
+.badge.draft{background:#fff4d6;color:#7a5a05}.badge.buka{background:#eefaf2;color:#146c3a}.badge.tutup{background:#eef1f8;color:#445}
+.msg{padding:11px 13px;border-radius:12px;font-size:13.5px;line-height:1.5;margin:10px 0}
+.msg.err{background:#fff3f3;color:#9b1c1c}.msg.ok{background:#eefaf2;color:#146c3a}.msg.warn{background:#fff8e6;color:#5a4306;border:1px solid #f0d58a}
+.stat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.stat div{background:#f5f7fc;border-radius:12px;padding:10px;text-align:center}.stat b{display:block;font-size:22px}.stat span{font-size:11.5px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}td,th{padding:7px 8px;border-bottom:1px solid #eef1f8;text-align:left}
+td.k{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:800;letter-spacing:1px}
+.hasil{margin:8px 0}.hasil .r{display:flex;justify-content:space-between;font-weight:800;font-size:14px;margin-bottom:4px}
+.hasil .bar2{height:14px;border-radius:99px;background:#eef1f8;overflow:hidden}.hasil .bar2 i{display:block;height:100%;background:linear-gradient(90deg,#e8c05a,#c49325)}
+.belum{font-size:13px;line-height:1.7;color:var(--muted)}
+.gate{min-height:70vh;display:flex;align-items:center;justify-content:center}.gate .card{width:min(380px,100%)}
+#dashboard{display:none}
+#cetak{display:none}
+@media print{
+  body{background:#fff;padding:0}body>*:not(#cetak){display:none!important}
+  #cetak{display:block!important}
+  .kartu{border:2px solid #000;border-radius:10px;padding:14px;margin:0 0 12px;break-inside:avoid;font-size:14px}
+  .kartu .kd{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:26px;font-weight:800;letter-spacing:3px;margin:6px 0}
+}
+</style></head><body>
+<header><div class="wrap bar"><div><b>Admin Polling</b><small>Kode suara &amp; hasil</small></div><div><a href="admin.html">Panel Admin</a> <button id="btnKeluar" style="display:none">Keluar</button></div></div></header>
+
+<main class="wrap">
+  <div class="gate" id="gateWrap"><div class="card">
+    <h2>Masuk Admin</h2><p class="sub">Hanya akun Admin RT yang bisa membuat dan mengelola polling.</p>
+    <input type="email" id="gateEmail" placeholder="Email pengurus" autocomplete="username">
+    <input type="password" id="gatePass" placeholder="Password Firebase" autocomplete="current-password">
+    <div class="msg err" id="gateErr" style="display:none"></div>
+    <button class="btn" id="btnMasuk" type="button">Masuk</button>
+  </div></div>
+
+  <div id="dashboard">
+    <div class="card">
+      <h2>Buat polling baru</h2>
+      <p class="sub">Polling dibuat dulu sebagai <b>Draft</b>. Setelah itu buat kode rumah, lalu buka polling. Setelah dibuka, pertanyaan dan jawaban tidak bisa diubah.</p>
+      <label class="f" for="nJudul">Pertanyaan / judul</label>
+      <input type="text" id="nJudul" maxlength="120" placeholder="Contoh: Setuju iuran keamanan naik jadi Rp 10.000?">
+      <label class="f" for="nKet">Keterangan (boleh kosong)</label>
+      <textarea id="nKet" maxlength="500" placeholder="Penjelasan singkat untuk warga"></textarea>
+      <label class="f">Pilihan jawaban (2 sampai 6)</label>
+      <div id="nPilihan"></div>
+      <button class="btn alt" id="btnTambahPil" type="button">+ Tambah pilihan</button>
+      <div id="nMsg"></div>
+      <button class="btn" id="btnBuat" type="button">Simpan sebagai Draft</button>
+    </div>
+    <div id="daftar"></div>
+  </div>
+</main>
+<div id="cetak"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+<script src="config.js"></script>
+<script>
+var db = null;
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function pesanGagal(err, aksi){
+  var k = (err && err.code) ? String(err.code) : "";
+  if (/PERMISSION/i.test(k)) return aksi + " ditolak server. Kemungkinan aturan Firebase belum ditempel/dipublish, atau status polling tidak mengizinkan.";
+  if (/NETWORK|UNAVAILABLE|DISCONNECT/i.test(k)) return aksi + " gagal: koneksi internet terputus.";
+  return aksi + " gagal. Coba lagi.";
+}
+
+/* ---- kode & hash (sama persis dengan polling.html) ---- */
+var ABJAD = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";   // 31 karakter, tanpa 0/1/I/L/O
+function bikinKode(){
+  var out = "", a = new Uint8Array(1);
+  while (out.length < 10) { crypto.getRandomValues(a); if (a[0] < 248) out += ABJAD.charAt(a[0] % 31); }
+  return out.slice(0, 5) + "-" + out.slice(5);
+}
+function normKode(s){ return String(s || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); }
+function sha256hex(teks){
+  return crypto.subtle.digest("SHA-256", new TextEncoder().encode(teks)).then(function(buf){
+    return Array.prototype.map.call(new Uint8Array(buf), function(b){ return ("0" + b.toString(16)).slice(-2); }).join("");
+  });
+}
+
+/* ---- login ---- */
+document.addEventListener("DOMContentLoaded", function(){
+  var gateErr = $("gateErr");
+  function galat(t){ gateErr.textContent = t; gateErr.style.display = "block"; }
+  var c = RT_CONFIG.firebaseConfig || {};
+  if (!(c.apiKey && c.databaseURL && c.appId)) return galat("Firebase belum dikonfigurasi.");
+  if (!window.crypto || !crypto.subtle) return galat("Browser ini tidak mendukung pembuatan kode yang aman. Buka lewat alamat https://.");
+  if (!firebase.apps.length) firebase.initializeApp(c);
+  db = firebase.database();
+  var auth = firebase.auth();
+  auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function(){});
+  function admin(u){ return !!(u && RT_CONFIG.adminUid && u.uid === RT_CONFIG.adminUid); }
+  auth.onAuthStateChanged(function(u){
+    if (u && admin(u)) { $("gateWrap").style.display = "none"; $("dashboard").style.display = "block"; $("btnKeluar").style.display = ""; mulai(); }
+    else if (u) { auth.signOut(); galat("Akun ini bukan akun Admin yang terdaftar."); }
+  });
+  $("btnMasuk").addEventListener("click", function(){
+    var e = $("gateEmail").value.trim(), p = $("gatePass").value;
+    if (!e || !p) return galat("Email dan password wajib diisi.");
+    var b = this; b.disabled = true; b.textContent = "Memeriksa...";
+    auth.signInWithEmailAndPassword(e, p).then(function(r){
+      if (!admin(r.user)) return auth.signOut().then(function(){ throw new Error("not-admin"); });
+      gateErr.style.display = "none";
+    }).catch(function(err){
+      galat(err && err.message === "not-admin" ? "Akun ini bukan akun Admin yang terdaftar." :
+        (/invalid-credential|wrong-password|user-not-found/i.test(String(err && err.code)) ? "Email atau password salah." : "Login ditolak. Cek akun Firebase dan Rules."));
+    }).finally(function(){ b.disabled = false; b.textContent = "Masuk"; });
+  });
+  $("btnKeluar").addEventListener("click", function(){ auth.signOut().then(function(){ location.reload(); }); });
+});
+
+/* ---- form buat polling ---- */
+var jmlPil = 0;
+function tambahPil(){
+  if (jmlPil >= 6) return;
+  jmlPil++;
+  var d = document.createElement("div");
+  d.innerHTML = '<input type="text" class="pil" maxlength="80" placeholder="Pilihan ' + jmlPil + '">';
+  $("nPilihan").appendChild(d);
+}
+function msgBuat(t, ok){ $("nMsg").innerHTML = '<div class="msg ' + (ok ? "ok" : "err") + '">' + esc(t) + '</div>'; }
+
+var daftarKodeBaru = {};   // id -> [{rumah, kode}]  (hanya ada di layar ini, TIDAK disimpan di server)
+var daftarStatus = {};
+
+function mulai(){
+  tambahPil(); tambahPil();
+  $("btnTambahPil").addEventListener("click", tambahPil);
+  $("btnBuat").addEventListener("click", function(){
+    var judul = $("nJudul").value.trim(), ket = $("nKet").value.trim();
+    var pil = Array.prototype.map.call(document.querySelectorAll(".pil"), function(i){ return i.value.trim(); }).filter(Boolean);
+    if (!judul) return msgBuat("Isi pertanyaan / judul dulu.");
+    if (pil.length < 2) return msgBuat("Isi minimal 2 pilihan jawaban.");
+    var pilObj = {}; pil.forEach(function(t, i){ pilObj["abcdef".charAt(i)] = t; });
+    var id = "p" + Date.now().toString(36);
+    var data = { judul: judul, pilihan: pilObj, createdAt: firebase.database.ServerValue.TIMESTAMP };
+    if (ket) data.keterangan = ket;
+    var up = {}; up["pollingData/" + id] = data; up["pollingStatus/" + id] = "draft";
+    var b = this; b.disabled = true;
+    db.ref().update(up).then(function(){
+      msgBuat("Polling tersimpan sebagai Draft. Lanjut: buat kode rumah di bawah.", true);
+      $("nJudul").value = ""; $("nKet").value = ""; document.querySelectorAll(".pil").forEach(function(i){ i.value = ""; });
+    }).catch(function(e){ msgBuat(pesanGagal(e, "Menyimpan polling")); }).finally(function(){ b.disabled = false; });
+  });
+  db.ref("pollingStatus").on("value", function(s){ daftarStatus = s.val() || {}; gambarDaftar(); });
+}
+
+function gambarDaftar(){
+  var ids = Object.keys(daftarStatus).sort().reverse();
+  if (!ids.length) { $("daftar").innerHTML = '<div class="card"><p class="sub" style="margin:0">Belum ada polling.</p></div>'; return; }
+  var wadah = $("daftar");
+  // pertahankan kartu yang sudah ada agar daftar kode di layar tidak hilang saat status lain berubah
+  ids.forEach(function(id){
+    var el = $("p_" + id);
+    if (!el) { el = document.createElement("div"); el.className = "card"; el.id = "p_" + id; wadah.appendChild(el); }
+    if (el.getAttribute("data-st") !== daftarStatus[id]) { el.setAttribute("data-st", daftarStatus[id]); isiKartu(id); }
+  });
+  Array.prototype.forEach.call(wadah.children, function(el){ if (!daftarStatus[el.id.slice(2)]) wadah.removeChild(el); });
+  ids.forEach(function(id){ wadah.appendChild($("p_" + id)); });
+}
+
+function isiKartu(id){
+  var st = daftarStatus[id], el = $("p_" + id);
+  db.ref("pollingData/" + id).once("value").then(function(s){
+    var d = s.val() || {};
+    var h = '<h2>' + esc(d.judul || "(tanpa judul)") + '<span class="badge ' + st + '">' + (st === "draft" ? "Draft" : st === "buka" ? "Dibuka" : "Ditutup") + '</span></h2>';
+    if (d.keterangan) h += '<p class="sub">' + esc(d.keterangan) + '</p>';
+    h += '<p class="sub" style="margin-bottom:4px">Pilihan: ' + Object.keys(d.pilihan || {}).sort().map(function(k){ return esc(d.pilihan[k]); }).join(" &bull; ") + '</p>';
+    h += '<div id="a_' + id + '"></div><div id="m_' + id + '"></div><div id="s_' + id + '"></div>';
+    el.innerHTML = h;
+    el._data = d;
+    if (st === "draft") aksiDraft(id); else statusPantau(id);
+  });
+}
+
+function msg(id, t, jenis){ var m = $("m_" + id); if (m) m.innerHTML = '<div class="msg ' + (jenis || "err") + '">' + esc(t) + '</div>'; }
+
+/* ---------- DRAFT ---------- */
+function aksiDraft(id){
+  db.ref("pollingKode/" + id).once("value").then(function(s){
+    var sudahAda = s.exists(), n = sudahAda ? Object.keys(s.val()).length : 0;
+    var a = $("a_" + id);
+    a.innerHTML =
+      (sudahAda ? '<div class="msg ok">Kode rumah sudah dibuat (' + n + ' kode). Daftar kode tidak disimpan di server. Jika halaman ini sudah ditutup, daftar tidak bisa ditampilkan lagi.</div>' :
+        '<div class="msg warn">Belum ada kode rumah. Klik tombol di bawah untuk membuat satu kode untuk setiap rumah di daftar rumah (' + (RT_CONFIG.daftarRumah || []).length + ' rumah).</div>') +
+      '<button class="btn" id="g_' + id + '" ' + (sudahAda ? "disabled" : "") + '>Buat kode untuk semua rumah</button>' +
+      '<button class="btn alt" id="o_' + id + '" ' + (sudahAda ? "" : "disabled") + '>Buka polling</button>' +
+      '<button class="btn bahaya" id="x_' + id + '">Hapus draft</button>';
+    $("g_" + id).addEventListener("click", function(){ buatKode(id); });
+    $("o_" + id).addEventListener("click", function(){
+      if (!confirm("Buka polling sekarang?\n\nSetelah dibuka, pertanyaan, pilihan, dan kode rumah TIDAK bisa diubah lagi.")) return;
+      db.ref("pollingStatus/" + id).set("buka").catch(function(e){ msg(id, pesanGagal(e, "Membuka polling")); });
+    });
+    $("x_" + id).addEventListener("click", function(){
+      if (!confirm("Hapus draft polling ini beserta kodenya?")) return;
+      db.ref("pollingKode/" + id).once("value").then(function(ks){
+        var up = {}; up["pollingData/" + id] = null; up["pollingStatus/" + id] = null; up["pollingKode/" + id] = null; up["pollingKodeB/" + id] = null;
+        return db.ref().update(up);
+      }).then(function(){ delete daftarKodeBaru[id]; }).catch(function(e){ msg(id, pesanGagal(e, "Menghapus draft")); });
+    });
+    if (daftarKodeBaru[id]) tampilKode(id);
+  });
+}
+
+function buatKode(id){
+  var rumah = RT_CONFIG.daftarRumah || [];
+  if (!rumah.length) return msg(id, "Daftar rumah di config.js kosong.");
+  if (!confirm("Buat " + rumah.length + " kode (1 per rumah)?\n\nKode HANYA ditampilkan sekali di layar ini. Setelah itu langsung cetak/unduh dan simpan di tempat aman. Kode tidak bisa dibuat ulang.")) return;
+  var list = [], seen = {};
+  rumah.forEach(function(r){ var k; do { k = bikinKode(); } while (seen[k]); seen[k] = 1; list.push({ rumah: r, kode: k }); });
+  $("g_" + id).disabled = true;
+  Promise.all(list.map(function(x){
+    var n = normKode(x.kode);
+    return Promise.all([sha256hex("S|" + id + "|" + n), sha256hex("B|" + id + "|" + n)]).then(function(hh){ x.h1 = hh[0]; x.h2 = hh[1]; });
+  })).then(function(){
+    var up = {};
+    list.forEach(function(x){ up["pollingKode/" + id + "/" + x.h1] = { rumah: x.rumah }; up["pollingKodeB/" + id + "/" + x.h2] = true; });
+    return db.ref().update(up);
+  }).then(function(){
+    daftarKodeBaru[id] = list.map(function(x){ return { rumah: x.rumah, kode: x.kode }; });
+    aksiDraft(id);
+    msg(id, "Berhasil. Daftar kode tampil di bawah. Cetak atau unduh SEKARANG.", "ok");
+  }).catch(function(e){ $("g_" + id).disabled = false; msg(id, pesanGagal(e, "Membuat kode")); });
+}
+
+function tampilKode(id){
+  var list = daftarKodeBaru[id], s = $("s_" + id);
+  var t = '<div class="msg warn"><b>Penting:</b> daftar ini hanya ada di layar ini dan akan hilang bila halaman ditutup/dimuat ulang. Server hanya menyimpan versi acak (hash) dari kode, bukan kodenya. Simpan daftar ini di tempat aman, dan <b>hapus/musnahkan setelah polling selesai</b> supaya suara tetap rahasia.</div>' +
+    '<button class="btn" id="cp_' + id + '">Cetak kartu per rumah</button><button class="btn alt" id="cs_' + id + '">Unduh CSV</button><button class="btn alt" id="cc_' + id + '">Salin semua</button>' +
+    '<table><tr><th>Rumah</th><th>Kode</th></tr>' + list.map(function(x){ return '<tr><td>' + esc(x.rumah) + '</td><td class="k">' + esc(x.kode) + '</td></tr>'; }).join("") + '</table>';
+  s.innerHTML = t;
+  $("cp_" + id).addEventListener("click", function(){ cetakKartu(id); });
+  $("cs_" + id).addEventListener("click", function(){ unduhCsv(id); });
+  $("cc_" + id).addEventListener("click", function(){
+    var teks = list.map(function(x){ return x.rumah + "\t" + x.kode; }).join("\n");
+    (navigator.clipboard ? navigator.clipboard.writeText(teks) : Promise.reject()).then(function(){ msg(id, "Daftar disalin.", "ok"); }).catch(function(){ msg(id, "Tidak bisa menyalin otomatis. Pakai Unduh CSV."); });
+  });
+}
+
+function cetakKartu(id){
+  var d = $("p_" + id)._data || {}, list = daftarKodeBaru[id];
+  var alamat = String(RT_CONFIG.urlSitus || "").replace(/\/+$/, "") + "/polling.html";
+  $("cetak").innerHTML = list.map(function(x){
+    return '<div class="kartu"><b>KARTU SUARA &mdash; ' + esc(RT_CONFIG.namaRT || "") + ' / ' + esc(RT_CONFIG.namaRW || "") + '</b><div>' + esc(d.judul || "") + '</div>' +
+      '<div>Rumah: <b>' + esc(x.rumah) + '</b></div><div class="kd">' + esc(x.kode) + '</div>' +
+      '<div>Buka: ' + esc(alamat) + '</div><div style="font-size:12px;margin-top:4px">Satu rumah satu suara. Kode hanya bisa dipakai sekali. Rahasiakan kode ini.</div></div>';
+  }).join("");
+  window.print();
+}
+function unduhCsv(id){
+  var list = daftarKodeBaru[id];
+  var csv = "Rumah,Kode\n" + list.map(function(x){ return '"' + x.rumah.replace(/"/g, '""') + '",' + x.kode; }).join("\n");
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  a.download = "kode-suara-" + id + ".csv"; document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ---------- DIBUKA / DITUTUP ---------- */
+function statusPantau(id){
+  var st = daftarStatus[id], a = $("a_" + id);
+  if (st === "buka") {
+    a.innerHTML = '<button class="btn" id="r_' + id + '">Segarkan</button><button class="btn bahaya" id="t_' + id + '">Tutup polling</button>';
+    $("r_" + id).addEventListener("click", function(){ pantau(id); });
+    $("t_" + id).addEventListener("click", function(){
+      if (!confirm("Tutup polling ini?\n\nSetelah ditutup tidak bisa dibuka lagi, dan hasilnya tampil untuk SEMUA warga.")) return;
+      db.ref("pollingStatus/" + id).set("tutup").catch(function(e){ msg(id, pesanGagal(e, "Menutup polling")); });
+    });
+  }
+  pantau(id);
+}
+
+function pantau(id){
+  var st = daftarStatus[id], d = $("p_" + id)._data || {}, s = $("s_" + id);
+  s.innerHTML = '<p class="sub">Memuat…</p>';
+  Promise.all([db.ref("pollingKode/" + id).once("value"), db.ref("pollingSudah/" + id).once("value"), db.ref("pollingSuara/" + id).once("value")]).then(function(r){
+    var kode = r[0].val() || {}, sudah = r[1].val() || {}, suara = r[2].val() || {};
+    var nKode = Object.keys(kode).length, nSudah = Object.keys(sudah).length, nSuara = Object.keys(suara).length;
+    var h = '<div class="stat"><div><b>' + nKode + '</b><span>Kode dibuat</span></div><div><b>' + nSudah + '</b><span>Rumah sudah memilih</span></div><div><b>' + nSuara + '</b><span>Suara masuk</span></div></div>';
+    if (nSudah !== nSuara) h += '<div class="msg warn">Jumlah rumah yang sudah memilih (' + nSudah + ') berbeda dengan jumlah suara masuk (' + nSuara + '). Catat dan periksa sebelum hasil diumumkan.</div>';
+    var belum = Object.keys(kode).filter(function(h1){ return !sudah[h1]; }).map(function(h1){ return kode[h1].rumah; }).sort();
+    h += '<h3>Belum memilih (' + belum.length + ')</h3><div class="belum">' + (belum.length ? belum.map(esc).join(", ") : "Semua rumah sudah memilih.") + '</div>';
+    if (st === "tutup") {
+      var hit = {}, total = 0, maks = 0;
+      Object.keys(d.pilihan || {}).forEach(function(k){ hit[k] = 0; });
+      Object.keys(suara).forEach(function(x){ var p = suara[x] && suara[x].pilihan; if (p in hit) { hit[p]++; total++; } });
+      Object.keys(hit).forEach(function(k){ if (hit[k] > maks) maks = hit[k]; });
+      h += '<h3>Hasil akhir (' + total + ' suara sah)</h3>';
+      Object.keys(d.pilihan || {}).sort().forEach(function(k){
+        var pct = total ? Math.round(hit[k] * 100 / total) : 0;
+        h += '<div class="hasil"><div class="r"><span>' + esc(d.pilihan[k]) + '</span><span>' + hit[k] + ' (' + pct + '%)</span></div><div class="bar2"><i style="width:' + pct + '%"></i></div></div>';
+      });
+    } else {
+      h += '<p class="sub" style="margin-top:12px">Hasil per pilihan sengaja tidak ditampilkan selama polling dibuka, supaya adil. Hasil muncul setelah polling ditutup.</p>';
+    }
+    s.innerHTML = h;
+  }).catch(function(e){ s.innerHTML = '<div class="msg err">' + esc(pesanGagal(e, "Memuat data polling")) + '</div>'; });
+}
+</script>
+</body></html>
