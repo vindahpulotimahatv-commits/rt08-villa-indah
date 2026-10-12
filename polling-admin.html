@@ -321,26 +321,46 @@ function statusPantau(id){
 }
 
 /* Reset: hapus SEMUA kode, tanda "sudah memilih", dan suara.
-   hapus=false -> pertanyaan & pilihan dipertahankan, status kembali Draft (bisa buat kode baru lalu dibuka lagi).
-   hapus=true  -> seluruh polling dihapus. */
+   hapus=false -> pertanyaan & pilihan dipertahankan, status kembali Draft.
+   hapus=true  -> seluruh polling dihapus.
+   Konfirmasi memakai kotak di halaman (bukan prompt browser) dan penghapusan dilakukan per bagian,
+   supaya bagian yang ditolak server kelihatan. */
 function resetPolling(id, hapus){
-  var judul = ($("p_" + id)._data || {}).judul || "polling ini";
-  var tanya = hapus
-    ? 'HAPUS polling "' + judul + '" beserta semua kode dan suaranya?\n\nTindakan ini tidak bisa dibatalkan.\n\nKetik HAPUS untuk melanjutkan:'
-    : 'RESET polling "' + judul + '" ke Draft?\n\nSemua kode rumah dan suara yang sudah masuk akan DIHAPUS. Pertanyaan dan pilihan dipertahankan.\nTindakan ini tidak bisa dibatalkan.\n\nKetik RESET untuk melanjutkan:';
-  var jawab = prompt(tanya);
-  if (jawab === null) return;
-  if (jawab.trim().toUpperCase() !== (hapus ? "HAPUS" : "RESET")) return msg(id, "Dibatalkan: kata konfirmasi tidak cocok.", "warn");
-  var up = {};
-  up["pollingKode/" + id] = null; up["pollingKodeB/" + id] = null; up["pollingSudah/" + id] = null; up["pollingSuara/" + id] = null;
-  if (hapus) { up["pollingData/" + id] = null; up["pollingStatus/" + id] = null; }
-  else up["pollingStatus/" + id] = "draft";
-  db.ref().update(up).then(function(){
-    delete daftarKodeBaru[id];
-    // paksa kartu digambar ulang (status bisa tetap sama bila hanya sebagian yang berubah)
-    var el = $("p_" + id);
-    if (el && !hapus) { el.removeAttribute("data-st"); gambarDaftar(); }
-  }).catch(function(e){ msg(id, pesanGagal(e, hapus ? "Menghapus polling" : "Mereset polling")); });
+  var kata = hapus ? "HAPUS" : "RESET", m = $("m_" + id);
+  m.innerHTML = '<div class="msg warn"><b>' + (hapus ? "Hapus polling ini beserta semua kode & suara?" : "Reset ke Draft?") + '</b><br>' +
+    (hapus ? "" : "Semua kode rumah dan suara dihapus; pertanyaan & pilihan dipertahankan.<br>") +
+    'Tidak bisa dibatalkan. Ketik <b>' + kata + '</b> lalu klik Lanjutkan.' +
+    '<input type="text" id="kf_' + id + '" autocomplete="off" placeholder="' + kata + '">' +
+    '<button class="btn bahaya" id="kl_' + id + '">Lanjutkan</button><button class="btn alt" id="kb_' + id + '">Batal</button></div>';
+  $("kb_" + id).addEventListener("click", function(){ m.innerHTML = ""; });
+  $("kl_" + id).addEventListener("click", function(){
+    if ($("kf_" + id).value.trim().toUpperCase() !== kata) return msg(id, "Kata konfirmasi harus " + kata + ".", "warn");
+    jalankanReset(id, hapus);
+  });
+}
+function jalankanReset(id, hapus){
+  var langkah = [["pollingSuara", "suara"], ["pollingSudah", "tanda sudah memilih"], ["pollingKodeB", "kode cadangan"], ["pollingKode", "kode rumah"]];
+  if (hapus) { langkah.push(["pollingData", "data polling"]); langkah.push(["pollingStatus", "status polling"]); }
+  var gagal = [], i = 0;
+  msg(id, "Sedang menghapus...", "warn");
+  function lanjut(){
+    if (i >= langkah.length) return selesai();
+    var l = langkah[i++];
+    var ref = db.ref(l[0] + "/" + id);
+    // batas waktu 15 detik supaya tidak menggantung tanpa pesan
+    var t = new Promise(function(_, rej){ setTimeout(function(){ rej({ code: "TIMEOUT" }); }, 15000); });
+    Promise.race([ref.remove(), t]).catch(function(e){ gagal.push(l[1] + " (" + ((e && e.code) || (e && e.message) || "error") + ")"); }).then(lanjut);
+  }
+  function selesai(){
+    if (gagal.length) return msg(id, "Sebagian GAGAL dihapus server: " + gagal.join(", ") + ". Kemungkinan Rules Firebase belum mengizinkan admin menghapus bagian ini. Muat ulang halaman untuk melihat kondisi terbaru.");
+    if (hapus) { delete daftarKodeBaru[id]; return; }   // kartu hilang otomatis lewat listener status
+    db.ref("pollingStatus/" + id).set("draft").then(function(){
+      delete daftarKodeBaru[id];
+      var el = $("p_" + id); if (el) el.removeAttribute("data-st");
+      gambarDaftar();
+    }).catch(function(e){ msg(id, "Kode & suara sudah terhapus, tetapi status gagal diubah ke Draft (" + ((e && e.code) || "error") + "). Rules Firebase menolak perubahan status dari Ditutup ke Draft."); });
+  }
+  lanjut();
 }
 
 function pantau(id){
