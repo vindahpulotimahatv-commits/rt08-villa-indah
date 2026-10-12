@@ -174,7 +174,8 @@ html,body{overflow-x:hidden}
 
   <div class="seg" id="segTab">
     <button type="button" class="on" data-pn="bulanan">🧾 Iuran Bulanan</button>
-    <button type="button" data-pn="lain">📒 Tunggakan &amp; Iuran Khusus</button>
+    <button type="button" data-pn="lain">📒 Tunggakan</button>
+    <button type="button" data-pn="tambah">💠 Iuran Tambahan</button>
   </div>
   <div id="panelBulanan">
 
@@ -278,12 +279,10 @@ html,body{overflow-x:hidden}
       <button class="btn btn-gold btn-sm" id="lnBtnSerah" type="button" style="width:auto">📤 Serahkan</button>
     </div>
 
-    <div id="lnIkRekap"></div>
-
     <div class="list-card">
-      <div class="list-title">➕ Catat Pembayaran Tunggakan / Iuran Khusus</div>
+      <div class="list-title">➕ Catat Pembayaran Tunggakan</div>
       <div style="padding:4px 14px 14px">
-        <p style="margin:0 0 12px;color:var(--muted);font-size:12px;line-height:1.5">Untuk warga yang membayar tunggakan atau iuran khusus (misalnya 17 Agustusan) yang selama ini dicatat di buku. Setiap pembayaran tetap mendapat kwitansi.</p>
+        <p style="margin:0 0 12px;color:var(--muted);font-size:12px;line-height:1.5">Untuk warga yang membayar tunggakan atau pembayaran lain yang selama ini dicatat di buku. Setiap pembayaran tetap mendapat kwitansi. (Iuran 17 Agustusan dll. ada di tab Iuran Tambahan.)</p>
         <div class="mfield"><label>Rumah (ketik blok/no atau nama)</label>
           <input type="text" id="lnRumah" placeholder="Contoh: E2 No.10" autocomplete="off" autocapitalize="characters" spellcheck="false">
           <div class="ln-ac" id="lnAc" hidden></div>
@@ -309,8 +308,53 @@ html,body{overflow-x:hidden}
     </div>
 
     <div class="list-card">
-      <div class="list-title">📒 Riwayat Pencatatan</div>
+      <div class="list-title">📒 Riwayat Tunggakan</div>
       <div id="lnList"><div class="empty-note">Belum ada catatan.</div></div>
+    </div>
+  </div>
+
+  <div id="panelTambah" style="display:none">
+    <div class="summary-grid">
+      <div class="sg-item"><span>Total tercatat</span><strong id="tbTotal">Rp 0</strong></div>
+      <div class="sg-item lunas"><span>Cash di tangan</span><strong id="tbCash">Rp 0</strong></div>
+      <div class="sg-item"><span>Jumlah catatan</span><strong id="tbJml">0</strong></div>
+    </div>
+
+    <div class="setor-banner" id="tbSetorBar" style="display:none">
+      <div>💵 Cash Iuran Tambahan di Tangan<b id="tbCashBanner">Rp 0</b><small style="display:block;font-weight:600;opacity:.85">Belum diserahkan ke Bendahara. Tekan Serahkan setelah uangnya diserahkan.</small></div>
+      <button class="btn btn-gold btn-sm" id="tbBtnSerah" type="button" style="width:auto">📤 Serahkan</button>
+    </div>
+
+    <div id="tbIkRekap"></div>
+
+    <div class="list-card">
+      <div class="list-title">➕ Catat Pembayaran Iuran Tambahan</div>
+      <div style="padding:4px 14px 14px">
+        <p style="margin:0 0 12px;color:var(--muted);font-size:12px;line-height:1.5">Catat pembayaran iuran tambahan yang dibuat Admin (misalnya 17 Agustusan). Nominal sudah ditetapkan Admin. Setiap pembayaran mendapat kwitansi.</p>
+        <div class="mfield"><label>Rumah (ketik blok/no atau nama)</label>
+          <input type="text" id="tbRumah" placeholder="Contoh: E2 No.10" autocomplete="off" autocapitalize="characters" spellcheck="false">
+          <div class="ln-ac" id="tbAc" hidden></div>
+          <div id="tbPilih" style="font-size:12.5px;font-weight:800;color:#1c8a4e"></div>
+        </div>
+        <div class="mfield"><label>Pembayaran untuk</label>
+          <select id="tbJenis">
+          </select>
+          <div id="tbIkInfo" style="font-size:12px;font-weight:800;color:#146c3a"></div>
+        </div>
+        <div class="mfield"><label>Keterangan (boleh kosong)</label><textarea id="tbKet" maxlength="300" placeholder="Catatan tambahan (opsional)"></textarea></div>
+        <div class="mfield"><label>Uang diterima (Rp)</label><input type="text" id="tbJumlah" inputmode="numeric" placeholder="Otomatis sesuai nominal Admin" autocomplete="off"></div>
+        <div class="mfield"><label>Tanggal bayar</label><input type="date" id="tbTgl"></div>
+        <div class="mfield"><label>Cara bayar</label>
+          <select id="tbMetode"><option value="cash">Tunai (Cash)</option><option value="transfer">Transfer</option></select>
+        </div>
+        <div class="mfield"><label>WhatsApp warga (opsional, untuk kirim kwitansi)</label><input type="tel" id="tbWa" placeholder="08xxxxxxxxxx" autocomplete="off"></div>
+        <button class="btn btn-gold" id="tbSimpan" type="button">✅ Simpan &amp; Buat Kwitansi</button>
+      </div>
+    </div>
+
+    <div class="list-card">
+      <div class="list-title">📒 Riwayat Pembayaran Iuran Tambahan</div>
+      <div id="tbList"><div class="empty-note">Belum ada catatan.</div></div>
     </div>
   </div>
 </div></div>
@@ -1821,92 +1865,106 @@ function lnEl_(id){ return document.getElementById(id); }
 function tglIndo_(s){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ""); return m ? m[3] + "/" + m[2] + "/" + m[1] : (s || "-"); }
 function bukaSheet_(){ document.getElementById("modalScrim").classList.add("open"); document.getElementById("modalSheet").classList.add("open"); }
 
+var PN_ = { ln: { tambahan: false, rumah: null }, tb: { tambahan: true, rumah: null } };
+/* Tab "Tunggakan" = catatan TANPA iuranId. Tab "Iuran Tambahan" = catatan DENGAN iuranId. Keduanya satu node pemasukanLain. */
+function milikTab_(p, it){ return !!(it && it.iuranId) === PN_[p].tambahan; }
+function el_(p, k){ return document.getElementById(p + k); }
+
 function isiJenisLain_(){
-  var sel = lnEl_("lnJenis"), cur = sel.value;
+  var sel = el_("tb", "Jenis"), cur = sel.value;
   var opts = Object.keys(ikData).filter(function(id){ return ikData[id] && ikData[id].aktif === true; })
     .sort(function(a, b){ return (ikData[b].createdAt || 0) - (ikData[a].createdAt || 0); })
     .map(function(id){ return '<option value="ik:' + esc_(id) + '">' + esc_(ikData[id].judul) + ' — ' + fmtRp_(ikData[id].jumlah) + ' / rumah</option>'; });
-  opts.push('<option value="Tunggakan iuran bulanan">Tunggakan iuran bulanan</option>', '<option value="__lain">Lainnya (tulis sendiri)</option>');
+  if (!opts.length) opts.push('<option value="">(Belum ada iuran tambahan aktif)</option>');
   sel.innerHTML = opts.join("");
   if (cur) sel.value = cur;
   if (sel.selectedIndex < 0) sel.selectedIndex = 0;
   aturJenisLain_();
 }
 function aturJenisLain_(){
-  var v = lnEl_("lnJenis").value, ik = v.indexOf("ik:") === 0 ? ikData[v.slice(3)] : null, j = lnEl_("lnJumlah");
-  lnEl_("lnJenisLainWrap").style.display = v === "__lain" ? "" : "none";
-  if (ik) { j.value = ik.jumlah; j.readOnly = true; lnEl_("lnIkInfo").textContent = "Nominal ditetapkan Admin: " + fmtRp_(ik.jumlah) + " per rumah."; }
-  else { if (j.readOnly) j.value = ""; j.readOnly = false; lnEl_("lnIkInfo").textContent = ""; }
+  var v = el_("ln", "Jenis").value;
+  el_("ln", "JenisLainWrap").style.display = v === "__lain" ? "" : "none";
+  var v2 = el_("tb", "Jenis").value, ik = v2.indexOf("ik:") === 0 ? ikData[v2.slice(3)] : null, j = el_("tb", "Jumlah");
+  if (ik) { j.value = ik.jumlah; j.readOnly = true; el_("tb", "IkInfo").textContent = "Nominal ditetapkan Admin: " + fmtRp_(ik.jumlah) + " per rumah."; }
+  else { j.value = ""; j.readOnly = true; el_("tb", "IkInfo").textContent = ""; }
 }
 
 function pasangTabLain_(){
   IK.pasangCss();
   var btns = document.querySelectorAll("#segTab button");
+  var panels = { bulanan: "panelBulanan", lain: "panelLain", tambah: "panelTambah" };
   Array.prototype.forEach.call(btns, function(b){
     b.addEventListener("click", function(){
       Array.prototype.forEach.call(btns, function(x){ x.classList.toggle("on", x === b); });
-      var lain = b.getAttribute("data-pn") === "lain";
-      lnEl_("panelBulanan").style.display = lain ? "none" : "";
-      lnEl_("panelLain").style.display = lain ? "" : "none";
-      if (lain) mulaiLain_();
+      var pn = b.getAttribute("data-pn");
+      Object.keys(panels).forEach(function(k){ document.getElementById(panels[k]).style.display = k === pn ? "" : "none"; });
+      if (pn !== "bulanan") mulaiLain_();
     });
   });
-  lnEl_("lnJenis").addEventListener("change", aturJenisLain_);
-  var inp = lnEl_("lnRumah"), ac = lnEl_("lnAc");
-  inp.addEventListener("input", function(){
-    lainRumah = null; lnEl_("lnPilih").textContent = "";
-    var raw = inp.value.trim(), q = normKey_(raw), qn = raw.toLowerCase();
-    if (!q) { ac.hidden = true; ac.innerHTML = ""; return; }
-    var hasil = daftarRumahGabung_().filter(function(r){ return normKey_(r.label).indexOf(q) !== -1 || String(r.nama || "").toLowerCase().indexOf(qn) !== -1; }).slice(0, 30);
-    ac.innerHTML = hasil.length ? hasil.map(function(r){ return '<div data-key="' + esc_(r.key) + '"><b>' + esc_(r.label) + '</b> · ' + esc_(r.nama || "-") + '</div>'; }).join("") : '<div>Tidak ada rumah yang cocok</div>';
-    ac.hidden = false;
-  });
-  ac.addEventListener("click", function(e){
-    var it = e.target.closest ? e.target.closest("[data-key]") : null; if (!it) return;
-    var key = it.getAttribute("data-key");
-    var r = daftarRumahGabung_().filter(function(x){ return x.key === key; })[0]; if (!r) return;
-    lainRumah = r; inp.value = r.label; ac.hidden = true;
-    lnEl_("lnPilih").textContent = "✔ " + r.label + " · " + (r.nama || "-");
-    lnEl_("lnWa").value = (typeof nomorWargaTersimpan_ === "function" ? nomorWargaTersimpan_(r.key) : "") || "";
-  });
-  lnEl_("lnSimpan").addEventListener("click", simpanLain_);
-  lnEl_("lnBtnSerah").addEventListener("click", serahkanLain_);
-  lnEl_("lnList").addEventListener("click", function(e){
-    var b = e.target.closest ? e.target.closest(".ln-kw") : null; if (!b) return;
-    var rec = lainData[b.getAttribute("data-id")]; if (rec) tampilKwitansiLain_(rec, b.getAttribute("data-id"));
+  el_("ln", "Jenis").addEventListener("change", aturJenisLain_);
+  el_("tb", "Jenis").addEventListener("change", aturJenisLain_);
+  ["ln", "tb"].forEach(function(p){
+    var inp = el_(p, "Rumah"), ac = el_(p, "Ac");
+    inp.addEventListener("input", function(){
+      PN_[p].rumah = null; el_(p, "Pilih").textContent = "";
+      var raw = inp.value.trim(), q = normKey_(raw), qn = raw.toLowerCase();
+      if (!q) { ac.hidden = true; ac.innerHTML = ""; return; }
+      var hasil = daftarRumahGabung_().filter(function(r){ return normKey_(r.label).indexOf(q) !== -1 || String(r.nama || "").toLowerCase().indexOf(qn) !== -1; }).slice(0, 30);
+      ac.innerHTML = hasil.length ? hasil.map(function(r){ return '<div data-key="' + esc_(r.key) + '"><b>' + esc_(r.label) + '</b> · ' + esc_(r.nama || "-") + '</div>'; }).join("") : '<div>Tidak ada rumah yang cocok</div>';
+      ac.hidden = false;
+    });
+    ac.addEventListener("click", function(e){
+      var it = e.target.closest ? e.target.closest("[data-key]") : null; if (!it) return;
+      var key = it.getAttribute("data-key");
+      var r = daftarRumahGabung_().filter(function(x){ return x.key === key; })[0]; if (!r) return;
+      PN_[p].rumah = r; inp.value = r.label; ac.hidden = true;
+      el_(p, "Pilih").textContent = "✔ " + r.label + " · " + (r.nama || "-");
+      el_(p, "Wa").value = (typeof nomorWargaTersimpan_ === "function" ? nomorWargaTersimpan_(r.key) : "") || "";
+    });
+    el_(p, "Simpan").addEventListener("click", function(){ simpanLain_(p); });
+    el_(p, "BtnSerah").addEventListener("click", function(){ serahkanLain_(p); });
+    el_(p, "List").addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".ln-kw") : null; if (!b) return;
+      var rec = lainData[b.getAttribute("data-id")]; if (rec) tampilKwitansiLain_(rec, b.getAttribute("data-id"));
+    });
   });
 }
 
 function mulaiLain_(){
   if (!db) { showToast("Firebase belum siap."); return; }
-  if (!lnEl_("lnTgl").value) lnEl_("lnTgl").value = tglWIB_();
+  ["ln", "tb"].forEach(function(p){ if (!el_(p, "Tgl").value) el_(p, "Tgl").value = tglWIB_(); });
   if (lainMulai_) return;
   lainMulai_ = true;
   db.ref("iuranKhusus").on("value", function(s){ ikData = s.val() || {}; isiJenisLain_(); gambarLain_(); }, function(){});
   db.ref("pemasukanLain").limitToLast(1000).on("value", function(s){ lainData = s.val() || {}; gambarLain_(); },
-    function(e){ lnEl_("lnList").innerHTML = '<div class="empty-note">' + esc_(pesanGagal_(e, "Membaca catatan")) + '</div>'; });
+    function(e){ ["ln", "tb"].forEach(function(p){ el_(p, "List").innerHTML = '<div class="empty-note">' + esc_(pesanGagal_(e, "Membaca catatan")) + '</div>'; }); });
 }
 
 function gambarLain_(){
-  var items = Object.keys(lainData).map(function(k){ return Object.assign({ id: k }, lainData[k]); })
-    .sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
-  var total = 0, cash = 0;
-  items.forEach(function(it){ total += it.jumlah || 0; if (it.metode === "cash" && !it.disetor && it.petugas === petugasNama) cash += it.jumlah || 0; });
-  lnEl_("lnTotal").textContent = fmtRp_(total); lnEl_("lnCash").textContent = fmtRp_(cash); lnEl_("lnJml").textContent = items.length;
-  lnEl_("lnCashBanner").textContent = fmtRp_(cash);
-  lnEl_("lnSetorBar").style.display = cash > 0 ? "" : "none";
-  if (!items.length) { lnEl_("lnList").innerHTML = '<div class="empty-note">Belum ada catatan.</div>'; return; }
-  var aktifIk = {}; Object.keys(ikData).forEach(function(id){ if (ikData[id] && ikData[id].aktif === true) aktifIk[id] = ikData[id]; });
-  var rk = IK.rekap(aktifIk, lainData, RT_CONFIG.daftarRumah);
-  lnEl_("lnIkRekap").innerHTML = rk.length ? '<div class="list-card"><div class="list-title">💠 Iuran Tambahan Aktif</div>' + rk.map(function(r){ return IK.kartuHtml(r); }).join("") + '</div>' : "";
-  lnEl_("lnList").innerHTML = items.slice(0, 80).map(function(it){
-    var badge = it.diterima ? '<span class="status-pill lunas">✅ Diterima Bendahara</span>' : it.metode === "transfer" ? '<span class="status-pill proses">🏦 Transfer</span>'
-      : (it.disetor ? '<span class="status-pill lunas">✅ Diserahkan</span>' : '<span class="status-pill proses">💵 Di tangan</span>');
-    return '<div class="setoran-row"><div><h4>' + esc_(it.rumah) + ' · ' + fmtRp_(it.jumlah) + '</h4>' +
-      '<p>' + esc_(it.jenis) + (it.keterangan ? ' — ' + esc_(it.keterangan) : '') + '<br>' + esc_(tglIndo_(it.tglBayar)) + ' · ' + esc_(it.nama || "-") + ' · ' + esc_(it.petugas || "") + '</p></div>' +
-      '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end">' + badge +
-      '<button class="btn btn-line btn-sm ln-kw" type="button" data-id="' + esc_(it.id) + '">🧾 Kwitansi</button></div></div>';
-  }).join("");
+  ["ln", "tb"].forEach(function(p){
+    var items = Object.keys(lainData).map(function(k){ return Object.assign({ id: k }, lainData[k]); })
+      .filter(function(it){ return milikTab_(p, it); })
+      .sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
+    var total = 0, cash = 0;
+    items.forEach(function(it){ total += it.jumlah || 0; if (it.metode === "cash" && !it.disetor && it.petugas === petugasNama) cash += it.jumlah || 0; });
+    el_(p, "Total").textContent = fmtRp_(total); el_(p, "Cash").textContent = fmtRp_(cash); el_(p, "Jml").textContent = items.length;
+    el_(p, "CashBanner").textContent = fmtRp_(cash);
+    el_(p, "SetorBar").style.display = cash > 0 ? "" : "none";
+    if (p === "tb") {
+      var aktifIk = {}; Object.keys(ikData).forEach(function(id){ if (ikData[id] && ikData[id].aktif === true) aktifIk[id] = ikData[id]; });
+      var rk = IK.rekap(aktifIk, lainData, RT_CONFIG.daftarRumah);
+      el_("tb", "IkRekap").innerHTML = rk.length ? '<div class="list-card"><div class="list-title">💠 Iuran Tambahan Aktif</div>' + rk.map(function(r){ return IK.kartuHtml(r); }).join("") + '</div>' : "";
+    }
+    if (!items.length) { el_(p, "List").innerHTML = '<div class="empty-note">Belum ada catatan.</div>'; return; }
+    el_(p, "List").innerHTML = items.slice(0, 80).map(function(it){
+      var badge = it.diterima ? '<span class="status-pill lunas">✅ Diterima Bendahara</span>' : it.metode === "transfer" ? '<span class="status-pill proses">🏦 Transfer</span>'
+        : (it.disetor ? '<span class="status-pill lunas">✅ Diserahkan</span>' : '<span class="status-pill proses">💵 Di tangan</span>');
+      return '<div class="setoran-row"><div><h4>' + esc_(it.rumah) + ' · ' + fmtRp_(it.jumlah) + '</h4>' +
+        '<p>' + esc_(it.jenis) + (it.keterangan ? ' — ' + esc_(it.keterangan) : '') + '<br>' + esc_(tglIndo_(it.tglBayar)) + ' · ' + esc_(it.nama || "-") + ' · ' + esc_(it.petugas || "") + '</p></div>' +
+        '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end">' + badge +
+        '<button class="btn btn-line btn-sm ln-kw" type="button" data-id="' + esc_(it.id) + '">🧾 Kwitansi</button></div></div>';
+    }).join("");
+  });
 }
 
 function pdfLain_(rec, kode){
@@ -1932,22 +1990,24 @@ function tampilKwitansiLain_(rec, id){
   bukaSheet_();
 }
 
-function simpanLain_(){
+function simpanLain_(p){
   if (!db) return;
+  var lainRumah = PN_[p].rumah;
   if (!lainRumah) { showToast("Pilih rumah dari daftar saran dulu."); return; }
-  var sel = lnEl_("lnJenis").value, ikId = sel.indexOf("ik:") === 0 ? sel.slice(3) : "", ik = ikId ? ikData[ikId] : null;
+  var sel = el_(p, "Jenis").value || "", ikId = sel.indexOf("ik:") === 0 ? sel.slice(3) : "", ik = ikId ? ikData[ikId] : null;
   if (ikId && !(ik && ik.aktif === true)) { showToast("Iuran ini sudah tidak aktif."); return; }
-  var jenis = ik ? ik.judul : (sel === "__lain" ? lnEl_("lnJenisLain").value.trim() : sel);
+  var jenis = ik ? ik.judul : (sel === "__lain" ? el_(p, "JenisLain").value.trim() : sel);
+  if (PN_[p].tambahan && !ik) { showToast("Pilih iuran tambahan yang aktif dulu."); return; }
   if (!jenis) { showToast("Isi nama iuran / keperluannya."); return; }
   if (ikId) {
     var sudah = Object.keys(lainData).some(function(k){ var x = lainData[k]; return x && x.iuranId === ikId && normKey_(x.rumah) === normKey_(lainRumah.rumah); });
     if (sudah) { showToast(lainRumah.label + " sudah tercatat membayar iuran ini."); return; }
   }
-  var jumlah = ik ? ik.jumlah : parseInt(String(lnEl_("lnJumlah").value).replace(/[^\d]/g, ""), 10);
+  var jumlah = ik ? ik.jumlah : parseInt(String(el_(p, "Jumlah").value).replace(/[^\d]/g, ""), 10);
   if (!jumlah || jumlah <= 0) { showToast("Isi jumlah uang yang diterima."); return; }
   if (jumlah > 100000000) { showToast("Jumlah terlalu besar."); return; }
-  var tgl = lnEl_("lnTgl").value || tglWIB_(), ket = lnEl_("lnKet").value.trim().slice(0, 300);
-  var metode = lnEl_("lnMetode").value === "transfer" ? "transfer" : "cash", telp = lnEl_("lnWa").value.trim();
+  var tgl = el_(p, "Tgl").value || tglWIB_(), ket = el_(p, "Ket").value.trim().slice(0, 300);
+  var metode = el_(p, "Metode").value === "transfer" ? "transfer" : "cash", telp = el_(p, "Wa").value.trim();
   if (!confirm("Simpan pembayaran " + fmtRp_(jumlah) + " dari " + lainRumah.label + " untuk " + jenis + "?")) return;
   var rec = { rumah: lainRumah.rumah, nama: lainRumah.nama || "", jenis: jenis, jumlah: jumlah, metode: metode, petugas: petugasNama, tglBayar: tgl, createdAt: firebase.database.ServerValue.TIMESTAMP };
   if (ket) rec.keterangan = ket;
@@ -1955,10 +2015,10 @@ function simpanLain_(){
   if (telp) rec.teleponWarga = telp;
   var hasil = null;
   try { var kode = RTSurat.kodeInvoice(tgl.slice(0, 7), kodeKwSemua_()); hasil = pdfLain_(rec, kode); rec.kodeKwitansi = kode; } catch (e) { console.error(e); }
-  var btn = lnEl_("lnSimpan"); btn.disabled = true; btn.textContent = "Menyimpan...";
+  var btn = el_(p, "Simpan"); btn.disabled = true; btn.textContent = "Menyimpan...";
   var id = db.ref("pemasukanLain").push().key;
   db.ref("pemasukanLain/" + id).set(rec).then(function(){
-    lnEl_("lnJumlah").value = ""; lnEl_("lnKet").value = ""; lnEl_("lnRumah").value = ""; lnEl_("lnPilih").textContent = ""; lainRumah = null;
+    el_(p, "Jumlah").value = ""; el_(p, "Ket").value = ""; el_(p, "Rumah").value = ""; el_(p, "Pilih").textContent = ""; PN_[p].rumah = null;
     if (hasil) {
       hasilKwitansi = { hasil: hasil, payload: { lain: true, nama: rec.nama, rumah: rec.rumah, jumlah: rec.jumlah, jenis: rec.jenis, metode: rec.metode, teleponWarga: rec.teleponWarga || "", periodeLabel: rec.jenis } };
       tampilHasilKwitansi_(); bukaSheet_();
@@ -1968,11 +2028,11 @@ function simpanLain_(){
   }).then(function(){ btn.disabled = false; btn.innerHTML = "✅ Simpan &amp; Buat Kwitansi"; });
 }
 
-function serahkanLain_(){
+function serahkanLain_(p){
   var up = {}, n = 0, total = 0;
   Object.keys(lainData).forEach(function(id){
     var it = lainData[id];
-    if (it && it.metode === "cash" && !it.disetor && it.petugas === petugasNama) {
+    if (it && milikTab_(p, it) && it.metode === "cash" && !it.disetor && it.petugas === petugasNama) {
       up["pemasukanLain/" + id + "/disetor"] = true;
       up["pemasukanLain/" + id + "/setorAt"] = firebase.database.ServerValue.TIMESTAMP;
       up["pemasukanLain/" + id + "/setorOleh"] = petugasNama;

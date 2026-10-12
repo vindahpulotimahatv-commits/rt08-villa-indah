@@ -274,11 +274,25 @@ textarea{min-height:76px;resize:vertical}
   #dashboard .tabs .tab-btn .tb-ic{width:38px;height:38px;border-radius:12px}
   #dashboard .tabs .tab-btn .pill,#dashboard .tabs .tab-btn .tab-dot{position:static;margin-left:auto;box-shadow:none}
 }
+.hdr-right{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
+.hdr-acct{align-items:center;gap:6px}
+.hdr-acct[style*="flex"]{display:flex}
+.hdr-who{color:#fff;font-size:12px;font-weight:800;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.85}
+.hdr-btn{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.22);border-radius:10px;padding:7px 10px;font:800 12px/1 inherit;font-family:inherit;cursor:pointer;white-space:nowrap}
+.hdr-btn:hover{background:rgba(255,255,255,.2)}
+@media(max-width:820px){.hdr-who,.hdr-lbl{display:none}.hdr-btn{padding:8px 10px;font-size:15px}}
 </style>
 </head><body class="sg-plain">
 <header class="topbar"><div class="container topbar-inner">
   <div class="brand"><img class="brand-mark" src="assets/logo-badge.png" alt="Logo RT 08 / RW 021"><span>Bendahara RT 08<span class="badge-panitia">🔒 BENDAHARA</span></span></div>
-  <a class="back-link" href="index.html"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-arrow-left"/></svg>Beranda</a>
+  <div class="hdr-right">
+    <div id="bBar" class="hdr-acct" style="display:none">
+      <span id="bWho" class="hdr-who" title="Akun Bendahara">Bendahara</span>
+      <button type="button" class="hdr-btn" id="bBtnGanti" title="Ganti Password" aria-label="Ganti Password">🔑<span class="hdr-lbl"> Ganti Password</span></button>
+      <button type="button" class="hdr-btn" id="bBtnKeluar" title="Keluar" aria-label="Keluar">⎋<span class="hdr-lbl"> Keluar</span></button>
+    </div>
+    <a class="back-link" href="index.html"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-arrow-left"/></svg>Beranda</a>
+  </div>
 </div></header>
 
 <div class="gate-wrap" id="gateWrap">
@@ -454,11 +468,6 @@ textarea{min-height:76px;resize:vertical}
 
 </div></div>
 
-<div id="bBar" style="display:none;position:fixed;left:14px;bottom:14px;z-index:150;background:#0b2144;color:#fff;border-radius:14px;padding:8px 10px;font-size:12px;font-weight:800;box-shadow:var(--shadow-lg);gap:6px;align-items:center;flex-wrap:wrap;max-width:calc(100% - 28px)">
-  <span id="bWho">🔓 Bendahara</span>
-  <button type="button" class="btn btn-sm" id="bBtnGanti">🔑 Ganti Password</button>
-  <button type="button" class="btn btn-sm" id="bBtnKeluar">Keluar</button>
-</div>
 <div id="bPwOverlay" style="display:none;position:fixed;inset:0;background:rgba(5,15,36,.6);z-index:300;align-items:center;justify-content:center;padding:16px">
   <div class="form-card" style="max-width:380px;width:100%;margin:0">
     <h3>Ganti Password</h3>
@@ -1984,7 +1993,7 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
     var ok = !!(u && RT_CONFIG.bendaharaUid && u.uid === RT_CONFIG.bendaharaUid);
     document.getElementById("bBar").style.display = ok ? "flex" : "none";
     if (ok) {
-      document.getElementById("bWho").textContent = "🔓 " + u.email;
+      document.getElementById("bWho").textContent = u.email;
       if (!localStorage.getItem("bPwGanti_" + u.uid)) setTimeout(function(){ showToast("Jika masih memakai password awal, segera ganti lewat 🔑 Ganti Password."); }, 1500);
     }
   });
