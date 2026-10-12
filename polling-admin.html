@@ -310,7 +310,37 @@ function statusPantau(id){
       db.ref("pollingStatus/" + id).set("tutup").catch(function(e){ msg(id, pesanGagal(e, "Menutup polling")); });
     });
   }
+  // Reset: tersedia untuk polling Dibuka maupun Ditutup
+  var r = document.createElement("div");
+  r.style.marginTop = "6px";
+  r.innerHTML = '<button class="btn alt" id="rd_' + id + '">Reset ke Draft</button><button class="btn bahaya" id="rh_' + id + '">Hapus polling ini</button>';
+  a.appendChild(r);
+  $("rd_" + id).addEventListener("click", function(){ resetPolling(id, false); });
+  $("rh_" + id).addEventListener("click", function(){ resetPolling(id, true); });
   pantau(id);
+}
+
+/* Reset: hapus SEMUA kode, tanda "sudah memilih", dan suara.
+   hapus=false -> pertanyaan & pilihan dipertahankan, status kembali Draft (bisa buat kode baru lalu dibuka lagi).
+   hapus=true  -> seluruh polling dihapus. */
+function resetPolling(id, hapus){
+  var judul = ($("p_" + id)._data || {}).judul || "polling ini";
+  var tanya = hapus
+    ? 'HAPUS polling "' + judul + '" beserta semua kode dan suaranya?\n\nTindakan ini tidak bisa dibatalkan.\n\nKetik HAPUS untuk melanjutkan:'
+    : 'RESET polling "' + judul + '" ke Draft?\n\nSemua kode rumah dan suara yang sudah masuk akan DIHAPUS. Pertanyaan dan pilihan dipertahankan.\nTindakan ini tidak bisa dibatalkan.\n\nKetik RESET untuk melanjutkan:';
+  var jawab = prompt(tanya);
+  if (jawab === null) return;
+  if (jawab.trim().toUpperCase() !== (hapus ? "HAPUS" : "RESET")) return msg(id, "Dibatalkan: kata konfirmasi tidak cocok.", "warn");
+  var up = {};
+  up["pollingKode/" + id] = null; up["pollingKodeB/" + id] = null; up["pollingSudah/" + id] = null; up["pollingSuara/" + id] = null;
+  if (hapus) { up["pollingData/" + id] = null; up["pollingStatus/" + id] = null; }
+  else up["pollingStatus/" + id] = "draft";
+  db.ref().update(up).then(function(){
+    delete daftarKodeBaru[id];
+    // paksa kartu digambar ulang (status bisa tetap sama bila hanya sebagian yang berubah)
+    var el = $("p_" + id);
+    if (el && !hapus) { el.removeAttribute("data-st"); gambarDaftar(); }
+  }).catch(function(e){ msg(id, pesanGagal(e, hapus ? "Menghapus polling" : "Mereset polling")); });
 }
 
 function pantau(id){

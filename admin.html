@@ -311,6 +311,7 @@ textarea{min-height:76px;resize:vertical}
     <button class="tab-btn" data-tab="pembukuan" aria-label="Pembukuan Bendahara" title="Pembukuan Bendahara"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-wallet"/></svg></span><span class="tb-l">Pembukuan</span></button>
     <button class="tab-btn" data-tab="bai" id="tabBaiBtn" aria-label="Berita Acara Internal" title="Berita Acara Internal (Humas, Bendahara, Pengurus)"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-file-text"/></svg></span><span class="tb-l">Berita Acara</span></button>
     <button class="tab-btn" data-tab="masukan" aria-label="Masukan Warga" title="Masukan Warga"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-message-circle"/></svg></span><span class="tb-l">Masukan</span></button>
+    <button class="tab-btn" data-tab="polling" aria-label="Polling Warga" title="Polling Warga"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-clipboard-list"/></svg></span><span class="tb-l">Polling</span></button>
   </div>
 
   <!-- ===== PANEL LAPORAN WARGA ===== -->
@@ -505,6 +506,17 @@ textarea{min-height:76px;resize:vertical}
   </div>
 
   <!-- ===== PANEL UMKM ===== -->
+  <!-- ===== PANEL POLLING WARGA ===== -->
+  <div class="panel" id="panel-polling">
+    <div class="list-card">
+      <div class="list-title">Polling Warga</div>
+      <p class="sub" style="padding:0 14px 6px;margin:0">Saklar ini mengatur apakah tombol <b>Polling Warga</b> tampil di menu aplikasi warga. Saklar tidak membuka/menutup polling; itu diatur di halaman Admin Polling.</p>
+      <div id="plStatus" class="empty-note">Memuat status...</div>
+      <div style="padding:4px 14px 8px"><button type="button" id="plSaklar" disabled style="border:0;border-radius:12px;padding:11px 16px;font-weight:900;font-size:14px;cursor:pointer;background:linear-gradient(135deg,#e8c05a,#c49325);color:#0b2144">...</button></div>
+      <div style="padding:0 14px 14px"><a href="polling-admin.html" style="display:inline-block;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;font-weight:800;font-size:13px;color:inherit;text-decoration:none">Buka Admin Polling: buat, kode, hasil, reset &rarr;</a></div>
+    </div>
+  </div>
+
   <!-- ===== PANEL MASUKAN WARGA ===== -->
   <div class="panel" id="panel-masukan">
     <div class="list-card">
@@ -732,11 +744,31 @@ document.addEventListener("DOMContentLoaded", function(){
   });
 });
 
+/* ---------------- PANEL POLLING (saklar menu) ---------------- */
+function initPollingPanel_(){
+  var st = document.getElementById("plStatus"), b = document.getElementById("plSaklar");
+  if (!st || !b || !db) return;
+  db.ref("pollingMenu").on("value", function(s){
+    var aktif = s.val() === true;
+    st.className = "empty-note";
+    st.style.cssText = "padding:6px 14px;font-weight:800;color:" + (aktif ? "#146c3a" : "#7a5a05");
+    st.textContent = aktif ? "Menu Polling AKTIF: warga melihat tombol Polling Warga." : "Menu Polling NONAKTIF: tombol Polling Warga disembunyikan dari warga.";
+    b.textContent = aktif ? "Nonaktifkan menu Polling" : "Aktifkan menu Polling";
+    b.setAttribute("data-aktif", aktif ? "1" : "0");
+    b.disabled = false;
+  }, function(){ st.textContent = "Gagal membaca status menu (cek Rules Firebase)."; });
+  b.addEventListener("click", function(){
+    b.disabled = true;
+    db.ref("pollingMenu").set(b.getAttribute("data-aktif") !== "1").catch(function(){ st.textContent = "Gagal mengubah menu. Cek koneksi/Rules Firebase."; b.disabled = false; });
+  });
+}
+
 /* ---------------- DASHBOARD LOGIC ---------------- */
 var dashboardInited_ = false;
 function initDashboard_(){
   if (dashboardInited_) return;
   dashboardInited_ = true;
+  initPollingPanel_();
 
   var testMode_ = false;
   var today = tglWIB_();
