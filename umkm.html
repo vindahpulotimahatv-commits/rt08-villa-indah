@@ -351,7 +351,7 @@ radial-gradient(circle at 85% 20%,rgba(213,166,43,.12),transparent 18%),
 <section class="section"><div class="container">
 <div class="umkm-grid" id="umkmGrid"></div>
 <div style="height:22px"></div>
-<div class="callout"><div><h3>Punya usaha di RT 08?</h3><p>Warga bisa mendaftarkan usaha untuk tampil di direktori UMKM.</p></div><a class="btn btn-gold" href="#" id="btnDaftarUMKM">Daftarkan Usaha</a></div>
+<div class="callout"><div><h3>Punya usaha di RT 08?</h3><p>Daftarkan usaha di sini. Setelah disetujui pengurus, usaha otomatis terhubung ke marketplace UMKM VIPT.</p></div><div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-gold" href="#" id="btnDaftarUMKM">Daftarkan Usaha</a><a class="btn btn-brand" href="#" id="btnMarketplace" hidden>Belanja di UMKM VIPT</a></div></div>
 </div></section>
 </main>
 <footer class="sg-footer">
@@ -476,6 +476,8 @@ function loadUmkm_(){
   });
 }
 document.addEventListener("DOMContentLoaded",()=>{
+  const mpU = String(RT_CONFIG.urlUmkmMarketplace||"").replace(/\/+$/,""), bm = document.getElementById("btnMarketplace");
+  if (bm && mpU) { bm.href = mpU; bm.target = "_blank"; bm.rel = "noopener"; bm.hidden = false; }
   const g=document.getElementById("navGrupWA");
   if(g){
     if(RT_CONFIG.linkGrupWA){ g.href=RT_CONFIG.linkGrupWA; g.target="_blank"; g.rel="noopener"; }

@@ -48,6 +48,10 @@ const RT_CONFIG = {
   waJalan: "6281381112532",
   waMenpora: "6281932136575",   // Menpora / Karang Taruna (Mas Adin)
 
+  // Alamat situs marketplace UMKM VIPT (tanpa garis miring di akhir), mis. "https://namaanda.github.io/UMKM_VIPT".
+  // Usaha yang sudah disetujui pengurus di halaman UMKM portal ini ditarik otomatis ke marketplace oleh pengurus.
+  urlUmkmMarketplace: "",
+
   // Nomor WhatsApp yang menerima pesan "Pendaftaran UMKM" dari halaman UMKM.
   // Kosongkan ("") untuk memakai nomor Ketua RT (waKetua).
   waUMKM: "",
