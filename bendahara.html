@@ -1920,7 +1920,7 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
       if (!laporAktif_) return;
       var id = laporAktif_, it = laporData_[id], r = it && cari_(it.rumah);
       laporSembunyiInfo_();
-      if (!it || !r || r.key !== rKey || it.bulanKey !== b0) return;
+      if (!it || !r || r.key !== rKey) return; /* cukup cocok nomor rumahnya; bulan boleh beda (Bendahara bisa geser bulan di form) */
       selesaiBagian_(id, "bulananOk");
     };
     /* Laporan gabungan baru berstatus "dicatat" setelah iuran bulanan DAN iuran tambahannya sama-sama dicatat. */
