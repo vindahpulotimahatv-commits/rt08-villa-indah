@@ -1886,14 +1886,17 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
         var r = cari_(it.rumah); if (!r) { showToast("Rumah tidak dikenali di data warga: " + it.rumah); return; }
         var n = it.jmlBulan || 1;
         inpR_.value = r.blok + " " + r.no;
-        document.getElementById("lgBulan").value = it.bulanKey;
+        var bMulai_ = it.bulanKey, geserTeks_ = "", terisi_ = function(b){ var e = (penarikanSemua_[b] || {})[r.key]; return !!(e && (e.status === "lunas_cash" || e.status === "lunas_transfer" || e.status === "transfer_pending")); };
+        for (var g_ = 0; g_ < 24; g_++) { var bad_ = false; for (var j_ = 0; j_ < n; j_++) { if (terisi_(geserBulan_(bMulai_, j_))) { bad_ = true; break; } } if (!bad_) break; bMulai_ = geserBulan_(bMulai_, 1); }
+        if (bMulai_ !== it.bulanKey) geserTeks_ = ' <b style="color:#b45309">⚠️ ' + esc_(fmtBulanID_(it.bulanKey)) + ' SUDAH LUNAS (cash/transfer lain). Form otomatis dialihkan ke ' + esc_(fmtBulanID_(bMulai_)) + ' sebagai bayar di muka. Konfirmasi ke warga dulu bila perlu.</b>';
+        document.getElementById("lgBulan").value = bMulai_;
         document.getElementById("lgJml").value = n;
         document.getElementById("lgKK").checked = !!it.tambahanKK;
         document.getElementById("lgCatatan").value = "Lapor warga via aplikasi" + (it.catatan ? " — " + it.catatan : "");
         document.getElementById("lgUang").value = (it.jenis !== "gabungan" && n === 1 && it.jumlahSeharusnya != null && it.jumlah !== it.jumlahSeharusnya) ? it.jumlah : "";
         showPicked_(); hitung_();
         laporAktif_ = id;
-        infoEl_.innerHTML = '📥 Mengisi dari laporan warga: ' + esc_(r.rumah) + ' — transfer ' + fmtRp_(it.jumlah) + (it.jenis === "gabungan" ? ' (gabungan: bagian iuran bulanan ' + fmtRp_(it.jumlahBulanan || 0) + ' + ' + esc_(it.ikJudul || "Iuran Tambahan") + ' ' + fmtRp_(it.ikJumlah || 0) + ')' : '') + ' (' + esc_(laporTglTeks_(it.tglTransfer)) + '). Cek mutasi rekening dulu. <a href="#" id="lgLaporBatal" style="font-weight:900;margin-left:6px">Batalkan</a>';
+        infoEl_.innerHTML = '📥 Mengisi dari laporan warga: ' + esc_(r.rumah) + ' — transfer ' + fmtRp_(it.jumlah) + (it.jenis === "gabungan" ? ' (gabungan: bagian iuran bulanan ' + fmtRp_(it.jumlahBulanan || 0) + ' + ' + esc_(it.ikJudul || "Iuran Tambahan") + ' ' + fmtRp_(it.ikJumlah || 0) + ')' : '') + ' (' + esc_(laporTglTeks_(it.tglTransfer)) + '). Cek mutasi rekening dulu.' + geserTeks_ + ' <a href="#" id="lgLaporBatal" style="font-weight:900;margin-left:6px">Batalkan</a>';
         infoEl_.style.display = "block";
         document.getElementById("lgLaporBatal").addEventListener("click", function(ev){ ev.preventDefault(); laporSembunyiInfo_(); });
         document.getElementById("cardLangsung").scrollIntoView({ behavior: "smooth", block: "start" });
