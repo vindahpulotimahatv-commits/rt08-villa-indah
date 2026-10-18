@@ -356,8 +356,8 @@ textarea{min-height:76px;resize:vertical}
       <div class="finance-summary" id="financeSummary"></div>
     </div>
     <div class="list-card">
-      <div class="list-title">📊 Export Laporan Keuangan (Excel)</div>
-      <p class="sub" style="padding:0 14px;margin:0 0 8px;color:var(--muted);font-size:12px">Semua jenis keuangan dalam satu file Excel: Ringkasan, Transaksi, Pemasukan, Pengeluaran, <b>Iuran per Rumah</b> (tabel rumah × bulan, hijau = lunas), Detail Iuran, dan Rekap Petugas. Siap dikirim ke Ketua RT &amp; pengurus.</p>
+      <div class="list-title">📊 Export Laporan Keuangan (Excel &amp; PDF)</div>
+      <p class="sub" style="padding:0 14px;margin:0 0 8px;color:var(--muted);font-size:12px">Semua jenis keuangan dalam satu file Excel atau PDF: Ringkasan, Transaksi, Pemasukan, Pengeluaran, <b>Iuran per Rumah</b> (tabel rumah × bulan, hijau = lunas), Detail Iuran, dan Rekap Petugas. Siap dikirim ke Ketua RT &amp; pengurus.</p>
       <div style="padding:0 14px 14px;display:grid;gap:10px">
         <div class="field"><label>Periode laporan</label>
           <select id="xlsPeriode">
@@ -371,6 +371,8 @@ textarea{min-height:76px;resize:vertical}
         <div class="field" id="xlsBulanWrap" style="display:none"><label>Bulan</label><input type="month" id="xlsBulan"></div>
         <button type="button" class="btn btn-brand" id="btnXlsUnduh">📥 Unduh Excel</button>
         <button type="button" class="btn btn-gold" id="btnXlsKirim">📤 Kirim ke Ketua &amp; Pengurus</button>
+        <button type="button" class="btn btn-brand" id="btnPdfUnduh">📄 Unduh PDF</button>
+        <button type="button" class="btn btn-gold" id="btnPdfKirim">📤 Kirim PDF ke Ketua &amp; Pengurus</button>
       </div>
     </div>
     <div class="list-card">
@@ -491,6 +493,7 @@ textarea{min-height:76px;resize:vertical}
 <script src="warga-data.js"></script>
 <script src="warga-kontak.js"></script>
 <script src="surat-pdf.js"></script>
+<script src="laporan-keuangan-pdf.js"></script>
 <script src="iuran-cari.js"></script>
 <script>
 var db = null;
@@ -1456,29 +1459,142 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
   document.getElementById("xlsPeriode").addEventListener("change", function(){
     document.getElementById("xlsBulanWrap").style.display = this.value === "pilih" ? "block" : "none";
   });
-  document.getElementById("btnXlsUnduh").addEventListener("click", async function(){
+  /* ---- PDF LAPORAN KEUANGAN (isi sama dengan Excel) ---- */
+  var PDF_MIME_ = "application/pdf";
+  function dataLaporanPdf_(P){
+    var semua = keuanganSemua_.slice().sort(function(a, b){ return (a.tanggal || "").localeCompare(b.tanggal || "") || (a.createdAt || 0) - (b.createdAt || 0); });
+    var saldoAwal = 0, dlm = [];
+    semua.forEach(function(it){
+      var j = parseFloat(it.jumlah) || 0, t = it.tanggal || "", masuk = it.jenis === "masuk";
+      if (P.mulai && t < P.mulai) { saldoAwal += masuk ? j : -j; return; }
+      if (P.akhir && t > P.akhir) return;
+      dlm.push(it);
+    });
+    var totMasuk = 0, totKeluar = 0, perKat = {}, perBln = {};
+    dlm.forEach(function(it){
+      var j = parseFloat(it.jumlah) || 0, masuk = it.jenis === "masuk", kat = it.kategori || "Tanpa Kategori", bk = (it.tanggal || "").slice(0, 7);
+      if (masuk) totMasuk += j; else totKeluar += j;
+      perKat[kat] = perKat[kat] || { m: 0, k: 0 }; perKat[kat][masuk ? "m" : "k"] += j;
+      perBln[bk] = perBln[bk] || { m: 0, k: 0 }; perBln[bk][masuk ? "m" : "k"] += j;
+    });
+    var saldoAkhir = saldoAwal + totMasuk - totKeluar;
+
+    var iuran = [], kunciBulan = {};
+    Object.keys(penarikanSemua_).forEach(function(bk){
+      if (P.bMulai && (bk < P.bMulai || bk > P.bAkhir)) return;
+      var bln = penarikanSemua_[bk] || {};
+      Object.keys(bln).forEach(function(rk){ if (bln[rk]) { iuran.push(Object.assign({ bulanKey: bk, rumahKey: rk }, bln[rk])); kunciBulan[bk] = 1; } });
+    });
+    iuran.sort(function(a, b){ return a.bulanKey.localeCompare(b.bulanKey) || String(a.rumah || "").localeCompare(String(b.rumah || ""), "id", { numeric: true }); });
+    var bulanList = daftarBulanXls_(P, Object.keys(kunciBulan));
+    var dasarTarif = RT_CONFIG.iuranBulanan || 60000;
+
+    var rumahList = (typeof WARGA_DATA !== "undefined" ? WARGA_DATA : []).map(function(w){ return { key: kunciRumahXls_(w.blok + " " + w.no), rumah: w.blok + " No." + w.no, nama: w.nama || "" }; });
+    rumahList.sort(function(a, b){ return a.rumah.localeCompare(b.rumah, "id", { numeric: true }); });
+    var idx = {}; rumahList.forEach(function(h, i){ idx[h.key] = i; });
+    var petaIuran = {};
+    iuran.forEach(function(e){
+      var k = idx[e.rumahKey] != null ? e.rumahKey : (typeof rtKunciRumah === "function" ? rtKunciRumah(e.rumah) : kunciRumahXls_(e.rumah));
+      if (idx[k] == null) { idx[k] = rumahList.length; rumahList.push({ key: k, rumah: e.rumah || e.rumahKey, nama: e.nama || "" }); }
+      (petaIuran[k] = petaIuran[k] || {})[e.bulanKey] = e;
+    });
+    var totalRumah = rumahList.length;
+
+    /* rekap iuran per bulan */
+    var rekapIuran = bulanList.map(function(bk){
+      var o = { label: bulanLong_(bk), lunas: 0, jml: 0, tunggu: 0, belum: 0, kosong: 0 };
+      rumahList.forEach(function(h){
+        var e = (petaIuran[h.key] || {})[bk]; if (!e) return;
+        var st = statusIuranXls_(e);
+        if (st.ok) { o.lunas++; o.jml += parseFloat(e.jumlah) || 0; } else if (st.tunggu) o.tunggu++; else o.belum++;
+      });
+      o.kosong = totalRumah - o.lunas - o.tunggu - o.belum;
+      return o;
+    });
+
+    /* tabel rumah x bulan */
+    var totBulan = bulanList.map(function(){ return 0; }), totSemua = 0;
+    var rows = rumahList.map(function(h){
+      var tot = 0, sel = bulanList.map(function(bk, j){
+        var e = (petaIuran[h.key] || {})[bk];
+        if (!e) return { k: "kosong", jml: 0 };
+        var st = statusIuranXls_(e), jml = parseFloat(e.jumlah) || 0;
+        if (st.ok) { tot += jml; totBulan[j] += jml; return { k: "ok", jml: jml }; }
+        return { k: st.tunggu ? "tunggu" : "belum", jml: jml };
+      });
+      totSemua += tot;
+      return { rumah: h.rumah, nama: h.nama, sel: sel, total: tot };
+    });
+
+    /* detail iuran */
+    var dt = { dasar: 0, rukem: 0, jml: 0 };
+    var detail = iuran.map(function(e){
+      var st = statusIuranXls_(e), jml = parseFloat(e.jumlah) || 0;
+      var rukem = e.tambahanKK ? Math.max(0, jml - dasarTarif) : 0, dasar = jml - rukem;
+      if (st.ok) { dt.dasar += dasar; dt.rukem += rukem; dt.jml += jml; }
+      return { k: st.ok ? "ok" : st.tunggu ? "tunggu" : "belum", bulan: bulanLong_(e.bulanKey), rumah: e.rumah || "", nama: e.nama || "", petugas: e.petugas || "",
+        metode: e.metode === "cash" ? "Cash" : e.metode === "transfer" ? "Transfer" : "-", status: st.teks, dasar: dasar, rukem: rukem, jumlah: jml, tgl: tsIndo_(e.confirmedAt) };
+    });
+
+    /* rekap petugas */
+    var pm = {};
+    iuran.forEach(function(e){
+      var pt = e.petugas || "(tanpa nama)", o = pm[pt] = pm[pt] || { nama: pt, rumah: 0, cash: 0, transfer: 0, belum: 0, jml: 0 }, st = statusIuranXls_(e);
+      o.rumah++; if (e.metode === "cash") o.cash++; else if (e.metode === "transfer") o.transfer++;
+      if (st.ok) o.jml += parseFloat(e.jumlah) || 0; else if (!st.tunggu) o.belum++;
+    });
+    var petugas = Object.keys(pm).sort().map(function(k){ return pm[k]; });
+
+    /* transaksi dengan saldo berjalan */
+    var saldo = saldoAwal;
+    var transaksi = dlm.map(function(it){
+      var j = parseFloat(it.jumlah) || 0, masuk = it.jenis === "masuk"; saldo += masuk ? j : -j;
+      return { tgl: tglIndo_(it.tanggal), jenis: masuk ? "Pemasukan" : "Pengeluaran", kategori: it.kategori || "-", ket: it.keterangan || "", masuk: masuk ? j : 0, keluar: masuk ? 0 : j, saldo: saldo };
+    });
+
+    return {
+      label: P.label, dicetak: tsIndo_(Date.now()), namaBendahara: RT_CONFIG.namaBendahara, namaKetua: RT_CONFIG.namaKetua, tarif: dasarTarif,
+      saldoAwal: saldoAwal, totMasuk: totMasuk, totKeluar: totKeluar, saldoAkhir: saldoAkhir, mulaiPeriode: !!P.mulai,
+      perKat: Object.keys(perKat).sort().map(function(k){ return { nama: k, m: perKat[k].m, k: perKat[k].k }; }),
+      perBulan: Object.keys(perBln).sort().map(function(k){ return { label: bulanLong_(k), m: perBln[k].m, k: perBln[k].k }; }),
+      rekapIuran: rekapIuran, totalRumah: totalRumah,
+      matriks: { bulan: bulanList.map(bulanLong_), rows: rows, totBulan: totBulan, totSemua: totSemua },
+      detail: detail, detailTot: dt, petugas: petugas, transaksi: transaksi
+    };
+  }
+  async function bangunPdf_(){
+    if (typeof RTLaporanPDF === "undefined") throw new Error("laporan-keuangan-pdf.js belum termuat. Muat ulang halaman lalu coba lagi.");
+    var P = periodeXls_(); if (!P) return null;
+    var D = dataLaporanPdf_(P), logo = null;
+    try { if (typeof RTSurat !== "undefined" && RTSurat.muatLogo) logo = await RTSurat.muatLogo("assets/logo-rt.png", 220); } catch (e0) { logo = null; }
+    var r = RTLaporanPDF.buat(D, logo);
+    return { bytes: r.bytes, namaFile: r.namaFile, label: P.label, totMasuk: D.totMasuk, totKeluar: D.totKeluar, saldoAkhir: D.saldoAkhir };
+  }
+
+  /* ---- Tombol unduh & kirim (dipakai bersama oleh Excel dan PDF) ---- */
+  async function unduhLaporan_(bangun, mime, nama){
     try {
-      var x = await bangunExcel_(); if (!x) return;
+      var x = await bangun(); if (!x) return;
       /* Aplikasi Android: unduhan blob tidak jalan di WebView, jadi buka menu Bagikan (Simpan ke Drive/File, WhatsApp, dll). */
       if (window.RTAndroid && typeof window.RTAndroid.shareFile === "function") {
-        try { if (window.RTAndroid.shareFile(bytesKeB64_(x.bytes), x.namaFile, XLSX_MIME_, "", "", false)) { showToast("Pilih tujuan: simpan atau kirim file Excel."); return; } } catch (e2) { console.warn(e2); }
+        try { if (window.RTAndroid.shareFile(bytesKeB64_(x.bytes), x.namaFile, mime, "", "", false)) { showToast("Pilih tujuan: simpan atau kirim file " + nama + "."); return; } } catch (e2) { console.warn(e2); }
       }
-      unduhBlobAdmin_(x.bytes, x.namaFile, XLSX_MIME_); showToast("Excel diunduh: " + x.namaFile);
+      unduhBlobAdmin_(x.bytes, x.namaFile, mime); showToast(nama + " diunduh: " + x.namaFile);
     }
-    catch (e) { console.error(e); showToast(e && e.message ? e.message : "Gagal membuat Excel."); }
-  });
-  document.getElementById("btnXlsKirim").addEventListener("click", async function(){
-    var btn = this, x;
-    try { x = await bangunExcel_(); if (!x) return; } catch (e) { console.error(e); showToast(e && e.message ? e.message : "Gagal membuat Excel."); return; }
+    catch (e) { console.error(e); showToast(e && e.message ? e.message : "Gagal membuat " + nama + "."); }
+  }
+  async function kirimLaporan_(btn, bangun, mime, nama){
+    var x;
+    try { x = await bangun(); if (!x) return; } catch (e) { console.error(e); showToast(e && e.message ? e.message : "Gagal membuat " + nama + "."); return; }
     var pesan = "Laporan Keuangan RT 08 / RW 021 Villa Indah — periode *" + x.label + "*.\n" +
-      "Pemasukan: " + fmtRp_(x.totMasuk) + "\nPengeluaran: " + fmtRp_(x.totKeluar) + "\nSaldo akhir: *" + fmtRp_(x.saldoAkhir) + "*\n\nFile Excel terlampir. Dikirim oleh Bendahara lewat Portal RT 08.";
+      "Pemasukan: " + fmtRp_(x.totMasuk) + "\nPengeluaran: " + fmtRp_(x.totKeluar) + "\nSaldo akhir: *" + fmtRp_(x.saldoAkhir) + "*\n\nFile " + nama + " terlampir. Dikirim oleh Bendahara lewat Portal RT 08.";
     if (gatewayAktif_()) {
       var penerima = penerimaLaporan_();
       if (!penerima.length) { showToast("Belum ada nomor penerima. Isi waKetua / waPengurusLaporan di config.js."); return; }
-      if (!confirm("Kirim laporan " + x.label + " (Excel) ke:\n\n" + penerima.map(function(d){ return "• " + d.nama + " (" + d.nomor + ")"; }).join("\n") + "\n\nLanjutkan?")) return;
+      if (!confirm("Kirim laporan " + x.label + " (" + nama + ") ke:\n\n" + penerima.map(function(d){ return "• " + d.nama + " (" + d.nomor + ")"; }).join("\n") + "\n\nLanjutkan?")) return;
       btn.disabled = true; var ok = 0, gagal = [];
       for (var i = 0; i < penerima.length; i++) {
-        try { await kirimWAFile_(penerima[i].nomor, pesan, x.bytes, x.namaFile, XLSX_MIME_); ok++; }
+        try { await kirimWAFile_(penerima[i].nomor, pesan, x.bytes, x.namaFile, mime); ok++; }
         catch (e) { gagal.push(penerima[i].nama + ": " + ((e && e.message) || "gagal")); }
         if (i < penerima.length - 1) await new Promise(function(res){ setTimeout(res, 2500); });
       }
@@ -1486,17 +1602,21 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
       showToast(gagal.length ? ok + " terkirim, gagal: " + gagal.join("; ") : "✅ Laporan terkirim ke " + ok + " pengurus.");
       return;
     }
-    /* Aplikasi Android: buka WhatsApp dengan Excel sudah terlampir, lalu pilih kontak/grup pengurus. */
+    /* Aplikasi Android: buka WhatsApp dengan file sudah terlampir, lalu pilih kontak/grup pengurus. */
     if (window.RTAndroid && typeof window.RTAndroid.shareFile === "function") {
-      try { if (window.RTAndroid.shareFile(bytesKeB64_(x.bytes), x.namaFile, XLSX_MIME_, "", pesan, true)) { showToast("Pilih kontak/grup pengurus di WhatsApp, lalu tekan Kirim."); return; } } catch (e3) { console.warn(e3); }
+      try { if (window.RTAndroid.shareFile(bytesKeB64_(x.bytes), x.namaFile, mime, "", pesan, true)) { showToast("Pilih kontak/grup pengurus di WhatsApp, lalu tekan Kirim."); return; } } catch (e3) { console.warn(e3); }
     }
     try {
-      var file = new File([x.bytes], x.namaFile, { type: XLSX_MIME_ });
+      var file = new File([x.bytes], x.namaFile, { type: mime });
       if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: pesan }); showToast("Pilih WhatsApp lalu kontak/grup pengurus."); return; }
     } catch (e) { if (e && e.name === "AbortError") return; console.warn(e); }
-    unduhBlobAdmin_(x.bytes, x.namaFile, XLSX_MIME_);
-    showToast("Excel diunduh. Lampirkan manual ke WhatsApp (atau isi waGateway di config.js agar terkirim otomatis).");
-  });
+    unduhBlobAdmin_(x.bytes, x.namaFile, mime);
+    showToast(nama + " diunduh. Lampirkan manual ke WhatsApp (atau isi waGateway di config.js agar terkirim otomatis).");
+  }
+  document.getElementById("btnXlsUnduh").addEventListener("click", function(){ unduhLaporan_(bangunExcel_, XLSX_MIME_, "Excel"); });
+  document.getElementById("btnXlsKirim").addEventListener("click", function(){ kirimLaporan_(this, bangunExcel_, XLSX_MIME_, "Excel"); });
+  document.getElementById("btnPdfUnduh").addEventListener("click", function(){ unduhLaporan_(bangunPdf_, PDF_MIME_, "PDF"); });
+  document.getElementById("btnPdfKirim").addEventListener("click", function(){ kirimLaporan_(this, bangunPdf_, PDF_MIME_, "PDF"); });
 
   if (window.RTIuranCari) RTIuranCari.pasang(document.getElementById("cariIuranWadah"), { getData: function(){ return penarikanSemua_; } });
   db.ref("penarikan").on("value", function(snap){
