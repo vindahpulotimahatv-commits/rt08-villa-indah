@@ -39,7 +39,9 @@
     if (mulai < batas) mulai = batas;
     var out = [];
     for (var m = mulai; m <= now; m = tambah(m, 1)) out.push(m);
-    return { bulan: out, now: now };
+    /* Batas bayar = tanggal 15 tiap bulan: lewat tanggal 15 (mulai tgl 16) bulan berjalan baru dihitung menunggak. */
+    var batasTgl = parseInt(konfig().batasBayarTanggal, 10) || 15, tgl = tglHariIni().tgl;
+    return { bulan: out, now: now, terakhir: tgl > batasTgl ? now : tambah(now, -1) };
   }
 
   /* Bangun ringkasan status tiap rumah. */
@@ -54,7 +56,7 @@
         if (e && STATUS_LUNAS[e.status]) s = e.status === "lunas_cash" ? "cash" : "transfer";
         else if (e && e.status === "transfer_pending") { s = "pending"; menunggu++; }
         if (e && e.kodeKwitansi) kodeAkhir = e.kodeKwitansi;
-        if (s === "belum" && b <= db.now) tunggak.push(b);   // menunggak terhitung tanggal 1 bulan iuran
+        if (s === "belum" && b <= db.terakhir) tunggak.push(b);   // menunggak = lewat tanggal 15 bulan iuran
         per.push({ b: b, s: s, e: e || null });
       });
       return {
@@ -68,7 +70,7 @@
 
 
   /* ---------- TEGURAN / REMINDER OTOMATIS (WhatsApp) ----------
-     Aturan: iuran bulan X dianggap MENUNGGAK mulai tanggal 1 bulan berikutnya (X sudah lewat & belum lunas).
+     Aturan: batas bayar iuran = tanggal 15 tiap bulan. Iuran bulan X dianggap MENUNGGAK mulai tanggal 16 bulan X bila belum lunas.
      Satu klik membuka WhatsApp ke nomor warga dengan pesan yang disusun sistem. */
   var BLN_PANJANG = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
   function panjang(k) { return BLN_PANJANG[parseInt(k.slice(5, 7), 10) - 1] + " " + k.slice(0, 4); }
@@ -108,7 +110,7 @@
       "Berdasarkan catatan Pengurus RT, iuran bulanan Bapak/Ibu *belum tercatat lunas* untuk:\n" +
       r.tunggak.map(function (b, i) { return (i + 1) + ". " + panjang(b); }).join("\n") +
       "\n\nTotal tunggakan: *" + rp(r.jmlTunggak) + "* (" + n + " bulan)\n\n" +
-      "Tunggakan tersebut dihitung sejak tanggal 1 " + panjang(r.tunggak[0]) + " sampai dengan " + h.tgl + " " + panjang(h.bln) + " (hari pesan ini dikirim)." +
+      "Batas pembayaran iuran adalah tanggal 15 tiap bulan. Tunggakan tersebut dihitung sejak lewat tanggal 15 " + panjang(r.tunggak[0]) + " sampai dengan " + h.tgl + " " + panjang(h.bln) + " (hari pesan ini dikirim)." +
       (n >= 3 ? " Mohon tunggakan segera diselesaikan." : "") +
       "\n\nPembayaran dapat dilakukan secara cash ke petugas Humas RT" +
       (rek.nomor ? ", atau transfer ke:\n*" + rek.bank + " " + rek.nomor + " a.n. " + rek.nama + " (Bendahara RT)*\n(mohon kirim bukti transfer di chat ini)" : ".") +

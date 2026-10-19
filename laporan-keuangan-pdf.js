@@ -10,9 +10,13 @@
 (function (root) {
   "use strict";
 
-  var PW = 841.89, PH = 595.28;            // A4 mendatar
+  var PW = 841.89, PH = 595.28;            // A4 mendatar (laporan lengkap); A4 tegak untuk PDF warga
   var MX = 30, TOP = 34, BOT = PH - 36;    // margin kiri-kanan, atas, batas bawah isi
   var CW = PW - 2 * MX;                    // lebar isi
+  function ukuran(tegak) {
+    PW = tegak ? 595.28 : 841.89; PH = tegak ? 841.89 : 595.28;
+    BOT = PH - 36; CW = PW - 2 * MX;
+  }
 
   /* Lebar huruf Helvetica (per 1000 unit, kode WinAnsi 32..255) */
   var WD = { R: [278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 278, 278, 584, 584, 584, 556, 1015, 667, 667, 722, 722, 667, 611, 778, 722, 278, 500, 667, 556, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 278, 278, 278, 469, 556, 333, 556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556, 556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584, 761, 556, 556, 222, 556, 333, 1000, 556, 556, 333, 1000, 667, 333, 1000, 556, 611, 556, 556, 222, 222, 333, 333, 350, 556, 1000, 333, 1000, 500, 333, 944, 556, 500, 667, 278, 333, 556, 556, 556, 556, 260, 556, 333, 737, 370, 556, 584, 333, 737, 333, 400, 584, 333, 333, 333, 556, 537, 278, 333, 333, 365, 556, 834, 834, 834, 611, 667, 667, 667, 667, 667, 667, 1000, 722, 667, 667, 667, 667, 278, 278, 278, 278, 722, 722, 778, 778, 778, 778, 778, 584, 778, 722, 722, 722, 722, 667, 667, 611, 556, 556, 556, 556, 556, 556, 889, 500, 556, 556, 556, 556, 278, 278, 278, 278, 556, 556, 556, 556, 556, 556, 556, 584, 611, 556, 556, 556, 556, 500, 556, 500], B: [278, 333, 474, 556, 556, 889, 722, 238, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 333, 333, 584, 584, 584, 611, 975, 722, 722, 722, 722, 667, 611, 778, 722, 278, 556, 722, 611, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 333, 278, 333, 584, 556, 333, 556, 611, 556, 611, 556, 333, 611, 611, 278, 278, 556, 278, 889, 611, 611, 611, 611, 389, 556, 333, 611, 556, 778, 556, 556, 500, 389, 280, 389, 584, 761, 556, 611, 278, 556, 500, 1000, 556, 556, 333, 1000, 667, 333, 1000, 611, 611, 611, 611, 278, 278, 500, 500, 350, 556, 1000, 333, 1000, 556, 333, 944, 611, 500, 667, 278, 333, 556, 556, 556, 556, 280, 556, 333, 737, 370, 556, 584, 333, 737, 333, 400, 584, 333, 333, 333, 611, 556, 278, 333, 333, 365, 556, 834, 834, 834, 611, 722, 722, 722, 722, 722, 722, 1000, 722, 667, 667, 667, 667, 278, 278, 278, 278, 722, 722, 778, 778, 778, 778, 778, 584, 778, 722, 722, 722, 722, 667, 667, 611, 556, 556, 556, 556, 556, 556, 889, 556, 556, 556, 556, 556, 278, 278, 278, 278, 611, 611, 611, 611, 611, 611, 611, 584, 611, 611, 611, 611, 611, 556, 611, 556] };
@@ -152,7 +156,7 @@
      opt: fs (ukuran huruf), headRep (ulang header tiap halaman), fillRow(rowIndex)->warna, boldRow(rowIndex) */
   Layout.prototype.tabel = function (cols, rows, opt) {
     opt = opt || {};
-    var self = this, d = this.doc, fs = opt.fs || 8, lh = fs + 2.4, pad = 3;
+    var self = this, d = this.doc, fs = opt.fs || 8, lh = fs + 2.4, pad = opt.pad != null ? opt.pad : 3;
     var total = cols.reduce(function (a, c) { return a + c.w; }, 0), X = [MX];
     cols.forEach(function (c) { X.push(X[X.length - 1] + c.w); });
     var x0 = opt.center ? MX + (CW - total) / 2 : MX;
@@ -196,6 +200,7 @@
   /* ---------- Isi laporan ---------- */
   function buat(D, logo) {
     D = D || {};
+    ukuran(false);
     var doc = new Doc(), L = new Layout(doc);
     var label = D.label || "-", kop = "LAPORAN KEUANGAN " + (D.rtRw || "RT 08 / RW 021") + " " + (D.kompleks || "VILLA INDAH PULO TIMAHA");
 
@@ -344,7 +349,102 @@
     return { bytes: doc.build("Laporan Keuangan RT 08 - " + label), namaFile: namaFile };
   }
 
-  var API = { buat: buat };
+  /* ===== PDF RINGKAS UNTUK WARGA: tepat 1 halaman (A4 tegak) =====
+     Isi: ringkasan kas, rekap pemasukan, detail pengeluaran. Tanpa nama/nomor rumah. */
+  function tinggiTabel(cols, rows, fs, pad) {
+    var lh = fs + 2.4, h = 0, m = 1;
+    cols.forEach(function (c) { m = Math.max(m, wrap(c.t, "B", fs, c.w - 2 * pad).length); });
+    h = m * lh + 2 * pad;
+    rows.forEach(function (row) {
+      var mm = 1;
+      row.forEach(function (v, i) { var o = (v && typeof v === "object") ? v : { t: v }, t = o.t == null ? "" : String(o.t); if (t !== "") mm = Math.max(mm, wrap(t, o.b ? "B" : "R", fs, cols[i].w - 2 * pad).length); });
+      h += mm * lh + 2 * pad;
+    });
+    return h;
+  }
+  function buatWarga(D, logo) {
+    D = D || {};
+    ukuran(true);
+    var doc = new Doc(), L = new Layout(doc), label = D.label || "-";
+    var kop = "LAPORAN KEUANGAN " + (D.rtRw || "RT 08 / RW 021");
+    var yTop = L.y, xt = MX;
+    if (logo && logo.bytes) { doc.drawImage(doc.addImage(logo.bytes, logo.w, logo.h), MX, yTop, 40, 40 * logo.h / logo.w); xt = MX + 50; }
+    doc.text(xt, yTop + 15, norm(kop), "B", 15, NAVY);
+    doc.text(xt, yTop + 28, norm(D.kompleks || "VILLA INDAH PULO TIMAHA"), "B", 10, NAVY);
+    doc.text(xt, yTop + 40, "Periode: " + norm(label) + "   |   Dicetak: " + norm(D.dicetak || ""), "R", 8.5, [0.3, 0.3, 0.3]);
+    L.y = yTop + 52;
+    doc.line(MX, L.y, MX + CW, L.y, 1.2, 0.3); L.y += 10;
+
+    /* ringkasan kas */
+    L.seksi("RINGKASAN KAS");
+    var kotak = [["Saldo Awal", D.saldoAwal, null], ["Pemasukan", D.totMasuk, [0.1, 0.5, 0.25]], ["Pengeluaran", D.totKeluar, [0.7, 0.15, 0.15]], ["Saldo Akhir", D.saldoAkhir, NAVY]];
+    var bw = (CW - 3 * 6) / 4, by = L.y;
+    kotak.forEach(function (k, i) {
+      var x = MX + i * (bw + 6);
+      doc.rect(x, by, bw, 40, { fill: i === 3 ? BIRU : ABU, stroke: [0.8, 0.8, 0.8], lw: 0.5 });
+      doc.text(x + 7, by + 14, norm(k[0]), "R", 8, [0.35, 0.35, 0.35]);
+      doc.text(x + 7, by + 31, norm(rpR(k[1])), "B", 12, k[2] || [0, 0, 0]);
+    });
+    L.y = by + 40 + 10;
+
+    /* rekap pemasukan */
+    var pk = D.pemasukanKat || [], totN = 0, totM = 0;
+    L.seksi("REKAP PEMASUKAN");
+    var rowsM = pk.map(function (k) { totN += k.n; totM += k.total; return [k.nama, rp(k.n), rp(k.total)]; });
+    if (!rowsM.length) rowsM.push([{ t: "Belum ada pemasukan pada periode ini", a: "l" }, "", ""]);
+    else rowsM.push([{ t: "TOTAL PEMASUKAN", b: true, fill: BIRU }, { t: rp(totN), b: true, a: "r", fill: BIRU }, { t: rp(totM), b: true, a: "r", fill: BIRU }]);
+    L.tabel([{ t: "Kategori", w: CW - 100 - 150 }, { t: "Jumlah Transaksi", w: 100, a: "r" }, { t: "Total (Rp)", w: 150, a: "r" }], rowsM, { fs: 8.5, pad: 2.6 });
+
+    /* detail pengeluaran — dipadatkan otomatis agar tetap 1 halaman */
+    var NOTE = 44;
+    L.seksi("DETAIL PENGELUARAN");
+    var kolP = [{ t: "No", w: 22, a: "c" }, { t: "Tanggal", w: 56, a: "c" }, { t: "Kategori", w: 100 }, { t: "Keterangan", w: CW - 22 - 56 - 100 - 90 }, { t: "Jumlah (Rp)", w: 90, a: "r" }];
+    var px = (D.pengeluaran || []).slice(), totK = 0;
+    px.forEach(function (e) { totK += e.jumlah; });
+    function barisP(list, lain) {
+      var rows = list.map(function (e, i) { return [String(i + 1), e.tgl, e.kategori, e.ket, rp(e.jumlah)]; });
+      if (lain) rows.push(["", "", "", { t: "Lain-lain (" + lain.n + " transaksi kecil)", b: false }, rp(lain.total)]);
+      rows.push([{ t: "", fill: BIRU }, { t: "", fill: BIRU }, { t: "", fill: BIRU }, { t: "TOTAL PENGELUARAN", b: true, fill: BIRU }, { t: rp(totK), b: true, a: "r", fill: BIRU }]);
+      return rows;
+    }
+    var sisa = BOT - L.y - NOTE, fsPilih = 0, fsList = [8.5, 8, 7.5, 7, 6.5, 6], rows = null, padP = 2.6, lainInfo = null, i;
+    if (!px.length) { rows = [[{ t: "Belum ada pengeluaran pada periode ini", a: "l" }, "", "", "", ""]]; fsPilih = 8.5; }
+    else {
+      for (i = 0; i < fsList.length && !fsPilih; i++) {
+        padP = fsList[i] >= 8 ? 2.6 : 1.8;
+        if (tinggiTabel(kolP, barisP(px, null), fsList[i], padP) <= sisa) { fsPilih = fsList[i]; rows = barisP(px, null); }
+      }
+      if (!fsPilih) {
+        /* tetap kepanjangan: tampilkan yang terbesar, sisanya digabung "Lain-lain" */
+        fsPilih = 6; padP = 1.8;
+        var urut = px.map(function (e, k) { return { e: e, k: k }; }).sort(function (a, b) { return b.e.jumlah - a.e.jumlah; });
+        var simpan = urut.length;
+        while (simpan > 1) {
+          var pilih = urut.slice(0, simpan), sisaList = urut.slice(simpan), lain = sisaList.length ? { n: sisaList.length, total: sisaList.reduce(function (a, o) { return a + o.e.jumlah; }, 0) } : null;
+          var tampil = pilih.sort(function (a, b) { return a.k - b.k; }).map(function (o) { return o.e; });
+          var rr = barisP(tampil, lain);
+          if (tinggiTabel(kolP, rr, fsPilih, padP) <= sisa) { rows = rr; break; }
+          simpan--; urut = urut.sort(function (a, b) { return b.e.jumlah - a.e.jumlah; });
+        }
+        if (!rows) rows = barisP([], { n: px.length, total: totK });
+      }
+    }
+    L.tabel(kolP, rows, { fs: fsPilih, pad: padP });
+
+    /* catatan + pengurus */
+    var ny = Math.min(L.y + 4, BOT - NOTE + 6);
+    doc.text(MX, ny + 8, "Laporan ini dibagikan untuk keterbukaan kepada warga. Pertanyaan atau koreksi, silakan hubungi Bendahara / Pengurus RT.", "R", 7.5, [0.35, 0.35, 0.35]);
+    doc.text(MX, ny + 20, "Bendahara RT: " + norm(D.namaBendahara || "-") + "   |   Ketua RT: " + norm(D.namaKetua || "-"), "B", 8, [0.2, 0.2, 0.2]);
+
+    /* footer */
+    doc.line(MX, PH - 28, PW - MX, PH - 28, 0.4, 0.6);
+    doc.text(MX, PH - 18, "Dibuat lewat Portal Warga RT 08 (PANDU) - Laporan untuk warga " + norm(label), "R", 7.5, [0.4, 0.4, 0.4]);
+
+    var namaFile = "Laporan-Keuangan-Warga_RT08_" + String(label).replace(/[^A-Za-z0-9]+/g, "-") + ".pdf";
+    return { bytes: doc.build("Laporan Keuangan Warga RT 08 - " + label), namaFile: namaFile, halaman: doc.pages.length };
+  }
+
+  var API = { buat: buat, buatWarga: buatWarga };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.RTLaporanPDF = API;
 })(typeof window !== "undefined" ? window : this);

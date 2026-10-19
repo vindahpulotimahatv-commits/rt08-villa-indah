@@ -372,6 +372,7 @@ textarea{min-height:76px;resize:vertical}
         <button type="button" class="btn btn-brand" id="btnXlsUnduh">📥 Unduh Excel</button>
         <button type="button" class="btn btn-gold" id="btnXlsKirim">📤 Kirim ke Ketua &amp; Pengurus</button>
         <button type="button" class="btn btn-brand" id="btnPdfUnduh">📄 Unduh PDF</button>
+        <button type="button" class="btn btn-brand" id="btnPdfWarga">👥 PDF untuk Warga (1 halaman)</button>
         <button type="button" class="btn btn-gold" id="btnPdfKirim">📤 Kirim PDF ke Ketua &amp; Pengurus</button>
       </div>
     </div>
@@ -856,7 +857,10 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
     return y + "-" + ("0" + (m + 1)).slice(-2);
   }
   function hitungTunggakanAdm_(){
-    var sekarang = tglWIB_().slice(0, 7), terakhir = sekarang;   // menunggak terhitung tanggal 1 bulan iuran
+    var sekarang = tglWIB_().slice(0, 7);
+    /* Batas bayar iuran = tanggal 15 tiap bulan. Lewat tanggal 15 (mulai tanggal 16) baru masuk Catatan Menunggak. */
+    var batasTgl = parseInt(RT_CONFIG.batasBayarTanggal, 10) || 15;
+    var terakhir = parseInt(tglWIB_().slice(8, 10), 10) > batasTgl ? sekarang : addBulanAdm_(sekarang, -1);
     var kunci = Object.keys(penarikanSemua_).filter(function(k){ return /^\d{4}-\d{2}$/.test(k); }).sort();
     var mulai = (RT_CONFIG.bulanMulaiIuran && /^\d{4}-\d{2}$/.test(RT_CONFIG.bulanMulaiIuran)) ? RT_CONFIG.bulanMulaiIuran : kunci[0];
     if (!mulai) return [];
@@ -1544,6 +1548,8 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
       if (st.ok) o.jml += parseFloat(e.jumlah) || 0; else if (!st.tunggu) o.belum++;
     });
     var petugas = Object.keys(pm).sort().map(function(k){ return pm[k]; });
+    var pmk = {};
+    dlm.forEach(function(it){ if (it.jenis !== "masuk") return; var k = it.kategori || "Tanpa Kategori", o = pmk[k] = pmk[k] || { n: 0, total: 0 }; o.n++; o.total += parseFloat(it.jumlah) || 0; });
 
     /* transaksi dengan saldo berjalan */
     var saldo = saldoAwal;
@@ -1559,7 +1565,9 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
       perBulan: Object.keys(perBln).sort().map(function(k){ return { label: bulanLong_(k), m: perBln[k].m, k: perBln[k].k }; }),
       rekapIuran: rekapIuran, totalRumah: totalRumah,
       matriks: { bulan: bulanList.map(bulanLong_), rows: rows, totBulan: totBulan, totSemua: totSemua },
-      detail: detail, detailTot: dt, petugas: petugas, transaksi: transaksi
+      detail: detail, detailTot: dt, petugas: petugas, transaksi: transaksi,
+      pemasukanKat: Object.keys(pmk).sort().map(function(k){ return { nama: k, n: pmk[k].n, total: pmk[k].total }; }),
+      pengeluaran: dlm.filter(function(it){ return it.jenis !== "masuk"; }).map(function(it){ return { tgl: tglIndo_(it.tanggal), kategori: it.kategori || "-", ket: it.keterangan || "", jumlah: parseFloat(it.jumlah) || 0 }; })
     };
   }
   async function bangunPdf_(){
@@ -1568,6 +1576,16 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
     var D = dataLaporanPdf_(P), logo = null;
     try { if (typeof RTSurat !== "undefined" && RTSurat.muatLogo) logo = await RTSurat.muatLogo("assets/logo-rt.png", 220); } catch (e0) { logo = null; }
     var r = RTLaporanPDF.buat(D, logo);
+    return { bytes: r.bytes, namaFile: r.namaFile, label: P.label, totMasuk: D.totMasuk, totKeluar: D.totKeluar, saldoAkhir: D.saldoAkhir };
+  }
+
+  /* PDF ringkas 1 halaman untuk dibagikan ke warga (ringkasan kas, rekap pemasukan, detail pengeluaran) */
+  async function bangunPdfWarga_(){
+    if (typeof RTLaporanPDF === "undefined" || !RTLaporanPDF.buatWarga) throw new Error("laporan-keuangan-pdf.js belum termuat / versi lama. Muat ulang halaman lalu coba lagi.");
+    var P = periodeXls_(); if (!P) return null;
+    var D = dataLaporanPdf_(P), logo = null;
+    try { if (typeof RTSurat !== "undefined" && RTSurat.muatLogo) logo = await RTSurat.muatLogo("assets/logo-rt.png", 220); } catch (e0) { logo = null; }
+    var r = RTLaporanPDF.buatWarga(D, logo);
     return { bytes: r.bytes, namaFile: r.namaFile, label: P.label, totMasuk: D.totMasuk, totKeluar: D.totKeluar, saldoAkhir: D.saldoAkhir };
   }
 
@@ -1616,6 +1634,7 @@ function linkCekInvoice_(kode){ return "\nCek iuran Anda sudah tercatat di aplik
   document.getElementById("btnXlsUnduh").addEventListener("click", function(){ unduhLaporan_(bangunExcel_, XLSX_MIME_, "Excel"); });
   document.getElementById("btnXlsKirim").addEventListener("click", function(){ kirimLaporan_(this, bangunExcel_, XLSX_MIME_, "Excel"); });
   document.getElementById("btnPdfUnduh").addEventListener("click", function(){ unduhLaporan_(bangunPdf_, PDF_MIME_, "PDF"); });
+  document.getElementById("btnPdfWarga").addEventListener("click", function(){ unduhLaporan_(bangunPdfWarga_, PDF_MIME_, "PDF untuk warga"); });
   document.getElementById("btnPdfKirim").addEventListener("click", function(){ kirimLaporan_(this, bangunPdf_, PDF_MIME_, "PDF"); });
 
   if (window.RTIuranCari) RTIuranCari.pasang(document.getElementById("cariIuranWadah"), { getData: function(){ return penarikanSemua_; } });
