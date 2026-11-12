@@ -313,6 +313,7 @@ textarea{min-height:76px;resize:vertical}
     <button class="tab-btn" data-tab="masukan" aria-label="Masukan Warga" title="Masukan Warga"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-message-circle"/></svg></span><span class="tb-l">Masukan</span></button>
     <button class="tab-btn" data-tab="polling" aria-label="Polling Warga" title="Polling Warga"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-clipboard-list"/></svg></span><span class="tb-l">Polling</span></button>
     <button class="tab-btn" data-tab="ikhusus" id="tabIKBtn" aria-label="Iuran Tambahan" title="Iuran Tambahan"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-receipt"/></svg></span><span class="tb-l">Iuran Tambahan</span></button>
+    <button class="tab-btn" data-tab="halaman" id="tabHalamanBtn" aria-label="Halaman Situs" title="Aktif/nonaktifkan halaman (Super Admin)"><span class="tb-ic"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-lock"/></svg></span><span class="tb-l">Halaman</span></button>
   </div>
 
   <!-- ===== PANEL LAPORAN WARGA ===== -->
@@ -536,7 +537,16 @@ textarea{min-height:76px;resize:vertical}
     </div>
   </div>
 
-  <!-- ===== PANEL MASUKAN WARGA ===== -->
+    <!-- ===== PANEL HALAMAN (SUPER ADMIN) ===== -->
+  <div class="panel" id="panel-halaman">
+    <div class="list-card">
+      <div class="list-title">Aktif / Nonaktifkan Halaman</div>
+      <p class="sub" style="padding:0 14px 6px;margin:0">Hanya Super Admin. Halaman yang dinonaktifkan menampilkan pemberitahuan kepada warga dan hilang dari menu. Bisa diaktifkan lagi kapan saja, tanpa edit kode.</p>
+      <div id="hlList"><div class="empty-note">Memuat status...</div></div>
+    </div>
+  </div>
+
+<!-- ===== PANEL MASUKAN WARGA ===== -->
   <div class="panel" id="panel-masukan">
     <div class="list-card">
       <div class="list-title">Survei Aplikasi PANDU</div>
@@ -783,12 +793,48 @@ function initPollingPanel_(){
   });
 }
 
+
+/* ---------------- PANEL HALAMAN (saklar aktif/nonaktif) ---------------- */
+function initHalamanPanel_(){
+  var box = document.getElementById("hlList");
+  if (!box || !db || typeof RT_HALAMAN === "undefined") return;
+  var off = {};
+  function gambar(){
+    box.innerHTML = "";
+    RT_HALAMAN.forEach(function(p){
+      var mati = off[p[0]] === true;
+      var row = document.createElement("div");
+      row.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-top:1px solid var(--line)";
+      var kiri = document.createElement("div");
+      kiri.innerHTML = "<b></b><div style='font-size:12px;color:#59657f'></div>";
+      kiri.firstChild.textContent = p[1];
+      kiri.lastChild.textContent = p[0] + ".html \u00b7 " + (mati ? "NONAKTIF" : "aktif");
+      kiri.lastChild.style.color = mati ? "#b91c1c" : "#146c3a";
+      kiri.lastChild.style.fontWeight = "700";
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = mati ? "Aktifkan" : "Nonaktifkan";
+      b.style.cssText = "border:0;border-radius:12px;padding:9px 14px;font-weight:900;font-size:13px;cursor:pointer;color:#fff;background:" + (mati ? "#16a34a" : "#dc2626");
+      b.addEventListener("click", function(){
+        if (!mati && !confirm("Nonaktifkan halaman " + p[1] + "? Warga tidak bisa membukanya sampai diaktifkan lagi.")) return;
+        b.disabled = true;
+        var ref = db.ref("halamanNonaktif/" + p[0]);
+        (mati ? ref.remove() : ref.set(true)).catch(function(){ alert("Gagal mengubah. Cek koneksi/Rules Firebase."); b.disabled = false; });
+      });
+      row.appendChild(kiri); row.appendChild(b); box.appendChild(row);
+    });
+  }
+  db.ref("halamanNonaktif").on("value", function(s){ off = s.val() || {}; gambar(); },
+    function(){ box.innerHTML = '<div class="empty-note">Gagal membaca status (cek Rules Firebase).</div>'; });
+}
+
 /* ---------------- DASHBOARD LOGIC ---------------- */
 var dashboardInited_ = false;
 function initDashboard_(){
   if (dashboardInited_) return;
   dashboardInited_ = true;
   initPollingPanel_();
+  initHalamanPanel_();
 
   var testMode_ = false;
   var today = tglWIB_();

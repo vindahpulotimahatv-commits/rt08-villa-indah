@@ -1,0 +1,222 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0A1B32"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="icon-192.png">
+<title>Jersey Futsal | PANDU</title>
+<style>
+:root{--navy:#123a6b;--gold:#d5a62b;--ink:#12213f;--muted:#59657f;--line:#dbe2f0;--bg:#f3f6fc;--pri:#1d4ed8;--err:#b91c1c}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5;
+background:linear-gradient(180deg,rgba(6,16,36,.78),rgba(8,20,44,.6) 40%,rgba(10,25,56,.9)),url("assets/bg-navy.jpg") center top/cover no-repeat fixed,#0a1b32;padding-bottom:40px}
+a{color:inherit}.wrap{width:min(760px,calc(100% - 28px));margin:auto}
+.top{position:sticky;top:0;z-index:50;background:rgba(8,20,44,.94);backdrop-filter:blur(14px);border-bottom:1px solid rgba(213,166,43,.28)}
+.bar{display:flex;align-items:center;justify-content:space-between;min-height:58px;gap:10px;color:#fff}
+.bar b{font-size:17px}.bar small{display:block;color:var(--gold);font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:800}
+.back{border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:8px 14px;font-weight:800;font-size:13px;color:#fff;text-decoration:none}
+.hero{text-align:center;color:#fff;padding:22px 0 4px}.hero h1{margin:0;font-size:1.45rem}.hero p{margin:6px 0 0;color:#ffe08a;font-weight:600}
+section{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;margin:16px 0;box-shadow:0 14px 40px rgba(3,10,26,.3)}
+h2{margin:0 0 4px;font-size:1.15rem}.mu{color:var(--muted);font-size:.92rem;margin:0 0 12px}
+img{width:100%;border-radius:10px;display:block}
+.btn{background:var(--pri);color:#fff;border:0;border-radius:12px;padding:12px 16px;font-size:1rem;font-weight:800;cursor:pointer;width:100%;margin-top:12px}
+.btn.g{background:#16a34a}.btn.r{background:#dc2626}.btn.s{width:auto;padding:5px 10px;font-size:.8rem;margin:0}
+label{display:block;font-weight:600;font-size:.9rem;margin-top:10px}
+input,textarea,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-size:1rem;margin-top:4px;font-family:inherit}
+.msg{margin-top:10px;font-weight:600;color:var(--err)}
+.ok{background:#dcfce7;color:#14532d;border-radius:12px;padding:14px;margin-top:12px;font-weight:600}
+[hidden]{display:none!important}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:.88rem}th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ic{border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:14px;background:var(--bg)}
+.ic h3{margin:0 0 2px;font-size:1rem;color:var(--pri)}
+.chips{margin:6px 0 0;font-size:.88rem}.chips b{display:inline-block;min-width:60px}
+.chip{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:1px 7px;margin:2px 3px 2px 0;font-weight:700}
+.warn{color:var(--err);font-weight:700}.adm{border:2px dashed var(--err)}
+.foot{text-align:center;color:#cbd5e8;font-size:.8rem;padding:6px 0 20px}
+</style></head><body>
+<header class="top"><div class="wrap bar"><div><b>Jersey Futsal</b><small>RT 08 / RW 021</small></div><a class="back" href="index.html">← Beranda</a></div></header>
+<main class="wrap">
+<div class="hero"><h1>Pesan Jersey Futsal RT 08 / RW 021</h1><p>Villa Indah Pulo Timaha · Bersama Kita Hebat</p></div>
+<section><h2>Desain jersey</h2><p class="mu">Desain yang dipakai: Desain B (biru-kuning), pemain dan kiper.</p><img src="assets/jersey-desain-b.jpg" alt="Desain B" loading="lazy"></section>
+<section><h2>Size chart</h2><p class="mu">Ukur baju favorit (panjang × lebar, cm) lalu cocokkan.</p><img src="assets/jersey-size-chart.jpg" alt="Size chart" loading="lazy"></section>
+<section><h2>Isi data pesanan</h2><p class="mu">Jika ingin pesan manual, hubungi:<br>Pak RT Hafidz: <a href="https://wa.me/6287788676667">+62 877-8867-6667</a><br>Adin: <a href="https://wa.me/6281932136575">+62 819-3213-6575</a></p>
+<label>Nomor WA pemesan<input id="wa" type="tel" inputmode="numeric" placeholder="contoh: 6281234567890"></label>
+<label>Nama pemesan<input id="pm" maxlength="40"></label>
+<label>Jumlah jersey yang dipesan<input id="q" type="number" min="1" max="10" value="1"></label>
+<div class="chips" id="used"></div>
+<div id="items"></div>
+<button class="btn g" id="sv">Simpan pesanan</button><div class="msg" id="om"></div>
+<div class="ok" id="ook" hidden><span id="ot"></span><button class="btn" id="pdfb">Unduh PDF bukti pesanan</button></div></section>
+<section><h2>Sudah memesan <span id="tot"></span></h2><p class="mu">Nomor punggung tidak boleh sama dalam kategori yang sama (anak dengan dewasa boleh sama).</p><div class="tw"><table><thead><tr><th>Pemesan</th><th>WA</th><th>Nama punggung</th><th>No</th><th>Kategori</th><th>Tipe</th><th>Ukuran</th><th>Catatan</th><th class="ad" hidden></th></tr></thead><tbody id="tb"><tr><td colspan="8">Belum ada pesanan.</td></tr></tbody></table></div><button class="btn" id="rkp">Unduh rekap pesanan (PDF)</button></section>
+<section class="adm" id="adm" hidden><h2>Admin</h2><p class="mu">Hanya muncul lewat alamat dengan #admin. Reset menghapus semua pesanan yang diisi lewat link (data isi manual tetap ada) dan tidak bisa dibatalkan.</p>
+<h3 style="margin:14px 0 4px;font-size:1rem">Tempel daftar dari WhatsApp</h3><p class="mu">Copy-paste seluruh daftar dari WA (Anak &amp; Dewasa). Daftar ini menggantikan data "isi manual" sebelumnya. Tidak perlu update repo.</p>
+<textarea id="wat" rows="10" placeholder="Anak&#10;1. Kallandra : xl anak (8)&#10;...&#10;Dewasa&#10;1. Ghazy : L Dewasa (22)"></textarea>
+<button class="btn" id="wap">Pratinjau</button><div class="msg" id="wam" style="color:var(--tx)"></div><div class="tw" id="wav"></div>
+<button class="btn g" id="was" hidden>Simpan ke daftar</button>
+<button class="btn r" id="rst" style="margin-top:22px">Reset semua pemesan</button><div class="msg" id="am"></div></section>
+</main><div class="foot">Data bisa diperbarui kapan saja dengan nomor WA yang sama.</div>
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getFirestore,doc,getDoc,getDocs,setDoc,deleteDoc,collection,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const cfg={apiKey:"AIzaSyAvjBx4s7CEtZXaND4ELGrZPFGAUlj7Yyk",authDomain:"jerseyrt08-9311a.firebaseapp.com",projectId:"jerseyrt08-9311a",storageBucket:"jerseyrt08-9311a.firebasestorage.app",messagingSenderId:"78172026973",appId:"1:78172026973:web:d5b35df7b2307e7eceb5b4"};
+const $=id=>document.getElementById(id);const db=getFirestore(initializeApp(cfg));const COL='orders';
+const digits=s=>String(s||'').replace(/\D/g,'');
+const SIZES=['S','M','L','XL','XXL','3XL'];const MAXQ=10;
+const esc=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const catL=c=>c==='dewasa'?'Dewasa':'Anak';const roleL=r=>r==='kiper'?'Kiper':'Pemain';
+let all=[],last=null;
+/* data yang sudah isi manual: [nama punggung, nomor (null=belum ada), ukuran, kategori] */
+const SEED=[['KALLANDRA',8,'XL','anak'],['VINO',9,'XL','anak'],['M BOBY',null,'XXL','anak'],['KAHFI',7,'XL','anak'],['AZZAM K',4,'L','anak'],['YOU - Q',10,'L','anak'],['DAFAA',1,'XL','anak'],['TEGAR',21,'L','anak'],['GATAN',5,'M','anak'],['JOJO',6,'L','anak'],['FATHAN',33,'XL','anak'],['SALVADOR',31,'XL','anak'],['WISHANG',27,'','anak'],['ATHAYA',17,'XL','anak'],['ALVIN',19,'M','anak'],['BASTIAN',15,'M','anak'],['GIBRAN R',18,'XL','anak'],
+['GHAZY',22,'L','dewasa'],['BACHDIM',36,'M','dewasa'],['REIFAN',17,'M','dewasa'],['RAIHAN',20,'M','dewasa'],['ALDO',10,'L','dewasa'],['PUTRA',5,'XXL','dewasa'],['IZAZ',27,'XL','dewasa']];
+const MANUAL=SEED.map(([np,no,size,cat],i)=>({id:'manual-'+(i+1),d:{pm:'Isi manual',wa:'',items:[{np,no,cat,role:'pemain',size,ct:''}]}}));
+const msg=t=>{$('om').textContent=t||''};
+
+/* ---------- form per jersey ---------- */
+const opt=(list,sel)=>list.map(([v,l])=>'<option value="'+v+'"'+(v===sel?' selected':'')+'>'+l+'</option>').join('');
+function card(i,v){v=v||{};
+return '<div class="ic"><h3>Jersey '+(i+1)+'</h3>'+
+'<div class="g2"><label>Nama punggung<input data-k="np" maxlength="14" value="'+esc(v.np)+'"></label>'+
+'<label>Nomor punggung<input data-k="no" type="number" inputmode="numeric" min="0" max="99" value="'+(v.no==null?'':esc(v.no))+'"></label></div>'+
+'<div class="g2"><label>Kategori<select data-k="cat">'+opt([['anak','Anak'],['dewasa','Dewasa']],v.cat||'anak')+'</select></label>'+
+'<label>Tipe baju<select data-k="role">'+opt([['pemain','Pemain'],['kiper','Kiper']],v.role||'pemain')+'</select></label></div>'+
+'<label>Ukuran<select data-k="size">'+opt(SIZES.map(x=>[x,x]),v.size||'M')+'</select></label>'+
+'<label>Catatan (boleh kosong)<input data-k="ct" maxlength="80" value="'+esc(v.ct)+'"></label></div>'}
+function readItems(){return [...document.querySelectorAll('#items .ic')].map(c=>{const g=k=>c.querySelector('[data-k="'+k+'"]').value;
+const n=g('no').trim();return {np:g('np').trim().toUpperCase(),no:n===''?NaN:Number(n),cat:g('cat'),role:g('role'),size:g('size'),ct:g('ct').trim()}})}
+function renderItems(n,data){const cur=data||readItems();$('items').innerHTML=Array.from({length:n},(_,i)=>card(i,cur[i])).join('')}
+function clampQ(){let n=parseInt($('q').value,10);if(!(n>=1))n=1;if(n>MAXQ)n=MAXQ;$('q').value=n;return n}
+$('q').addEventListener('change',()=>renderItems(clampQ()));
+renderItems(1,[]);
+
+/* ---------- data dari Firestore ---------- */
+const nk=(c,n)=>c+'|'+String(n||'').trim().toUpperCase();
+const manualFor=docs=>{const k=new Set();docs.forEach(o=>{if(o.id.startsWith('wa-')&&Array.isArray(o.d.items))o.d.items.forEach(it=>k.add(nk(it.cat,it.np)))});
+const hid=new Set(docs.filter(o=>o.id.startsWith('hide-')).map(o=>o.id.slice(5)));
+return MANUAL.filter(o=>!hid.has(o.id)&&!k.has(nk(o.d.items[0].cat,o.d.items[0].np)))};
+const flat=()=>{const r=[];[...manualFor(all),...all].forEach(o=>{if(!Array.isArray(o.d.items))return;o.d.items.forEach((it,k)=>r.push({id:o.id,k,pm:o.d.pm,wa:o.d.wa,...it}))});return r};
+function paint(){const rows=flat();const orders=new Set(rows.map(r=>r.id));
+$('tot').textContent='('+orders.size+' pemesan, '+rows.length+' pcs)';
+const tb=$('tb');tb.innerHTML='';
+if(!rows.length){tb.innerHTML='<tr><td colspan="8">Belum ada pesanan.</td></tr>'}
+rows.sort((a,b)=>(a.cat>b.cat?1:a.cat<b.cat?-1:0)||((a.no==null?999:a.no)-(b.no==null?999:b.no)));
+const adm=location.hash==='#admin';
+rows.forEach(r=>{const w=digits(r.wa);const tr=tb.insertRow();
+[r.pm||'-',w?w.slice(0,4)+'****'+w.slice(-3):'-',r.np||'-',r.no==null?'⚠ belum ada':r.no,catL(r.cat),roleL(r.role),r.size||'-',r.ct||'-'].forEach((v,i)=>{const c=tr.insertCell();c.textContent=v;if(i===3&&r.no==null)c.className='warn'});
+if(adm){const c=tr.insertCell();const b=document.createElement('button');b.className='btn r s';b.textContent='Hapus';b.onclick=()=>delItem(r);c.appendChild(b)}});
+document.querySelectorAll('.ad').forEach(e=>e.hidden=!adm);
+const chips=(cat)=>{const n=rows.filter(r=>r.cat===cat&&r.no!=null).map(r=>r.no).sort((a,b)=>a-b);return '<div><b>'+catL(cat)+' terpakai:</b> '+(n.length?n.map(x=>'<span class="chip">'+x+'</span>').join(''):'-')+'</div>'};
+$('used').innerHTML=chips('anak')+chips('dewasa')}
+onSnapshot(collection(db,COL),s=>{all=s.docs.map(d=>({id:d.id,d:d.data()}));paint()},e=>{console.error(e);msg('Gagal membaca data ['+(e.code||'error')+'] - cek aturan Firestore.')});
+window.addEventListener('hashchange',()=>{$('adm').hidden=location.hash!=='#admin';paint()});
+$('adm').hidden=location.hash!=='#admin';
+
+$('wa').addEventListener('blur',async()=>{const w=digits($('wa').value);if(w.length<9)return;
+try{const s=await getDoc(doc(db,COL,'w'+w));if(s.exists()&&s.data().pm&&Array.isArray(s.data().items)){const d=s.data();$('pm').value=d.pm;
+$('q').value=d.items.length;renderItems(d.items.length,d.items);msg('Data lama ditemukan. Ubah lalu tekan Simpan pesanan.')}}catch(e){}});
+
+/* ---------- simpan ---------- */
+function validate(items,myId,docsNow){
+for(let i=0;i<items.length;i++){const it=items[i],n='Jersey '+(i+1)+': ';
+if(!it.np)return n+'nama punggung wajib diisi.';
+if(!Number.isInteger(it.no)||it.no<0||it.no>99)return n+'nomor punggung wajib diisi (0-99).';
+if(!SIZES.includes(it.size))return n+'ukuran wajib dipilih.'}
+const seen={};
+for(let i=0;i<items.length;i++){const k=items[i].cat+'-'+items[i].no;
+if(k in seen)return 'Jersey '+(seen[k]+1)+' dan Jersey '+(i+1)+' memakai nomor '+items[i].no+' yang sama di kategori '+catL(items[i].cat)+'. Ganti salah satu.';seen[k]=i}
+for(const o of docsNow){if(o.id===myId||!Array.isArray(o.d.items))continue;
+for(const x of o.d.items){const it=items.find(t=>t.cat===x.cat&&x.no!=null&&t.no===x.no);
+if(it)return 'Nomor '+x.no+' ('+catL(x.cat)+') sudah dipakai '+(x.np||'-')+' (pemesan: '+(o.d.pm||'-')+'). Pilih nomor lain.'}}
+return ''}
+$('sv').onclick=async()=>{const wa=digits($('wa').value),pm=$('pm').value.trim();const items=readItems();
+if(wa.length<9||wa.length>15){msg('Nomor WA tidak valid (9-15 angka).');return}
+if(!pm){msg('Nama pemesan wajib diisi.');return}
+msg('Memeriksa nomor punggung...');
+try{const id='w'+wa;const snap=await getDocs(collection(db,COL));const now=snap.docs.map(d=>({id:d.id,d:d.data()}));
+const err=validate(items,id,[...manualFor(now),...now]);if(err){msg(err);return}
+const ex=now.some(o=>o.id===id&&Array.isArray(o.d.items));
+msg('Menyimpan...');
+await setDoc(doc(db,COL,id),{pm,wa,items,t:serverTimestamp()});
+last={pm,wa,items,w:new Date().toLocaleString('id-ID')};msg('');
+$('ot').textContent=(ex?'Pesanan diperbarui: ':'Pesanan tersimpan: ')+pm+' ('+items.length+' pcs)';$('ook').hidden=false}
+catch(e){console.error(e);msg('Gagal menyimpan ['+(e.code||e.name||'error')+']: '+(e.message||'').slice(0,160))}};
+
+/* ---------- PDF ---------- */
+$('pdfb').onclick=()=>{if(!last)return;if(!window.jspdf){window.print();return}
+const d=new window.jspdf.jsPDF();d.setFontSize(16);d.text('JERSEY FUTSAL RT 08 / RW 021',20,22);d.setFontSize(11);d.text('Villa Indah Pulo Timaha',20,29);
+d.setFontSize(14);d.text('BUKTI PESANAN JERSEY (DESAIN B)',20,45);d.setFontSize(12);
+d.text('Pemesan',20,58);d.text(': '+last.pm,60,58);d.text('Nomor WA',20,66);d.text(': '+last.wa,60,66);d.text('Waktu',20,74);d.text(': '+last.w,60,74);
+let y=88;last.items.forEach((it,i)=>{if(y>270){d.addPage();y=20}
+d.setFont(undefined,'bold');d.text('Jersey '+(i+1),20,y);d.setFont(undefined,'normal');y+=7;
+d.text('Nama punggung : '+it.np+'   No: '+it.no,24,y);y+=7;
+d.text('Kategori : '+catL(it.cat)+'   Tipe: '+roleL(it.role)+'   Ukuran: '+it.size,24,y);y+=7;
+if(it.ct){d.text('Catatan : '+it.ct,24,y);y+=7}y+=4});
+d.text('Total: '+last.items.length+' pcs',20,Math.min(y+4,285));
+d.save('bukti-pesanan-'+last.pm.replace(/\W+/g,'-')+'.pdf')};
+
+
+/* ---------- rekap PDF ---------- */
+$('rkp').onclick=()=>{const pin=prompt('Masukkan PIN admin untuk mengunduh rekap:');if(pin===null)return;if(pin.trim().toLowerCase()!=='adminrt'){alert('PIN salah.');return}
+const rows=[...flat()].sort((a,b)=>(a.cat>b.cat?1:a.cat<b.cat?-1:0)||((a.no==null?999:a.no)-(b.no==null?999:b.no)));
+if(!rows.length){alert('Belum ada pesanan.');return}
+if(!window.jspdf){window.print();return}
+const d=new window.jspdf.jsPDF();let y=20;
+const cut=(t,n)=>{t=String(t==null?'':t);return t.length>n?t.slice(0,n-1)+'.':t};
+const head=()=>{d.setFont(undefined,'bold');d.setFontSize(9);[['No',14],['Nama punggung',26],['Nomor',72],['Tipe',90],['Ukuran',110],['Pemesan',128],['Catatan',160]].forEach(c=>d.text(c[0],c[1],y));d.setFont(undefined,'normal');y+=2;d.line(14,y,196,y);y+=5};
+d.setFontSize(15);d.text('REKAP PESANAN JERSEY FUTSAL RT 08 / RW 021',14,y);y+=7;d.setFontSize(10);
+d.text('Villa Indah Pulo Timaha - dicetak '+new Date().toLocaleString('id-ID'),14,y);y+=6;
+d.text('Total: '+rows.length+' pcs dari '+new Set(rows.map(r=>r.id)).size+' pemesan',14,y);y+=9;
+['anak','dewasa'].forEach(cat=>{const rs=rows.filter(r=>r.cat===cat);if(!rs.length)return;
+if(y>250){d.addPage();y=20}
+d.setFontSize(12);d.setFont(undefined,'bold');d.text(catL(cat).toUpperCase()+' ('+rs.length+' pcs)',14,y);d.setFont(undefined,'normal');y+=6;head();d.setFontSize(9);
+rs.forEach((r,i)=>{if(y>280){d.addPage();y=20;head();d.setFontSize(9)}
+d.text(String(i+1),14,y);d.text(cut(r.np,22),26,y);d.text(r.no==null?'BELUM ADA':String(r.no),72,y);d.text(roleL(r.role),90,y);d.text(String(r.size||'-'),110,y);d.text(cut(r.pm,16),128,y);d.text(cut(r.ct,22),160,y);y+=6});y+=6});
+if(y>240){d.addPage();y=20}
+d.setFontSize(12);d.setFont(undefined,'bold');d.text('JUMLAH PER UKURAN',14,y);d.setFont(undefined,'normal');y+=7;d.setFontSize(10);
+['anak','dewasa'].forEach(cat=>['pemain','kiper'].forEach(role=>{const rs=rows.filter(r=>r.cat===cat&&r.role===role);if(!rs.length)return;
+const c={};rs.forEach(r=>{c[r.size]=(c[r.size]||0)+1});
+d.text(catL(cat)+' - '+roleL(role)+' ('+rs.length+'): '+SIZES.filter(z=>c[z]).map(z=>z+' x'+c[z]).join(', '),14,y);y+=6}));
+d.save('rekap-pesanan-jersey-rt08.pdf')};
+
+/* ---------- admin ---------- */
+const am=t=>{$('am').textContent=t||''};
+async function delItem(r){if(!confirm('Hapus '+(r.np||'jersey ini')+'?'))return;
+try{if(r.id.startsWith('manual-')){await setDoc(doc(db,COL,'hide-'+r.id),{hide:true});return}
+const o=all.find(x=>x.id===r.id);const items=o.d.items.filter((_,k)=>k!==r.k);
+if(items.length)await setDoc(doc(db,COL,r.id),{...o.d,items});else await deleteDoc(doc(db,COL,r.id))}catch(e){alert('Gagal menghapus.')}}
+$('rst').onclick=async()=>{if(!confirm('Hapus SEMUA pesanan? Tidak bisa dibatalkan.'))return;
+am('Menghapus...');try{const s=await getDocs(collection(db,COL));await Promise.all(s.docs.map(d=>deleteDoc(d.ref)));am('Selesai: '+s.size+' dokumen dihapus.')}catch(e){am('Gagal reset (cek aturan Firestore).')}};
+
+/* ---------- admin: tempel daftar WA ---------- */
+function parseWA(text){const out=[];let cat='anak';
+for(let raw of text.split(/\r?\n/)){const line=raw.replace(/[“”"]/g,'"').trim();if(!line)continue;
+const h=line.match(/^(anak|dewasa)\b[\s:\-]*$/i);if(h){cat=h[1].toLowerCase();continue}
+const m=line.match(/^\d+\s*[.)]\s*(.+)$/);if(!m)continue;let body=m[1];
+let no=null;const nm=[...body.matchAll(/\(\s*(\d*)\s*\)/g)].pop();
+if(nm){if(nm[1]!=='')no=Number(nm[1]);body=body.slice(0,nm.index)+body.slice(nm.index+nm[0].length)}
+let c=cat;const cw=body.match(/\b(anak|dewasa)\b/i);if(cw){c=cw[1].toLowerCase();body=body.replace(cw[0],' ')}
+body=body.replace(/["']/g,' ');
+let name,size='';const SZ=/(?:^|[^A-Za-z0-9])(3XL|XXL|XL|L|M|S)(?![A-Za-z0-9])/i;
+const ci=body.indexOf(':');
+if(ci>=0){name=body.slice(0,ci);const sm=body.slice(ci+1).match(SZ);if(sm)size=sm[1].toUpperCase()}
+else{const sm=body.match(SZ);if(sm){size=sm[1].toUpperCase();name=body.slice(0,sm.index+(sm[0].length-sm[1].length))}else name=body}
+name=name.replace(/\s+/g,' ').trim().toUpperCase();if(!name)continue;
+out.push({np:name,no,cat:c,role:'pemain',size,ct:''})}
+return out}
+let parsed=[];
+$('wap').onclick=()=>{parsed=parseWA($('wat').value);const wm=$('wam');
+if(!parsed.length){wm.textContent='Tidak ada baris yang terbaca. Pastikan formatnya "1. Nama : ukuran (nomor)".';$('wav').innerHTML='';$('was').hidden=true;return}
+const seen={},warn=[];parsed.forEach((r,i)=>{if(!r.size)warn.push(r.np+': ukuran kosong');if(r.no==null)warn.push(r.np+': nomor kosong');
+else{const k=r.cat+'-'+r.no;if(k in seen)warn.push('Nomor '+r.no+' ('+catL(r.cat)+') dobel: '+parsed[seen[k]].np+' & '+r.np);seen[k]=i}});
+wm.textContent=parsed.length+' orang terbaca.'+(warn.length?' Perhatian: '+warn.join('; '):'');
+$('wav').innerHTML='<table><thead><tr><th>Nama</th><th>No</th><th>Kategori</th><th>Ukuran</th></tr></thead><tbody>'+parsed.map(r=>'<tr><td>'+esc(r.np)+'</td><td>'+(r.no==null?'⚠':r.no)+'</td><td>'+catL(r.cat)+'</td><td>'+(r.size||'⚠')+'</td></tr>').join('')+'</tbody></table>';
+$('was').hidden=false};
+$('was').onclick=async()=>{if(!parsed.length)return;
+if(!confirm('Simpan '+parsed.length+' orang? Daftar WA sebelumnya akan diganti.'))return;
+const wm=$('wam');wm.textContent='Menyimpan...';
+try{const s=await getDocs(collection(db,COL));const keep=new Set();
+const slug=t=>t.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'x';const cnt={};
+for(const r of parsed){let id='wa-'+r.cat+'-'+slug(r.np);cnt[id]=(cnt[id]||0)+1;if(cnt[id]>1)id+='-'+cnt[id];keep.add(id);
+await setDoc(doc(db,COL,id),{pm:'Isi manual',wa:'',items:[r],t:serverTimestamp()})}
+const old=s.docs.filter(d=>d.id.startsWith('wa-')&&!keep.has(d.id));await Promise.all(old.map(d=>deleteDoc(d.ref)));
+wm.textContent='Selesai: '+parsed.length+' orang disimpan'+(old.length?', '+old.length+' data lama dihapus':'')+'.';$('was').hidden=true}
+catch(e){console.error(e);wm.textContent='Gagal menyimpan ['+(e.code||'error')+']. Cek aturan Firestore.'}};
+</script></body></html>

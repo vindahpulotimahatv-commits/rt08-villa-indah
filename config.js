@@ -374,3 +374,72 @@ const RT_PESAN_RUMAH = "Pilih Blok & Nomor Rumah dulu. Tanpa nomor rumah yang te
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mulai);
   else mulai();
 })();
+
+/* ============================================================
+   SAKLAR HALAMAN (diatur Super Admin di admin.html > tab "Halaman")
+   Status disimpan di Firebase: halamanNonaktif/<kunci> = true.
+   - Halaman nonaktif: pengunjung melihat pemberitahuan, bukan isi halaman.
+   - Tautan ke halaman itu disembunyikan dari menu & beranda.
+   Jika Firebase tidak terjangkau, halaman tetap terbuka (aman).
+   ============================================================ */
+var RT_HALAMAN = [
+  ["jersey","Jersey Futsal"],["informasi","Informasi"],["agenda","Agenda"],["layanan","Layanan"],
+  ["transparansi","Transparansi"],["umkm","UMKM"],["bayar","Bayar Iuran"],["info-harian","Info Harian"],
+  ["galeri","Galeri"],["berita","Berita Terkini"],["kontak","Kontak Penting"],["livechat","Live Chat"],
+  ["hiburan","Hiburan"],["masukan","Kritik, Saran & Survei"],["daftar-hadir","Daftar Hadir"]
+];
+(function () {
+  var KUNCI = "rt08HalamanOff";
+  var path = (location.pathname.split("/").pop() || "index.html").replace(/\.html$/i, "") || "index";
+  var dapat = RT_HALAMAN.some(function (p) { return p[0] === path; });
+  var cfg = (typeof RT_CONFIG !== "undefined" && RT_CONFIG.firebaseConfig) || {};
+
+  function bacaCache() { try { return JSON.parse(localStorage.getItem(KUNCI) || "{}") || {}; } catch (e) { return {}; } }
+
+  function sembunyikanTautan(off) {
+    Object.keys(off).forEach(function (k) {
+      if (!off[k] || k === path) return;
+      document.querySelectorAll('a[href="' + k + '.html"],a[href^="' + k + '.html#"]').forEach(function (a) {
+        var li = a.closest("li");
+        var t = li || a; t.style.display = "none"; t.setAttribute("data-hl", "1");
+      });
+    });
+  }
+
+  function tampilkanPemberitahuan() {
+    if (document.getElementById("rtHalamanOff")) return;
+    var nama = path; RT_HALAMAN.forEach(function (p) { if (p[0] === path) nama = p[1]; });
+    var d = document.createElement("div");
+    d.id = "rtHalamanOff";
+    d.style.cssText = "position:fixed;inset:0;z-index:2147483000;background:#0a1b32;color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:Inter,system-ui,sans-serif";
+    d.innerHTML = '<div style="max-width:420px"><div style="font-size:44px">🔒</div>' +
+      '<h1 style="margin:10px 0 6px;font-size:22px">Halaman ' + nama.replace(/</g, "&lt;") + ' sedang dinonaktifkan</h1>' +
+      '<p style="margin:0 0 18px;color:#cbd5e8;line-height:1.5">Pengurus RT 08 menutup halaman ini untuk sementara. Silakan kembali lagi nanti atau hubungi pengurus.</p>' +
+      '<a href="index.html" style="display:inline-block;background:linear-gradient(135deg,#e8c05a,#c49325);color:#0b2144;border-radius:12px;padding:12px 20px;font-weight:800;text-decoration:none">Ke Beranda</a></div>';
+    document.body.appendChild(d);
+    document.documentElement.style.overflow = "hidden";
+  }
+
+  function terapkan(off) {
+    sembunyikanTautan(off);
+    if (dapat && off[path]) tampilkanPemberitahuan();
+  }
+
+  function mulai() {
+    var cache = bacaCache();
+    terapkan(cache);
+    if (!cfg.databaseURL || typeof fetch !== "function") return;
+    fetch(String(cfg.databaseURL).replace(/\/+$/, "") + "/halamanNonaktif.json", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (v) {
+        var off = (v && typeof v === "object") ? v : {};
+        try { localStorage.setItem(KUNCI, JSON.stringify(off)); } catch (e) {}
+        var pn = document.getElementById("rtHalamanOff");
+        if (pn && !off[path]) { pn.remove(); document.documentElement.style.overflow = ""; }
+        document.querySelectorAll("[data-hl]").forEach(function (el) { el.style.display = ""; el.removeAttribute("data-hl"); });
+        terapkan(off);
+      })
+      .catch(function () { /* offline: pakai status terakhir */ });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mulai); else mulai();
+})();

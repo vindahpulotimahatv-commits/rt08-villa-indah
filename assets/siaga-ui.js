@@ -121,7 +121,8 @@ var PAGES=[
  ["Info Harian","info-harian.html","calendar-days","jadwal sholat adzan cuaca hujan banjir peringatan"],
  ["Kritik, Saran & Survei","masukan.html","message-circle","kritik saran masukan survei aplikasi pengurus"],
  ["Bayar Iuran","bayar.html","credit-card","iuran bayar transfer bulanan"],
- ["Hiburan Radio","hiburan.html","sparkles","hiburan radio musik"]
+ ["Hiburan Radio","hiburan.html","sparkles","hiburan radio musik"],
+ ["Jersey Futsal","jersey.html","shopping-bag","jersey futsal baju pesan kaos olahraga"]
 ];
 function bindSearch(){
   var inp=document.getElementById("sgSearchInput"), out=document.getElementById("sgSearchList"); if(!inp||!out) return;

@@ -153,6 +153,13 @@
         ".write": "auth != null && auth.uid == 'DOHOhpaimmTY2oB1WxbNQg0BLIG2' && (!data.exists() || (data.exists() && root.child('appConfig/testMode').val() == true))",
         ".validate": "newData.hasChildren(['tanggal','jenis','keterangan','jumlah']) && newData.child('tanggal').isString() && newData.child('jenis').isString() && (newData.child('jenis').val() == 'masuk' || newData.child('jenis').val() == 'keluar') && newData.child('keterangan').isString() && newData.child('jumlah').isNumber() && newData.child('jumlah').val() > 0 && newData.child('jumlah').val() <= 1000000000"
       }
+    },
+    "halamanNonaktif": {
+      ".read": true,
+      "$halaman": {
+        ".write": "auth != null && auth.uid == 'DOHOhpaimmTY2oB1WxbNQg0BLIG2'",
+        ".validate": "newData.isBoolean() && newData.val() == true"
+      }
     }
   }
 }
